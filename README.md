@@ -20,8 +20,6 @@ This repository is the LaTeX/GitHub Actions scaffold for the book. It is intenti
 .
 ├── .github/
 │   ├── workflows/build-book.yml
-│   ├── texlive.profile
-│   └── texlive.packages
 ├── bibliography/references.bib
 ├── diagrams/README.md
 ├── glossary/terms.tex
@@ -44,7 +42,6 @@ This repository is the LaTeX/GitHub Actions scaffold for the book. It is intenti
 ├── part2/                           # chapter09 through chapter18
 ├── part3/                           # chapter19 through chapter30
 ├── scripts/
-│   ├── install-texlive.sh
 │   ├── build-book.sh
 │   ├── build-part.sh
 │   ├── render-diagrams.sh
@@ -64,10 +61,10 @@ This repository is the LaTeX/GitHub Actions scaffold for the book. It is intenti
 ## Selected build configuration
 
 - XeLaTeX with the `book` document class
-- Latest TeX Live distribution installed on the GitHub-hosted Ubuntu runner
+- Latest full TeX Live distribution provided by `xu-cheng/texlive-action@v2`
 - CI-only build workflow, triggered on every push
 - US Letter paper, two-sided layout, mirrored margins and binding gutter
-- Source Serif Pro / Source Sans Pro font packages
+- Source Serif / Source Sans font packages (current TeX Live package names)
 - Editorial palette with ink, teal and rust accents
 - Shared semantic LaTeX environments and source citation commands in `styles/bookstyle.sty`
 - `listings` for code; Mermaid source files can be rendered to SVG/PDF
@@ -75,17 +72,17 @@ This repository is the LaTeX/GitHub Actions scaffold for the book. It is intenti
 - Glossary and alphabetical index infrastructure
 - Standard PDF output (no claim of PDF/UA or tagged-PDF conformance)
 
-The CI workflow pins GitHub Actions to full commit SHAs. The TeX Live distribution is intentionally not pinned to a yearly release, per the selected latest-version policy. The workflow records the installed TeX Live version in its log.
+The CI workflow uses the working `xu-cheng/texlive-action@v2` pattern with `scheme: full`, as supplied for this repository. TeX Live tracks the latest distribution. The workflow uses the same action-tag style as the supplied working example.
 
 ## Build and publish
 
 The workflow builds on every push. For version-tag pushes (`v*`), the already validated `build/book.pdf` is passed between jobs as a short-lived workflow artifact and attached to a GitHub Release. The release job does not rebuild the PDF, so it publishes the exact bytes that passed CI. Release creation uses the GitHub CLI and a job-scoped `contents: write` permission; the ordinary build job has read-only repository permissions.
 
-The book build uses `latexmk` with XeLaTeX, allowing it to orchestrate the required LaTeX/Biber/index passes. The CI quality stage checks the scaffold structure, generated PDF, unresolved references/citations, duplicate labels, missing bibliography entries, overfull boxes, text extraction, metadata/URL extraction/font embedding, spelling, and rendered page previews. It also runs a repeat-build comparison within the same CI environment. A visual preview is generated for every page; pixel-diff regression is deferred until an approved visual baseline exists for authored chapter layouts.
+The book build uses `latexmk` with XeLaTeX inside the full TeX Live action. It verifies the placeholder structure, compiles the combined book, runs glossary/index generation when entries exist, and uploads the generated PDF as a workflow artifact. Version tags (`v*`) publish the validated artifact to GitHub Releases without rebuilding it.
 
 ### Local commands
 
-A local TeX Live installation with the packages listed in `.github/texlive.packages` is required. The user selected CI-only support, so local setup is documented as optional and is not provisioned automatically.
+A local TeX Live installation with XeLaTeX, latexmk, Biber, makeglossaries and makeindex is required for local builds. CI uses the full TeX Live container; this repository does not maintain a second custom TeX Live installer.
 
 ```bash
 # Build the complete book (from repository root)
