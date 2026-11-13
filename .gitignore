@@ -1,0 +1,34 @@
+# LaTeX outputs
+/build/
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.ist
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.idx
+*.ilg
+*.ind
+*.acn
+*.acr
+*.alg
+*.xdy
+*.xdv
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

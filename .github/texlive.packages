@@ -1,0 +1,11 @@
+# Base collections and book-specific packages; the TeX Live release itself floats to latest.
+collection-latexrecommended
+collection-latexextra
+collection-fontsrecommended
+collection-xetex
+biber
+latexmk
+sourceserifpro
+sourcesanspro
+glossaries
+xindy

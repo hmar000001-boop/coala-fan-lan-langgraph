@@ -1,0 +1,166 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{styles/bookstyle}[2026/11/13 Shared style for Cognitive Architectures to Production Agentic Systems]
+
+% Core layout and language
+\RequirePackage[english]{babel}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{sourceserifpro}
+\RequirePackage[sfdefault]{sourcesanspro}
+\RequirePackage{geometry}
+\geometry{
+  paper=letterpaper,
+  inner=1.12in,
+  outer=0.88in,
+  top=0.92in,
+  bottom=0.95in,
+  bindingoffset=0.22in,
+  includeheadfoot
+}
+\RequirePackage{microtype}
+\RequirePackage{setspace}
+\setstretch{1.08}
+\RequirePackage{graphicx}
+\RequirePackage{enumitem}
+\setlist{itemsep=0.25em,topsep=0.35em}
+
+% Editorial palette: deep ink, teal and rust
+\RequirePackage{xcolor}
+\definecolor{BookInk}{HTML}{1F2D3D}
+\definecolor{BookTeal}{HTML}{167C80}
+\definecolor{BookRust}{HTML}{B65A3C}
+\definecolor{BookPale}{HTML}{F3F6F6}
+\definecolor{BookWarm}{HTML}{FAF4F0}
+\definecolor{BookLine}{HTML}{D6DEDF}
+
+% Headings, headers and page furniture
+\RequirePackage{titlesec}
+\titleformat{\part}[display]
+  {\normalfont\sffamily\bfseries\color{BookInk}\centering}
+  {\Large\partname\ \thepart}{1.0em}{\Huge}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\bfseries\color{BookInk}\raggedright\sloppy}
+  {\Large\chaptername\ \thechapter}{0.8em}{\Large}
+\titleformat{\section}{\Large\sffamily\bfseries\color{BookTeal}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\sffamily\bfseries\color{BookInk}}{\thesubsection}{0.7em}{}
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\sffamily\thepage\quad\nouppercase{\leftmark}}
+\fancyhead[RO]{\small\sffamily\nouppercase{\rightmark}\quad\thepage}
+\fancyfoot[C]{\small\color{BookTeal}\rule{0.18\textwidth}{0.35pt}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\headheight}{15pt}
+
+% Numbering is global across the book, not reset by chapter or part.
+\RequirePackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+\counterwithout{equation}{chapter}
+
+% Semantic reusable teaching and engineering environments
+\RequirePackage[most]{tcolorbox}
+\tcbset{
+  bookbox/.style={
+    enhanced,
+    breakable,
+    arc=1.2mm,
+    boxrule=0.6pt,
+    left=1.2mm,
+    right=1.2mm,
+    top=1.1mm,
+    bottom=1.1mm,
+    before skip=0.8em,
+    after skip=0.8em,
+    fonttitle=\bfseries\sffamily,
+    colback=BookPale,
+    coltitle=BookInk,
+    colframe=BookLine
+  }
+}
+\newtcolorbox{concept}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{definition}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{intuition}[1]{bookbox,colframe=BookTeal,colback=BookPale,title={#1}}
+\newtcolorbox{principle}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{distinction}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{workedexample}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{walkthrough}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{scenario}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{takeaway}[1]{bookbox,colframe=BookTeal,colback=BookPale,title={#1}}
+\newtcolorbox{reviewquestions}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{exercise}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{chapterrecap}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{paperclaim}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{paperboundary}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{sourceinterpretation}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{evidence}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{engineeringdecision}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{implementationnote}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{tradeoff}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{failuremode}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{securitynote}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newtcolorbox{testingnote}[1]{bookbox,colframe=BookTeal,title={#1}}
+\newtcolorbox{operationalnote}[1]{bookbox,colframe=BookInk,title={#1}}
+\newtcolorbox{diagramnote}[1]{bookbox,colframe=BookTeal,title={#1}}
+
+% Shared code style via listings
+\RequirePackage{listings}
+\lstdefinestyle{bookcode}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries\color{BookTeal},
+  commentstyle=\itshape\color{BookInk!70},
+  stringstyle=\color{BookRust},
+  numbers=left,
+  numberstyle=\tiny\color{BookInk!55},
+  numbersep=8pt,
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  frame=single,
+  rulecolor=\color{BookLine},
+  backgroundcolor=\color{BookPale},
+  tabsize=4,
+  columns=fullflexible
+}
+\lstnewenvironment{codeexample}[1][Code example]{\lstset{style=bookcode,title={#1}}}{}
+\lstnewenvironment{pseudocode}[1][Pseudocode]{\lstset{style=bookcode,title={#1},language={}}}{}
+\newtcolorbox{algorithm}[1]{bookbox,colframe=BookTeal,title={#1}}
+
+% Visible placeholder convention: intentionally not chapter prose.
+\newtcolorbox{placeholder}[1]{bookbox,colframe=BookRust,colback=BookWarm,title={#1}}
+\newcommand{\PlaceholderNote}[2]{\begin{placeholder}{#1}#2\end{placeholder}}
+
+% Bibliography and source-labelled footnotes
+\RequirePackage{csquotes}
+\RequirePackage[backend=biber,style=verbose-note,autocite=footnote,sorting=nyt]{biblatex}
+\addbibresource{bibliography/references.bib}
+\newcommand{\CoALACite}[1]{\footnote{\textsc{[CoALA]}\;\fullcite{#1}}}
+\newcommand{\FanLanCite}[1]{\footnote{\textsc{[Fan \& Lan]}\;\fullcite{#1}}}
+
+% Glossary and alphabetical index
+\RequirePackage[toc,nonumberlist]{glossaries}
+\makeglossaries
+\input{glossary/terms.tex}
+\RequirePackage[noautomatic]{imakeidx}
+\makeindex
+
+% Links and PDF metadata: standard PDF target, not a PDF/UA claim.
+\RequirePackage[unicode,hidelinks,pdfencoding=auto]{hyperref}
+\hypersetup{
+  pdftitle={From Cognitive Architectures to Production Agentic Systems},
+  pdfsubject={Understanding CoALA, Fan and Lan, and Engineering Complex Agents with Java},
+  pdfkeywords={CoALA, Fan and Lan, agentic systems, Java},
+  pdflang={en-US},
+  pdfcreator={XeLaTeX}
+}
+\RequirePackage{bookmark}
+
+% Figure helper requiring a textual description in the source and on the page.
+% The selected PDF target is standard PDF; this is not a claim of tagged-PDF conformance.
+\newcommand{\BookFigure}[4]{%
+  \begin{figure}[htbp]\centering
+    \includegraphics[width=0.92\textwidth]{#2}%
+    \caption{#3}\label{#4}%
+    \par\small\textit{Figure description: #1}%
+  \end{figure}%
+}

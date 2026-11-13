@@ -1,0 +1,16 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "CoALA", "FanLan", "XeLaTeX", "LaTeX", "TeXLive", "Biber", "biblatex",
+    "tcolorbox", "Mermaid", "LangGraph4j", "LangChain4j", "GraSP", "pseudocode",
+    "walkthrough", "makeglossaries", "latexmk", "xindy", "glossaries", "SourceSerif",
+    "SourceSans", "bookstyle", "backmatter", "frontmatter", "PlaceholderNote",
+    "BookFigure", "CoALACite", "FanLanCite", "paperclaim", "paperboundary",
+    "sourceinterpretation", "workedexample", "chapterrecap", "reviewquestions",
+    "engineeringdecision", "implementationnote", "failuremode", "securitynote",
+    "testingnote", "operationalnote", "diagramnote", "imakeidx", "pdffonts",
+    "pdfinfo", "pdftoppm", "pdftotext", "tlnet", "fontspec", "chngcntr"
+  ],
+  "ignorePaths": ["build/**", ".git/**", "LICENSE-CODE"]
+}
