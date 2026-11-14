@@ -1,4 +1,250 @@
 \chapter{Understanding Memory}
+\label{ch:understanding-memory}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+A language agent may need to carry information from one model call to another, use what happened earlier, retain knowledge about its world, and rely on procedures that determine how it operates. Calling all of that ``memory'' is not enough. CoALA separates different kinds of information and gives them different roles in the architecture.
+
+This chapter explains the memory dimension of CoALA. We begin with the difference between a model's immediate input and the agent's wider active state, then distinguish working memory from episodic, semantic, and procedural long-term memory. We will keep returning to Product X, our book-created payment-service incident, to see why the distinctions matter.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain why a prompt is not the whole memory architecture; describe working memory and its relationship to model calls; distinguish episodic, semantic, and procedural memory; classify examples by their memory role; and identify what CoALA's memory model does not prescribe.
+\end{learningbox}
+
+\section{Why one context window is not the whole memory story}
+\label{sec:memory-beyond-context}
+
+Return to Product X. The payment service is returning HTTP 500 errors. The agent begins with an incident report and an observation from monitoring: the error rate increased shortly after deployment 4.7. That timing is relevant, but it does not prove that the deployment caused the failure. The agent may need to inspect other observations, compare the current incident with an earlier one, consult facts about the service, and keep its investigation goal active while it makes several model calls.
+
+Now ask a simple question: where does the information from one step go before the next step begins?
+
+A language model call receives an input and produces an output. The model does not, simply by being called again, guarantee that every detail from a previous call remains available. If a later call needs earlier information, the surrounding agent system must make that information available again in some form. It might preserve the information in an active state, retrieve it from a longer-term store, or include it in the next input. These are different design activities, even if the final model input looks like one long piece of text.
+
+The CoALA paper begins its memory discussion with this distinction. Language models are stateless across calls in the sense relevant to the framework: information is not automatically maintained as an organized agent state from one call to the next. A language agent, by contrast, may store and maintain information internally during multi-step interaction. CoALA describes this information as organized into multiple memory modules, mainly textual but not limited to text.\CoALACite{\S 4.1, p. 9.}
+
+The distinction is not that every model call must be stateless in every possible implementation detail. The point is architectural: we should not confuse the context provided to one invocation with the agent's full information storage. The context is the information selected for that particular call. The agent's memory architecture is the broader arrangement that maintains and makes information available across its work.
+
+\subsection{A prompt is an input, not the complete memory system}
+
+Suppose the Product X agent has already received the initial incident report, recorded the active goal, and processed a service-health observation. A later model call may need only the latest observation and the question, ``Which diagnostic check would best distinguish the remaining explanations?'' It may not need the full incident history, every system fact, or every earlier intermediate result.
+
+A program can therefore assemble a prompt from selected information. That prompt is a view of what the model needs now; it is not necessarily the whole information structure from which the selection was made. After the model responds, the surrounding program may parse the response and place useful values back into the agent's active state. The next model call can then use a different subset.
+
+This is the first important distinction of the chapter:
+
+\begin{takeawaybox}[The prompt is not the memory]
+The prompt is the input prepared for one model call. CoALA's working memory is a broader data structure that persists across calls and can interact with long-term memory and grounding interfaces. A prompt may be synthesized from a subset of working memory; it should not be treated as an exact synonym for it.
+\end{takeawaybox}
+
+\section{The memory map: working memory and three long-term types}
+\label{sec:coala-memory-map}
+
+CoALA distinguishes short-term \gls{workingmemory} from several kinds of \gls{longtermmemory}.\index{memory!working}\index{memory!long-term} The long-term categories are \gls{episodicmemory}, \gls{semanticmemory}, and \gls{proceduralmemory}. The names are useful because they answer different questions about the information being preserved:
+
+\begin{itemize}
+  \item \textbf{\gls{workingmemory}:} What information is active and readily available for the current decision cycle?
+  \item \textbf{\gls{episodicmemory}:} What happened in earlier decision cycles or episodes?
+  \item \textbf{\gls{semanticmemory}:} What does the agent know about the world and about itself?
+  \item \textbf{\gls{proceduralmemory}:} What knowledge and procedures enable the agent to operate?
+\end{itemize}
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part1/chapter03/memory-landscape.png}
+  {CoALA's memory landscape: active working memory is distinguished from the three long-term memory categories. The diagram classifies information by role; it does not prescribe four separate databases.}
+  {fig:coala-memory-landscape}
+
+The map is a conceptual classification, not a deployment diagram. It does not require four servers, four databases, or four files. An implementation might store several categories in one physical system, or distribute one category across more than one component. The architectural question is what kind of information is being maintained and what role it plays, not which product happens to store the bytes.
+
+The categories also do not imply that every agent must implement every possible memory in the same way. CoALA is a framework for describing and designing a range of language agents. Different agents can have different memory configurations. The categories give us a vocabulary for expressing those choices.
+
+\section{Working memory: what is active now?}
+\label{sec:working-memory}
+
+Imagine an engineer walking through an incident with a colleague. The engineer does not need to recite every fact about the company before asking the next question. The engineer keeps a manageable set of current details in mind: what problem is being investigated, what has just been observed, which explanations remain plausible, and what needs to happen next. Information from earlier work can be brought back when it becomes relevant.
+
+Working memory plays a related role in CoALA. It maintains active and readily available information as symbolic variables for the current decision cycle. The paper describes its contents as including perceptual inputs, active knowledge generated by reasoning or retrieved from long-term memory, and other core information carried forward from a previous cycle, such as the agent's active goals.\CoALACite{\S 4.1, p. 9.}
+
+The phrase \emph{symbolic variables} may sound more complicated than it is. Think of named pieces of information that the agent can refer to: the current goal, the latest observation, a hypothesis, a selected action name, or the arguments needed for a procedure. The paper does not require a particular programming-language type, object model, or serialization format. The phrase simply emphasizes that active information can be represented in structured, accessible form rather than being only an undifferentiated transcript.
+
+\subsection{Working memory persists across model calls}
+
+CoALA makes an important point about earlier uses of an LLM's own context as a form of working memory. The framework's notion is more general: working memory is a data structure that persists across LLM calls. On each call, the model input is synthesized from a subset of working memory, for example by using a prompt template and relevant variables. The model output can then be parsed into other variables, such as an action name and its arguments, which are stored back into working memory and used by the system.\CoALACite{\S 4.1, p. 9.}
+
+The important movement is therefore not simply ``prompt in, text out.'' The agent has an active information structure; software selects some of it to prepare a model input; the model produces an output; and the system can interpret that output and update active information. The next call may use the updated state.
+
+\BookDiagram[0.54\textheight]
+  {Tex/diagrams/generated/part1/chapter03/working-memory-call.png}
+  {A teaching view of working memory around a model call: selected variables are placed in the prompt, and parsed results can update the persistent working-memory structure.}
+  {fig:working-memory-model-call}
+
+Consider the Product X example. Before a diagnostic call, working memory might contain:
+
+\begin{itemize}
+  \item the active goal: investigate the payment-service errors and provide a supported recommendation;
+  \item the latest observation: the error rate increased shortly after deployment 4.7;
+  \item the current uncertainty: the deployment is temporally associated with the increase, but causation has not been established;
+  \item the information already checked: a list of observations and results relevant to the current investigation.
+\end{itemize}
+
+The next model call may use only the goal, the latest observation, and selected evidence. If the response is parsed into a proposed diagnostic check and its parameters, those values may be added to working memory. The example illustrates how the active state can be broader than one prompt and can survive multiple calls. It does not prescribe the fields or data structure that an implementation must use.
+
+\subsection{Working memory is a central hub}
+
+Working memory is not isolated from the rest of the architecture. CoALA describes it as interacting with the LLM, long-term memory, and grounding interfaces. It serves as a central hub connecting components of a language agent.\CoALACite{\S 4.1, p. 9.}
+
+That central role helps explain why active information may have several origins. Some content arrives from the environment as a perceptual input. Some may be retrieved from long-term memory. Some may be generated through reasoning. Other information may be carried over from a previous decision cycle. Working memory brings the relevant active pieces together so they can be used by the system.
+
+Do not infer that every item in working memory must be sent to the model. The paper explicitly describes the LLM input as being synthesized from a subset. Nor should we infer that working memory must contain every possible fact the agent could retrieve. Its role is active availability, not exhaustive duplication of every long-term store.
+
 \begin{notebox}
-Chapter placeholder. The detailed outline must be reviewed and approved before this chapter is written.
+\textbf{A useful boundary.} The working-memory diagram is a book-created teaching redraw of the relationships described in CoALA. It does not add a mandatory prompt serializer, parser interface, variable schema, or program architecture.
 \end{notebox}
+
+\section{Episodic memory: preserving experience}
+\label{sec:episodic-memory}
+
+Suppose an engineer asks, ``Have we seen something like this before?'' A useful answer might be an account of an earlier incident: what was observed, what checks were made, what actions followed, and how the situation ended. The value is not limited to a single fact. The sequence of experience may matter.
+
+CoALA calls this kind of long-term information \textbf{episodic memory}.\index{memory!episodic} It stores experience from earlier decision cycles. The paper gives several illustrations: training input-output pairs, event histories, game trajectories from earlier episodes, and other representations of an agent's experiences. During a planning stage, episodes may be retrieved into working memory to support reasoning. An agent may also write new experiences from working memory into episodic memory as a form of learning.\CoALACite{\S 4.1, p. 9.}
+
+The term \emph{episode} is important. An episode is not merely a fact that happens to mention the past. It preserves something about an experience or sequence of events. A record that says ``the payment service depends on the account database'' is knowledge about the system. A record of a previous payment incident, including the observations and actions that occurred during it, is an experience. The two may be useful together, but they are not the same kind of information.
+
+\subsection{A Product X episode is evidence, not a verdict}
+
+\BookExampleLabel\ Suppose a previous Product X incident involved elevated payment errors. The retained episode might include the incident report, the monitoring observations, the investigation steps, and the eventual outcome. During a later incident, the agent may retrieve that episode because it resembles the current situation in some relevant way.
+
+The episode can help the agent ask better questions. It might remind the agent that a similar symptom once appeared alongside a database connection problem. But the earlier experience does not prove that today's incident has the same cause. The current system may have changed; the symptoms may have another explanation; or the similarity may be superficial.
+
+This distinction is especially important when an agent uses past experience. An episode supplies historical information. It does not automatically turn its outcome into a general rule. The agent must still interpret the relationship between the earlier experience and the current evidence.
+
+\subsection{Episodic memory is broader than a chat transcript}
+
+A conversation transcript can be one possible representation of experience, but it is not the definition of episodic memory in CoALA. The paper includes event flows and trajectories as well as input-output examples. The conceptual category is about preserving experience from previous decision cycles, not about using one particular transcript format.
+
+The framework also does not prescribe how an episode is segmented, how long it is retained, how it is indexed, or which fields must appear in it. Those questions matter when designing an actual system, but they are implementation and governance decisions beyond the memory taxonomy itself.
+
+\section{Semantic memory: preserving knowledge}
+\label{sec:semantic-memory}
+
+Now consider a different question: ``What do we know about the payment service?'' The answer may include facts about its dependencies, its normal operation, the meaning of a metric, or the relationship between two components. Those facts are not necessarily tied to one particular incident. They describe the world in which the agent operates.
+
+CoALA calls this kind of long-term information \textbf{semantic memory}.\index{memory!semantic} It stores an agent's knowledge about the world and itself. The paper notes that semantic memory can be initialized from external databases, including unstructured text such as Wikipedia, and describes knowledge resources used in language-processing and reinforcement-learning work. Some examples use fixed, read-only semantic memory. Language agents may also write new knowledge obtained through reasoning into semantic memory, incrementally building knowledge from experience.\CoALACite{\S 4.1, pp. 9--10.}
+
+The contrast with episodic memory is useful. An episode tells us something that happened. A semantic item tells us something the agent takes to be knowledge about the world or itself. A service fact such as ``the payment API uses the account database for account lookups'' is semantic in role. A record of a past outage in which an account lookup failed is episodic in role.
+
+\subsection{From experience to a more general statement}
+
+Experience can contribute to knowledge, but the two should not be collapsed. Imagine that several incidents provide evidence about a service dependency. A system might reason over an experience and derive a more general statement about the service. The episode preserves the particular event; the semantic memory may preserve the inferred knowledge that could be relevant beyond that event.
+
+CoALA explicitly allows new knowledge obtained through LLM reasoning to be written into semantic memory as a form of learning. This is one way a language agent may incrementally build world knowledge from experience. The paper's discussion does not imply that every reflection is correct or that every inference should be stored. The content still needs to be treated as knowledge with an appropriate level of confidence and context.
+
+\subsection{Semantic memory is not a particular database product}
+
+The term does not mean ``vector database,'' ``knowledge graph,'' ``relational database,'' or ``document store.'' Those may be possible implementation choices for some systems, but they are not the conceptual definition. CoALA describes the kind of information semantic memory contains and how it may be used; it does not mandate a physical technology.
+
+Similarly, a read-only external corpus can function as semantic memory in an agent's architecture, while another agent may have a way to add knowledge over time. The framework leaves room for this variation. The key question is whether the information represents knowledge about the world or the agent, not whether a particular database engine can update it.
+
+\section{Procedural memory: preserving how the agent operates}
+\label{sec:procedural-memory}
+
+The last category is easy to misunderstand. If episodic memory preserves experience and semantic memory preserves knowledge, what does procedural memory preserve? A useful intuition is that it concerns how the agent operates: the capabilities and procedures that enable it to process information and carry out its work.
+
+CoALA describes two forms of procedural memory.\index{memory!procedural} The first is \textbf{implicit knowledge} stored in the LLM's weights. The second is \textbf{explicit knowledge} written in the agent's code. The agent's code can itself contain two broad kinds of procedures: procedures that implement actions (reasoning, retrieval, grounding, and learning) and procedures that implement decision-making.\CoALACite{\S 4.1, p. 10.}
+
+This distinction matters because the model and the surrounding program contribute in different ways. The model's parameters encode learned patterns and capabilities, but they are not a readable library of explicit functions. Agent code, by contrast, may explicitly define how to construct a prompt, retrieve a document, call an external interface, store an experience, or coordinate the decision cycle.
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part1/chapter03/procedural-memory.png}
+  {CoALA distinguishes implicit procedural knowledge in LLM weights from explicit procedures in agent code. The code may implement individual actions and the decision-making process.}
+  {fig:procedural-memory-forms}
+
+\subsection{Why procedural memory must be initialized}
+
+CoALA notes an important difference between procedural memory and the other long-term categories. Episodic or semantic memory may initially be empty or even absent in a particular agent. Procedural memory, however, must be initialized by the designer with proper code to bootstrap the agent. Without the procedures that make the system operate, the agent cannot perform its intended operations in the first place.\CoALACite{\S 4.1, p. 10.}
+
+This does not mean that the agent must start with every possible skill or a fully developed policy. It means that enough code must exist to provide the basic mechanisms through which the agent can operate. A system might begin without a meaningful incident history or with a minimal knowledge base, but it still needs the code that invokes its model, processes inputs and outputs, and implements the procedures on which its operation depends.
+
+\subsection{Changing procedural memory is possible, but risky}
+
+CoALA allows for learning new actions by writing to procedural memory. But the paper emphasizes that this is significantly riskier than adding information to episodic or semantic memory. A change to code can introduce bugs or allow the agent to subvert its designers' intentions.\CoALACite{\S 4.1, p. 10.}
+
+The distinction is intuitive. Adding a new incident record changes what the agent can recall. Adding a new semantic fact changes what knowledge may be available. Changing a procedure can change how the agent behaves. If the agent modifies the code used to retrieve information, interact with the environment, or make decisions, the effect may reach far beyond one stored item.
+
+\begin{warningbox}
+Do not describe an LLM as an ordinary database of explicit procedures. CoALA distinguishes implicit knowledge in the model's weights from explicit procedures in agent code. Nor should procedural self-modification be presented as routine, automatically safe, or required by the framework. The paper identifies the possibility and the risk; it does not prescribe unrestricted autonomous code changes.
+\end{warningbox}
+
+\section{How the memory types cooperate}
+\label{sec:memory-cooperation}
+
+The four categories are easier to remember when we see how they complement one another. Imagine that the Product X agent is investigating the incident. Its active goal and current observations are kept available in working memory. A record of an earlier incident may be available in episodic memory. Facts about service dependencies may be available in semantic memory. The model weights and the code that implements retrieval, reasoning, grounding, and decision-making contribute to procedural memory.
+
+The categories are different, but they are not isolated. Working memory is the active hub. Information from long-term memory may be made available to it. Reasoning may generate new active information. The agent's procedures determine how it performs operations and coordinates the rest of its work. CoALA's memory section explicitly describes the links between working memory, the LLM, long-term memories, and grounding interfaces.\CoALACite{\S 4.1, pp. 9--10.}
+
+\BookDiagram[0.58\textheight]
+  {Tex/diagrams/generated/part1/chapter03/memory-cooperation.png}
+  {A high-level view of how the memory categories can cooperate around working memory. The arrows summarize relationships and do not prescribe a complete action sequence.}
+  {fig:memory-cooperation}
+
+The following classification makes the difference concrete:
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{0.30\linewidth}p{0.23\linewidth}X@{}}
+\toprule
+\textbf{Information in the Product X example} & \textbf{Memory role} & \textbf{Why this classification fits} \\
+\midrule
+The active goal to investigate the current payment incident & Working memory & It is active information relevant to the current decision cycle. \\
+The sequence of observations and actions from an earlier outage & Episodic memory & It preserves an earlier experience or trajectory. \\
+A known dependency between the payment service and the account database & Semantic memory & It is knowledge about the system, not one particular incident. \\
+The code that implements the diagnostic retrieval procedure & Procedural memory & It explicitly implements how the agent performs an operation. \\
+The model's learned parameters that contribute to its language capability & Procedural memory & CoALA treats the LLM weights as implicit procedural knowledge. \\
+A hypothesis formed during the current investigation & Working memory & Until it is written to long-term memory, it is an active result for the current work. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+This table is a teaching classification, not a claim that each item must be stored in a separate physical system. It also helps us avoid a common mistake: the same real-world subject can appear in different memory categories depending on what is represented. The account database can be mentioned in an episode, represented as a semantic dependency fact, and accessed through code stored as a procedural capability. The subject is similar; the information's role is different.
+
+\section{What the memory taxonomy does not decide}
+\label{sec:memory-taxonomy-boundaries}
+
+A conceptual framework becomes misleading when its categories are mistaken for a complete implementation specification. CoALA's memory taxonomy is deliberately more general than that. It helps us describe the forms of information an agent may maintain, but it does not settle every engineering question.
+
+The taxonomy does not decide:
+
+\begin{itemize}
+  \item which database engine, file format, vector index, knowledge graph, or serialization method should be used;
+  \item whether the four conceptual categories must be represented in four physically separate stores;
+  \item how a system should segment, summarize, index, expire, or version an episode;
+  \item which retention, privacy, access-control, or deletion policy should govern each memory;
+  \item which embedding model, retrieval ranking, or query expansion method should be selected;
+  \item how confidence, provenance, or disagreement should be recorded for a particular application.
+\end{itemize}
+
+These are important design questions, especially in production systems, but they are not answered by simply naming a memory category. When we later engineer concrete applications, we will make those decisions explicit and evaluate them as engineering choices. They should not be retroactively attributed to CoALA.
+
+The taxonomy also does not say that every agent must contain the same amount of information in every category. One agent may have little or no episodic memory. Another may depend heavily on a read-only semantic corpus. A system may have a relatively small set of explicit procedures and rely substantially on its pretrained model weights. CoALA gives us a way to describe these differences rather than requiring uniformity.
+
+\section{Chapter recap}
+
+\begin{chapterrecap}
+CoALA separates active working memory from long-term episodic, semantic, and procedural memory. Working memory maintains readily available information for the current decision cycle and persists across model calls; a prompt is synthesized from a subset of that information. Episodic memory preserves experience from earlier cycles. Semantic memory preserves knowledge about the world and the agent. Procedural memory includes implicit knowledge in LLM weights and explicit procedures in agent code. The categories cooperate around working memory, but they do not prescribe four databases or a specific storage technology.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item Why is the prompt supplied to one LLM call not necessarily the same thing as the agent's working memory?
+  \item Classify each item as working, episodic, semantic, or procedural memory: (a) the current incident goal; (b) a trajectory from an earlier incident; (c) a dependency fact; (d) code that invokes a health-check procedure; and (e) knowledge represented implicitly in model weights.
+  \item Could a service dependency appear in both episodic and semantic memory? Explain how the representation would differ.
+  \item Why does CoALA say that procedural memory must be initialized with code even if episodic or semantic memory may initially be empty?
+  \item Why can changing a procedure be riskier than adding an incident record?
+  \item A team says, ``We implemented CoALA memory by creating four databases.'' What part of that statement is an implementation choice rather than a requirement of the conceptual taxonomy?
+  \item \textbf{Classification exercise.} A later Product X incident produces a new observation, a revised hypothesis, a record of the investigation, and an updated reusable diagnostic procedure. Explain which items belong in working memory, which could become episodic or semantic memory, and which would count as a procedural change. State what additional evidence would be needed before treating the hypothesis as a general fact.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account in this chapter is grounded in \textsc{[CoALA]}, principally Section 4.1 and Figure 4A of Sumers et al. The Mermaid diagrams are book-authored teaching figures based on the paper's descriptions; they do not prescribe a software topology or reproduce the paper's artwork. Product X and all incident-specific details are examples created for this book. This chapter does not use Fan and Lan to reinterpret CoALA and does not prescribe a storage implementation.

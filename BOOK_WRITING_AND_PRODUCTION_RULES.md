@@ -54,7 +54,7 @@ For every substantive theoretical claim, identify the exact supporting paper sec
 - The latest author-supplied preamble supersedes earlier preferences for trim size and fonts: its current specification is a 7 × 10 inch, two-sided, open-right book using TeX Gyre Termes, TeX Gyre Heros, and TeX Gyre Cursor. The author-supplied preamble is the design baseline. It may be changed only when a demonstrable improvement is needed for consistent typography, accessibility, rendering, pagination, or figure placement. Preserve existing design intent and explain nontrivial changes in the review notes.
 - Use the `book` class, XeLaTeX, `fontspec`, the author's selected fonts and page layout, shared colors, heading styles, headers/footers, `listings`, `graphicx`, captions, and reusable teaching environments from the preamble.
 - Use `Tex/shared-macros.tex` for book-wide commands, citations, glossary, index, and reusable macros/environments. Do not create chapter-local versions of shared commands or boxes.
-- Shared environments include `learningbox`, `tipbox`, `warningbox`, `notebox`, `takeawaybox`, `chapterrecap`, and `reviewquestions`. Use them consistently and selectively. Chapter 1 and Chapter 2 must follow the same semantic box policy. Boxes are for learning objectives, genuinely useful tips, important cautions, clarifications, takeaways, recaps, and questions—not decoration or wrapping ordinary paragraphs.
+- Shared environments include `learningbox`, `tipbox`, `warningbox`, `notebox`, `takeawaybox`, `chapterrecap`, and `reviewquestions`. Use them consistently and selectively. All chapters must follow the same semantic box policy. Chapters 1–4 establish the visual baseline: a chapter-at-a-glance orientation, selective learning/tip/note/warning/takeaway boxes where they serve a pedagogical purpose, a chapter recap, and review questions. Do not force boxes around ordinary prose. Boxes are for learning objectives, genuinely useful tips, important cautions, clarifications, takeaways, recaps, and questions—not decoration or wrapping ordinary paragraphs.
 - Keep code examples in `listings`; use the shared language definitions and formatting. Avoid raw code screenshots.
 - Use semantic macros and labels consistently. Every figure has a caption and stable label; every cross-reference resolves.
 
@@ -65,7 +65,7 @@ All conceptual diagrams are authored as Mermaid text and rendered to PNG by CI b
 - Store editable `.mmd` sources under `Tex/diagrams/source/partN/chapterNN/`.
 - Store shared Mermaid theme and configuration in `Tex/diagrams/mermaid.config.json` (and related shared renderer configuration only when needed).
 - Pin Mermaid CLI in `tools/mermaid/package.json` and its lockfile. Never use an unpinned `npx @mermaid-js/mermaid-cli@latest` in CI.
-- CI uses Node.js 22.13+ (the repository currently configures Node 24), runs `npm ci`, and renders every `.mmd` source into a high-resolution PNG under the matching path in `Tex/diagrams/generated/` before XeLaTeX starts.
+- CI uses Node.js 22.13+ (the repository currently configures Node 24), installs the exactly version-pinned Mermaid CLI from `tools/mermaid/package.json`, and renders every `.mmd` source into a high-resolution PNG under the matching path in `Tex/diagrams/generated/` before XeLaTeX starts. The direct CLI version is pinned to 12.2.0; a committed npm lockfile remains a reproducibility improvement to add once dependency resolution is available. Until then, npm resolves transitive ranges during the CI install and this limitation must be disclosed.
 - The shared render script must be deterministic and recursive, handle spaces safely, fail on invalid Mermaid syntax, and generate a PNG for every source. CI validates PNG integrity, dimensions/resolution, matching LaTeX references, and missing/orphan generated files.
 - Use one shared Mermaid visual theme derived from the book colors and typography. Use `accTitle` and `accDescr` in each diagram source; also provide meaningful captions and nearby explanatory prose because the book embeds PNGs.
 - Use Mermaid for flowcharts, architecture maps, decision cycles, timelines, state diagrams, and other conceptual illustrations. Do not use TikZ, hand-positioned LaTeX nodes, ASCII-art diagrams, or custom LaTeX diagram libraries for book diagrams.
@@ -98,7 +98,8 @@ Before delivering a chapter or batch:
 
 ## 9. Current project state (2026-11-14)
 
-- Chapters 1 and 2 have been drafted and integrated.
-- Mermaid-based diagram generation was introduced for Chapters 1 and 2; the GitHub Actions run is the authoritative real-render verification point.
-- The next outline batch is Chapters 3 and 4. Both outlines must be reviewed and approved before either chapter's prose is written.
-- Chapters 5–30 remain placeholders until their own outlines are approved.
+- Chapters 1 and 2 have been drafted and integrated. Both use the shared semantic teaching-box system and Mermaid-to-PNG figure pipeline.
+- Chapters 3 and 4 have now been drafted from their reviewed outlines. The author explicitly requested the additional review pass and drafting of this batch. The chapter drafts are ready for author review.
+- Eight Mermaid sources have been added for Chapters 3 and 4. The validator now covers all figures referenced by Chapters 1–4. The CI workflow is the authoritative real-render verification point because the local environment could not resolve the npm registry.
+- The latest author-supplied preamble remains the shared design baseline. It has a reusable `\BookDiagram` macro; no chapter-specific drawing package is allowed.
+- Chapters 5–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.

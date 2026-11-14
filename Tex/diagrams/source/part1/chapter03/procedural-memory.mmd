@@ -1,0 +1,28 @@
+flowchart TB
+    accTitle: Two forms of procedural memory in CoALA
+    accDescr: Procedural memory includes implicit knowledge in LLM weights and explicit knowledge in agent code. Agent code contains action procedures and decision-making procedures. The designer initializes the code needed to bootstrap the agent.
+
+    subgraph procedural["Procedural memory"]
+      direction LR
+      subgraph implicit["Implicit knowledge"]
+        WEIGHTS["LLM weights"]
+      end
+      subgraph explicit["Explicit knowledge"]
+        CODE["Agent code"]
+        ACTIONS["Action procedures<br/>Reasoning, retrieval, grounding, learning"]
+        DECISION["Decision-making procedures"]
+        CODE --> ACTIONS
+        CODE --> DECISION
+      end
+    end
+
+    DESIGNER["Designer initializes<br/>bootstrap code"] --> CODE
+    UPDATE["Possible procedural updates"] -. "Risk: bugs or loss of designer intent" .-> CODE
+    UPDATE -. "Parameter adaptation" .-> WEIGHTS
+
+    classDef implicitNode fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.5px;
+    classDef explicitNode fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef riskNode fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E,stroke-width:1.5px;
+    class WEIGHTS implicitNode;
+    class CODE,ACTIONS,DECISION,DESIGNER explicitNode;
+    class UPDATE riskNode;

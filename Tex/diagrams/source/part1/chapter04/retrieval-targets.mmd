@@ -1,0 +1,26 @@
+flowchart TB
+    accTitle: Possible long-term memory targets for retrieval
+    accDescr: A retrieval procedure can read selected information from episodic, semantic, or procedural memory and place it in working memory. Possible retrieval approaches include rule-based, sparse, and dense methods.
+
+    QUERY["Current information need"] --> RET["Retrieval procedure"]
+    RET --> SELECT["Select a relevant target"]
+    subgraph targets["Possible long-term memory targets"]
+      direction LR
+      EPI["Episodic memory<br/>Earlier experience"]
+      SEM["Semantic memory<br/>World and self knowledge"]
+      PROC["Procedural memory<br/>Skills and procedures"]
+    end
+    SELECT --> EPI
+    SELECT --> SEM
+    SELECT --> PROC
+    EPI --> WM["Working memory"]
+    SEM --> WM
+    PROC --> WM
+    METHODS["Possible methods:<br/>rule-based, sparse, or dense"] -. "implementation choices" .-> RET
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef note fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px;
+    class EPI,SEM,PROC,WM store;
+    class QUERY,RET,SELECT process;
+    class METHODS note;

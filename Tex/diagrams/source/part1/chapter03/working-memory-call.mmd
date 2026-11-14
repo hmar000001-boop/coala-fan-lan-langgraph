@@ -1,0 +1,17 @@
+flowchart LR
+    accTitle: Working memory around an LLM call
+    accDescr: The agent maintains working memory across model calls, selects a subset of its variables to construct a prompt, calls the LLM, parses the result, and updates working memory.
+
+    WM["Working memory<br/>Persistent active data structure"]
+    SELECT["Select relevant variables"]
+    PROMPT["Construct model prompt"]
+    LLM["LLM call"]
+    PARSE["Parse model output"]
+    UPDATE["Update active variables"]
+
+    WM --> SELECT --> PROMPT --> LLM --> PARSE --> UPDATE --> WM
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:2px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    class WM,UPDATE store;
+    class SELECT,PROMPT,LLM,PARSE process;

@@ -1,0 +1,22 @@
+flowchart TB
+    accTitle: Product X example of retrieval, reasoning, and learning
+    accDescr: In this illustrative sequence, the agent retrieves a prior incident and a service fact into working memory, reasons over current and retrieved information to form a hypothesis, and may later write the experience and justified knowledge to long-term memory.
+
+    subgraph current["Current investigation"]
+      direction TB
+      EPI["Prior incident episode"] -->|"retrieve"| WM["Working memory<br/>Current observation and active goal"]
+      SEM["Service dependency fact"] -->|"retrieve"| WM
+      WM --> REASON["Reason over current and retrieved information"]
+      REASON --> HYP["Hypothesis in working memory"]
+    end
+
+    RESULT["Incident outcome becomes available"] --> STORE["Select information worth retaining"]
+    STORE -->|"write experience"| EPI2["Episodic memory"]
+    STORE -->|"write justified general knowledge"| SEM2["Semantic memory"]
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef active fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef decision fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.5px;
+    class EPI,SEM,EPI2,SEM2 store;
+    class WM,HYP active;
+    class REASON,RESULT,STORE decision;

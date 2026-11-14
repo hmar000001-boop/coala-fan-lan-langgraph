@@ -1,0 +1,20 @@
+flowchart TB
+    accTitle: CoALA internal actions and external grounding
+    accDescr: Retrieval reads from long-term memory into working memory. Reasoning processes working-memory contents with the LLM and writes new information to working memory. Learning writes information from current work into long-term memory. Grounding is an external action and is outside this chapter.
+
+    subgraph internal["Internal actions"]
+      direction LR
+      LT["Long-term memory"] -->|"read"| RET["Retrieval"] -->|"selected information"| WM["Working memory"]
+      WM -->|"active contents"| REASON["Reasoning with LLM"] -->|"new active information"| WM
+      WM -->|"selected information"| LEARN["Learning"] -->|"write"| LT
+    end
+    GROUND["Grounding<br/>External action"]
+    ENV["External environment"]
+    GROUND <--> ENV
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef internalNode fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef externalNode fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.5px;
+    class LT,WM store;
+    class RET,REASON,LEARN internalNode;
+    class GROUND,ENV externalNode;

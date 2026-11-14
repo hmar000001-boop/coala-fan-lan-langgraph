@@ -49,7 +49,10 @@ esac
 NORMALIZED_TEXT="$(tr '\n\r\f' '   ' < "$TEXT_FILE" | tr -s ' ')"
 for expected in \
   'Why Do Language Agents Need' \
-  'The Architecture of CoALA'; do
+  'The Architecture of CoALA' \
+  'Understanding Memory' \
+  'Internal Actions' \
+  'Retrieval, Reasoning and Learning'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;

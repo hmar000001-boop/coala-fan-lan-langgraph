@@ -1,0 +1,24 @@
+flowchart TB
+    accTitle: Learning paths into CoALA long-term memory
+    accDescr: Learning writes information into long-term memory. Experience can be stored in episodic memory, inferred knowledge can be stored in semantic memory, and procedural memory may be changed through model parameter updates or agent code changes. Procedural changes carry risk.
+
+    WM["Working-memory contents"]
+    WM -->|"experience or trajectory"| EPI["Episodic memory"]
+    WM -->|"inferred knowledge"| SEM["Semantic memory"]
+
+    subgraph procedural["Procedural memory updates"]
+      direction LR
+      WEIGHTS["LLM parameter adaptation"]
+      CODE["Agent code changes"]
+    end
+    WM -. "selected training material" .-> WEIGHTS
+    WM -. "learned or authored procedure" .-> CODE
+    RISK["Higher risk:<br/>bugs or changed designer intent"] -.-> CODE
+    RISK -.-> WEIGHTS
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef risk fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E,stroke-width:1.5px;
+    class WM process;
+    class EPI,SEM,WEIGHTS,CODE store;
+    class RISK risk;

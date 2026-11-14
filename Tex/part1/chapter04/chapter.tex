@@ -1,4 +1,219 @@
 \chapter{Internal Actions: Retrieval, Reasoning and Learning}
+\label{ch:internal-actions}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Chapter 3 explained what kinds of information CoALA distinguishes. This chapter asks a different question: what does an agent do with that information? CoALA calls the operations that interact with internal memories \emph{internal actions}. It distinguishes retrieval, reasoning, and learning by where information comes from, what operation is performed, and where the result goes.
+
+We will use Product X to separate three activities that can look similar in a running system: bringing stored information into the active state, processing active information to generate something new, and writing information into long-term memory. The chapter focuses on those internal operations. External grounding and the full decision procedure are developed later.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to define retrieval, reasoning, and learning in CoALA; identify their memory inputs and outputs; explain the main retrieval examples in the paper; distinguish working-memory updates from long-term writes; and recognize why procedural-memory changes require particular care.
+\end{learningbox}
+
+\section{From memory stores to internal actions}
+\label{sec:from-memory-to-actions}
+
+Return to Product X. The agent has the current incident goal and an observation that the error rate increased shortly after deployment 4.7. It may need to consult a record of an earlier incident, look up a dependency fact, interpret the evidence, and later preserve something useful from the investigation.
+
+These activities all involve information, but they are not the same operation. Looking up a previous incident is not the same as interpreting what that incident means for today's symptoms. Forming a hypothesis is not the same as preserving that hypothesis for use in a future cycle. If we call all three activities ``memory,'' we lose the distinctions that explain how the agent operates.
+
+CoALA separates the action space into external and internal actions. The internal category, or \glspl{internalaction}, describes operations that interact with the agent’s own memories rather than directly with the external environment. External actions interact with an environment through grounding. Within internal actions, the paper distinguishes \gls{retrieval}, \gls{reasoning}, and \gls{learning} according to what memory is accessed and whether the operation reads or writes.\index{internal action}\index{retrieval}\index{reasoning}\index{learning}\CoALACite{\S 4, Figure 5.}
+
+\BookDiagram[0.49\textheight]
+  {Tex/diagrams/generated/part1/chapter04/internal-action-map.png}
+  {CoALA's three internal action types classified by their information movement. Grounding is shown separately as an external action and is covered in Chapter 5.}
+  {fig:internal-action-map}
+
+The first pass through the three categories is deliberately simple:
+
+\begin{itemize}
+  \item \textbf{Retrieval} reads information from long-term memory into working memory.
+  \item \textbf{Reasoning} uses the LLM to process working-memory contents and generate new information in working memory.
+  \item \textbf{Learning} writes information into long-term memory.
+\end{itemize}
+
+The distinction is based on information movement and the memory involved. It is not a claim that every agent must perform all three operations in a fixed sequence. Nor does it mean that the operations are mutually exclusive at the level of a larger task. An agent may retrieve and reason several times, then write something to long-term memory when appropriate.
+
+\section{Retrieval: bringing long-term information into working memory}
+\label{sec:retrieval}
+
+Imagine that the Product X agent needs to know whether a similar payment incident happened before. The information may already exist in a retained record. The agent needs to locate and bring relevant information into its active state so it can be considered in the current investigation.
+
+In CoALA, a retrieval procedure reads information from long-term memory into working memory. The result becomes available as part of the active information used in the current decision cycle.\CoALACite{\S 4.3, p. 11.}
+
+Notice the direction. The information already exists in long-term memory. Retrieval reads it and makes it available in working memory. Retrieval does not, by itself, create a new interpretation of the information, and it does not write a new long-term memory item. Those would be different operations.
+
+\subsection{Retrieval can target different kinds of memory}
+
+The target of retrieval depends on the information needed. The agent might retrieve:
+
+\begin{itemize}
+  \item an earlier experience from episodic memory;
+  \item knowledge about the world or the agent from semantic memory; or
+  \item a procedure or skill from procedural memory.
+\end{itemize}
+
+\BookDiagram[0.52\textheight]
+  {Tex/diagrams/generated/part1/chapter04/retrieval-targets.png}
+  {Retrieval can read from different long-term memory categories and make selected information available in working memory. A single request need not query every category.}
+  {fig:retrieval-targets}
+
+The CoALA paper gives examples of several retrieval procedures. Voyager loads code-based skills from a skill library using dense retrieval. Generative Agents retrieves relevant events from episodic memory using a combination of recency, importance, and relevance. DocPrompting uses library documents to assist code generation, which can be understood as retrieving knowledge from semantic memory.\CoALACite{\S 4.3, p. 11.}
+
+These examples demonstrate that retrieval is not one single algorithm. CoALA mentions rule-based, sparse, and dense retrieval as possible ways to implement it. A rule-based procedure might apply explicit criteria. Sparse retrieval may match terms or features. Dense retrieval may compare representations in a learned vector space. The paper does not require every system to use all three, and it does not prescribe one as universally best.
+
+The Generative Agents example illustrates that a retrieval procedure can combine different signals. Recency can favor recent events; importance can involve reasoning-based assessment; relevance can use embedding-based similarity. These are ways to select potentially useful episodes. They do not turn retrieval into reasoning as a whole: the retrieval operation still selects stored information and brings it into working memory.
+
+\subsection{Retrieval is not the same as using what was retrieved}
+
+Suppose the Product X agent retrieves a record of an earlier incident. The record may say that an earlier payment error occurred alongside a database connection problem. The operation that found the record and placed it into working memory is retrieval. The next operation, which compares that record with the current observation and asks whether the same explanation is plausible, is reasoning.
+
+This distinction is useful because retrieval quality and reasoning quality can fail in different ways. A retrieval procedure can return irrelevant or incomplete material. A reasoning procedure can misinterpret relevant material. If both are described simply as ``the model remembered something,'' we cannot identify which operation needs improvement.
+
+\begin{tipbox}
+\textbf{A practical diagnostic question:} Did the operation bring information that was already stored in long-term memory into the active working state? If yes, classify that operation as retrieval. Ask separately what the agent did with the information after it became available.
+\end{tipbox}
+
+The paper also identifies a gap: adaptive, context-specific recall remains understudied in language agents. It points to a more principled integration of retrieval and decision-making as an important direction for future work.\CoALACite{\S 4.3, p. 11.} This is a research observation, not a requirement that every agent implement a particular adaptive retrieval algorithm.
+
+\section{Reasoning: generating new information in working memory}
+\label{sec:reasoning}
+
+Retrieval can make relevant information available, but the agent may still need to interpret it. In Product X, the agent now has the latest observation and a record of a prior incident. It must consider what the evidence means for the current situation. The earlier record may be relevant, but it does not answer the present question by itself.
+
+CoALA describes reasoning as an internal action that allows a language agent to process the contents of working memory and generate new information. Unlike retrieval, which reads from long-term memory into working memory, reasoning reads from and writes to working memory. It can summarize or distill information about a recent observation, a recent trajectory, or information retrieved from long-term memory.\CoALACite{\S 4.4, p. 11.}
+
+A reasoning action therefore operates on information that is already active. It may generate a summary, identify a pattern, formulate a hypothesis, or produce another result that can be stored as working-memory content. The output is new information for the current state, even if it was produced by interpreting existing material.
+
+\subsection{Reasoning can support more than one purpose}
+
+The paper describes two broad ways reasoning results may be used. They can support learning by providing material that is later written into long-term memory. They can also support decision-making by providing additional context for subsequent LLM calls.\CoALACite{\S 4.4, p. 11.}
+
+For the Product X example, imagine that the agent has the current observation, a deployment record, and a prior incident episode in working memory. A reasoning action might compare their timing and content, then produce a working hypothesis: ``The increase began shortly after deployment 4.7, but the available observations do not yet distinguish a deployment regression from a coincident dependency problem.'' This is an illustrative statement created for the book, not a result reported by CoALA.
+
+The hypothesis is now active information. It may guide a later decision, influence which information the system retrieves, or be refined after another observation. It has not necessarily been stored in long-term memory. The act of generating a new working-memory result is reasoning; writing selected information into long-term memory is learning.
+
+\subsection{Reasoning is not a synonym for one prompting technique}
+
+It is tempting to equate reasoning with a particular visible prompt pattern: a chain of intermediate steps, a critique prompt, a self-reflection template, or a sequence of calls. CoALA's category is more general. It describes the architectural role of processing working-memory contents with the LLM and generating new information in working memory.
+
+A particular system may implement reasoning with one model call, several calls, structured outputs, or other code around the model. Those are implementation patterns. They can be useful, but they are not the definition of reasoning in the framework. The important question is what information the operation reads and where its result is written.
+
 \begin{notebox}
-Chapter placeholder. The detailed outline must be reviewed and approved before this chapter is written.
+\textbf{Reasoning does not automatically persist its result.} A hypothesis or summary created in working memory is available to the current agent, but it is not thereby a long-term memory item. A separate learning action is needed if the result is to be written into long-term memory.
 \end{notebox}
+
+\section{Learning: writing information to long-term memory}
+\label{sec:learning}
+
+After an investigation, the Product X agent may have learned something useful. It may have a record of the incident's observations and outcome. It may have a new general fact about the service. In some designs, it may have a new or improved procedure. The question is how information from current work becomes information that can be used in later cycles.
+
+CoALA defines learning as writing information to long-term memory. The paper emphasizes that this covers a spectrum of procedures rather than one universal learning algorithm. It discusses updating episodic memory with experience, updating semantic memory with knowledge, and updating procedural memory through changes to model parameters or agent code.\CoALACite{\S 4.5, pp. 11--12.}
+
+\subsection{Writing experience to episodic memory}
+
+One form of learning is to store an experience or trajectory as an episode. The agent may preserve an input-output pair, an event sequence, or a record of an earlier trajectory. Later, the episode may be retrieved as an example or as a basis for reasoning and decision-making.
+
+In Product X, the current investigation could eventually produce an episode containing what was observed, which diagnostic actions were taken, and what outcome followed. This is different from merely keeping the latest observation in working memory. The working-memory item is active for the current cycle; the episodic record is retained as an experience that may be useful in later cycles.
+
+The paper also discusses how experiences stored in episodic memory may be used to update a parametric or non-parametric policy in reinforcement-learning settings. For language agents, it highlights that added episodes can later be retrieved as examples or a basis for reasoning and decision-making. The important point for this chapter is the distinction between preserving an experience and modifying a policy: they are related possibilities, but they are not the same operation.\CoALACite{\S 4.5, p. 11.}
+
+\subsection{Writing inferred knowledge to semantic memory}
+
+A second form of learning is to write knowledge into semantic memory. The paper describes work in which LLMs reason about raw experiences and store resulting inferences as semantic knowledge. It gives Reflexion as an example: after a failed episode, an LLM stores an inference such as ``there is no dishwasher in kitchen'' as semantic knowledge that can be attached to the context of a later episode. The paper also mentions building a semantic map of an environment using vision-language models.\CoALACite{\S 4.5, p. 11.}
+
+The distinction is again between a particular experience and a more general piece of knowledge inferred from it. Suppose the Product X investigation discovers that a specific outage occurred after a configuration change. The episode records what happened in that case. If additional evidence supports a stable dependency fact or a general operational constraint, that knowledge may be written into semantic memory. One incident alone may not justify such a generalization; the example does not say that every episode should be converted into a semantic fact.
+
+This is an important teaching boundary. Reasoning can produce an inference in working memory. Learning occurs when information is written to long-term memory. The inference and the write may be connected, but they are distinguishable operations.
+
+\subsection{Updating implicit procedural knowledge: model parameters}
+
+CoALA also discusses learning that changes procedural memory. The first form concerns the LLM's parameters. The model weights represent implicit procedural knowledge, and the paper describes adapting those weights during an agent's lifetime through methods including supervised learning, imitation learning, reinforcement learning, human feedback, and AI feedback. It also describes selecting generations for fine-tuning using an external measure, and using environmental feedback in reinforcement-learning settings.\CoALACite{\S 4.5, pp. 11--12.}
+
+These examples show that procedural learning can reach beyond writing a note into an external memory store. Updating the model parameters changes the learned behavior represented in the weights. CoALA notes that fine-tuning is a costly form of learning and that existing studies specify learning schedules. It suggests that more efficient training or smaller task-specific models could make more autonomous decisions about when and how to fine-tune possible in the future. This is a possibility discussed by the paper, not a claim that such autonomous updates are a standard capability of current agents.\CoALACite{\S 4.5, p. 12.}
+
+\subsection{Updating explicit procedural knowledge: agent code}
+
+The second form concerns the explicit procedures written in agent code. CoALA discusses updates to several kinds of procedures:
+
+\begin{itemize}
+  \item \textbf{Reasoning procedures:} for example, changing prompt templates or instructions used to elicit model behavior.
+  \item \textbf{Grounding procedures:} for example, creating code-based skills that interact with external environments.
+  \item \textbf{Retrieval procedures:} theoretically, an agent could learn to improve how it retrieves information, although the paper notes that such options had not been studied in recent language agents to the authors' knowledge.
+  \item \textbf{Learning or decision-making procedures:} theoretically, an agent could learn new procedures for learning or decision-making, but the paper describes such changes as risky for functionality and alignment and notes a lack of known implementations in the work it reviewed.
+\end{itemize}
+
+CoALA gives APE as an example of inferring prompt instructions from input-output examples and Voyager as an example of maintaining a library of code-based skills. It contrasts these with possible updates to retrieval, learning, and decision-making procedures that were underexplored or theoretical in the reviewed literature. These distinctions must be preserved: an example of an implemented skill library is not evidence that agents generally rewrite their own decision algorithms.\CoALACite{\S 4.5, pp. 12--13.}
+
+\BookDiagram[0.60\textheight]
+  {Tex/diagrams/generated/part1/chapter04/learning-paths.png}
+  {CoALA describes several learning paths into long-term memory: preserving experience, storing inferred knowledge, and changing procedural memory through parameters or code. The procedural paths have different costs and risks.}
+  {fig:learning-paths}
+
+\begin{warningbox}
+Do not collapse all learning into fine-tuning. Writing an experience to episodic memory, writing an inferred fact to semantic memory, changing model parameters, and updating agent code are different forms of learning. CoALA presents a spectrum, not one mandatory algorithm. It also warns that procedural changes can introduce bugs or undermine the designer's intentions.
+\end{warningbox}
+
+\subsection{What about modifying or deleting memories?}
+
+The paper's discussion focuses largely on adding information to long-term memory, but it also observes that modifying and deleting information---including unlearning---are understudied in recent language agents.\CoALACite{\S 4.5, p. 13.} This is a research gap, not a complete procedure for forgetting information. CoALA does not provide a universal unlearning algorithm, nor does it settle the operational, safety, or governance rules that a production system should use when information must be corrected or removed.
+
+\section{Putting retrieval, reasoning, and learning together}
+\label{sec:internal-actions-together}
+
+We can now walk through a short Product X example. The sequence is designed to make the three operations easy to distinguish; it is not a mandatory pipeline required by CoALA.
+
+\begin{enumerate}
+  \item \textbf{Retrieve.} The agent reads a prior incident episode from episodic memory and a service dependency fact from semantic memory into working memory. The information already existed in long-term memory; retrieval makes selected pieces active.
+  \item \textbf{Reason.} The agent processes the current observation and the retrieved information with the LLM. It produces a hypothesis in working memory: the timing may be consistent with a deployment-related change, but the evidence does not yet establish causation.
+  \item \textbf{Learn, if justified.} After the incident outcome is known, the system may write a record of the experience to episodic memory. If the investigation supports a more general fact, that knowledge may be written to semantic memory. Neither write is automatic merely because reasoning occurred.
+\end{enumerate}
+
+\BookDiagram[0.59\textheight]
+  {Tex/diagrams/generated/part1/chapter04/productx-internal-actions.png}
+  {One book-created Product X illustration showing retrieval into working memory, reasoning within working memory, and a later learning write. This is an illustrative sequence, not a universal CoALA control flow.}
+  {fig:productx-internal-actions}
+
+The sequence highlights the difference between the source of information and the operation performed on it. Retrieval brings previously stored information into the active state. Reasoning processes active information and generates something new. Learning writes selected information to long-term memory. In another task, the agent might retrieve more than once, reason before retrieving, or postpone learning until much later. The action categories remain distinct even when their use is interleaved.
+
+\section{Common confusions and boundaries}
+\label{sec:internal-action-boundaries}
+
+The distinctions become clearer when we test common statements:
+
+\begin{itemize}
+  \item \textbf{``The agent searched its memory, so it reasoned.''} Not necessarily. If it read an existing item from long-term memory into working memory, that was retrieval. Reasoning concerns processing working-memory contents to generate new information.
+  \item \textbf{``The model produced a useful hypothesis, so the agent learned it.''} Not necessarily. The hypothesis may exist only in working memory. A learning action is the write to long-term memory.
+  \item \textbf{``Learning means fine-tuning the LLM.''} Too narrow. CoALA includes writing experience to episodic memory, knowledge to semantic memory, and changes to procedural memory.
+  \item \textbf{``Every model output is a reasoning action.''} Not automatically. The architectural category depends on the operation's role and its effect on working memory, not merely on the presence of a model call.
+  \item \textbf{``Calling an API is an internal action.''} No. External interactions with the environment are grounding actions and belong to Chapter 5.
+  \item \textbf{``Retrieval, reasoning, and learning are the full decision procedure.''} No. They are internal action types. The top-level procedure that organizes the agent's decision cycles, planning stages, and execution is covered in Chapters 6--8.
+\end{itemize}
+
+A useful way to classify a proposed operation is to ask three questions: Was information already stored in long-term memory and brought into working memory? Was active information processed to generate new active information? Or was information written into long-term memory? The answers point toward retrieval, reasoning, and learning respectively. Some larger tasks contain more than one of these operations, but that does not make the categories interchangeable.
+
+\section{Chapter recap}
+
+\begin{chapterrecap}
+CoALA distinguishes three internal action types by their information movement. Retrieval reads from long-term memory into working memory. Reasoning uses the LLM to process working-memory contents and generate new information in working memory. Learning writes information into long-term memory. Learning can preserve experience, store inferred knowledge, or change procedural memory through model parameters or agent code. These actions support the agent's work but are not the same as external grounding or the top-level decision procedure.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item A system retrieves a prior incident record and places it in working memory. Which internal action has occurred, and why is it not yet reasoning?
+  \item The LLM compares the retrieved record with a current observation and produces a hypothesis in working memory. Which action is this? Has long-term memory changed?
+  \item The system later writes a new incident trajectory to episodic memory. Which action is this, and how does it differ from the earlier reasoning step?
+  \item Give an example of semantic learning that is different from storing an episode.
+  \item Name the three retrieval procedures mentioned in CoALA and explain why the paper does not require every agent to use all of them.
+  \item What is the difference between updating implicit procedural knowledge and updating explicit agent code?
+  \item Why does CoALA describe updates to learning or decision-making procedures as risky and underexplored?
+  \item \textbf{Classification exercise.} For each operation, identify whether it is retrieval, reasoning, learning, or external grounding: (a) read a service dependency document into working memory; (b) infer a possible cause from current observations; (c) write an incident trajectory into long-term memory; (d) request a live health check from the payment service. Explain why (d) is outside this chapter's three internal action types.
+  \item A teammate says, ``The agent reasoned about an incident and therefore its memory was updated.'' Rewrite this sentence so it distinguishes the working-memory result from a possible later learning action.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account is grounded in \textsc{[CoALA]}, principally Sections 4.3, 4.4, and 4.5, with Section 4.1 used for the memory terminology and Figure 5 used only to orient the distinction between internal and external action. Product X and its incident details are book-created examples. The Mermaid figures are original teaching diagrams maintained as text sources and rendered to PNG during CI; they do not prescribe an implementation or a mandatory operation sequence. No mechanism from Fan and Lan is used to reinterpret CoALA in this chapter.
