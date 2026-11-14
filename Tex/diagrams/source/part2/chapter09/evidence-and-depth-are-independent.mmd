@@ -1,0 +1,23 @@
+flowchart TB
+    accTitle: Evidence relation and migration depth are independent questions
+    accDescr: After a mechanism correspondence is reconstructed, two separate questions are asked. Evidence relation identifies lineage, structural migration, functional approximation, or convergence. Migration depth identifies implementation depth from conceptual resemblance through adaptive control. Neither axis is a combined score for the other.
+
+    M[Reconstructed mechanism correspondence]
+    M --> E[Evidence relation: how are the mechanisms related?]
+    M --> D[Migration depth: how deeply is this mechanism implemented?]
+    E --> E1[E1 documented lineage]
+    E --> E2[E2 structural migration]
+    E --> E3[E3 functional approximation]
+    E --> E4[E4 structural convergence]
+    D --> D0[D0 conceptual resemblance]
+    D --> D1[D1 callable interface]
+    D --> D2[D2 explicit state and components]
+    D --> D3[D3 triggered control transition]
+    D --> D4[D4 outcome-adapted control]
+
+    classDef root fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.4px;
+    classDef evidence fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef depth fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.1px;
+    class M root;
+    class E,E1,E2,E3,E4 evidence;
+    class D,D0,D1,D2,D3,D4 depth;

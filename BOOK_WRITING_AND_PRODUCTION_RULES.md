@@ -7,8 +7,8 @@
 
 1. Every chapter receives its own detailed outline and its own approval before chapter prose is written.
 1a. Store each outline's editable LaTeX source and review PDF inside that chapter's own folder (for example, `Tex/part1/chapter07/outline/`). A copy may also be indexed in `review/`, but the chapter folder is the authoritative location and the next repository ZIP must include it. Legacy Chapters 1–2 retain their original approved outline formats; from Chapter 3 onward, every outline has both an editable `.tex` source and review `.pdf` in the chapter-local folder.
-2. Work in batches of two chapters for drafting efficiency, but retain chapter-by-chapter outline approval. One chapter's approval does not approve the next chapter's outline.
-3. For each batch: prepare the two outlines as individual review PDFs; wait for approval of each; draft only the approved chapters; perform a source-fidelity and cross-chapter consistency review; build and visually inspect individual chapter PDFs and the combined book PDF.
+2. Select batch size dynamically from chapter scope and intellectual continuity. Use two-chapter batches when the chapters form a coherent pair; use a single-chapter batch for unusually broad or technically dense chapters; combine more only when the chapters are tightly coupled and can be reviewed without compressing either. Retain chapter-by-chapter outline approval in every case. One chapter's approval does not approve another chapter's outline.
+3. For each batch: prepare an individual outline PDF and editable source for every chapter in the selected batch; wait for approval of each outline; draft only the approved chapters; perform a source-fidelity and cross-chapter consistency review; build and visually inspect individual chapter PDFs and the combined book PDF.
 4. Do not silently treat a proposed outline, a prior chapter's approval, or a request to continue as approval of an unapproved outline.
 5. Deliver chapter content as individual PDFs. Do not deliver Markdown chapters, ZIP archives, or combined PDFs unless the author explicitly requests those formats. Repository source files remain in the project repository.
 6. Keep a durable status entry in `README.md` and preserve approved outlines, rule versions, and delivery checkpoints in `review/`.
@@ -115,13 +115,13 @@ Before delivering a chapter or batch:
 
 - Chapters 1 and 2 have been drafted and integrated. Both use the shared semantic teaching-box system and Mermaid-to-PNG figure pipeline.
 - Chapters 3 and 4 have now been drafted from their reviewed outlines. The author explicitly requested the additional review pass and drafting of this batch. The chapter drafts are ready for author review.
-- Eight Mermaid sources were added for Chapters 3 and 4; the validator was then expanded as later chapter batches were integrated.
+- Eight Mermaid sources were added for Chapters 3 and 4; the validator was then expanded as later chapter batches were integrated and now covers 39 sources for Chapters 1–10.
 - The latest author-supplied preamble remains the shared design baseline. It has a reusable `\BookDiagram` macro; no chapter-specific drawing package is allowed.
 - Chapter 5 — External Actions and Grounding: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.2, Figure 5, and the action-space safety discussion in §6.
 - Chapter 6 — Planning: From a Problem to Candidate Actions: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.6, Figure 4B, and the proposal sub-stage.
-- Eight Mermaid sources were added for Chapters 5 and 6; together with earlier chapters this brought the repository to 22 diagram sources before the latest batch.
-- Chapters 1–8 each have a standalone LaTeX entry point. The PDF validation script and standalone build script now cover Chapters 1–8.
-- Chapters 9–10 have outline review v1.0 files in their chapter-local `outline/` folders and remain structural placeholders while awaiting author approval. Chapters 11–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
+- Eight Mermaid sources were added for Chapters 5 and 6; the repository later expanded to 39 sources across Chapters 1–10.
+- Chapters 1–10 each have a standalone LaTeX entry point. The PDF validation script and standalone build script cover Chapters 1–10.
+- Chapters 9–10 have approved outline v1.0 files in their chapter-local `outline/` folders and drafted chapter prose (approximately 4,259 and 3,921 words). Their source-fidelity and drafting reviews are recorded in `review/Batch_09-10_Source_Review.md` and `review/Batch_09-10_Drafting_Review.md`. Their individual LaTeX layout tests passed (22 and 20 pages), but use placeholder PNGs and are not final illustrated PDFs. The real Mermaid render remains a GitHub Actions gate because local npm registry resolution failed with `EAI_AGAIN`. Chapters 11–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
 
 
 ### Chapter 7–8 status (14 November 2026)
@@ -135,9 +135,9 @@ Before delivering a chapter or batch:
 - Local npm installation of Mermaid CLI 12.2.0 was attempted again on 14 November 2026 and failed because `registry.npmjs.org` could not be resolved (`EAI_AGAIN`). Therefore real PNG rendering and printed-size visual inspection remain a GitHub Actions verification gate. Mock PNGs may be used only for a disposable LaTeX layout smoke test and must not be represented as actual Mermaid output.
 
 
-### Part II Batch 1 — Chapters 9–10 outline review (14 November 2026)
+### Part II Batch 1 — Chapters 9–10 drafted (14 November 2026)
 
 - Chapter 9 — Why Feature-Level Descriptions Are Not Enough: outline v1.0 prepared from Fan & Lan §§I, II-A–II-B, II-D–II-E, III, and VII, including Figure 1 and Tables I–II. The chapter motivates the feature/mechanism distinction, introduces the documented mechanism as the unit of analysis, explains why evidence relationship and migration depth are separate questions, and preserves the paper's bounded-review validity disclosures.
 - Chapter 10 — The Seven Fields of a Mechanism: outline v1.0 prepared from Fan & Lan §II-C, §§II-A and II-D–II-E, §III, Appendix A Tables VII–VIII, Appendix B, and §VII-C. It teaches K = <S,C,T,P,F,L,R> without adding, reordering, or renaming fields; uses the paper's ACT-R ledger entry as a worked example; and keeps E/D coding as separate axes for Chapter 11.
-- Both outline PDFs and editable LaTeX sources are stored in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`. Neither chapter's prose has been started. The scaffold check enforces the outline pair and placeholder state.
-- The local outline preview uses temporary Nimbus font substitutes because TeX Gyre OpenType faces are unavailable in this runner; the repository preamble remains unchanged and the outline source loads it normally.
+- Both outline PDFs and editable LaTeX sources are stored in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`. Both outlines were approved by the author on 14 November 2026 and their approval records are synchronized. The scaffold check enforces the outline pair and completed chapter source.
+- The chapter drafts use temporary local font substitutions only in disposable layout tests when TeX Gyre OpenType faces are unavailable; the repository preamble remains unchanged and is used by GitHub Actions.

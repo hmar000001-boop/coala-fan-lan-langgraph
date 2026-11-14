@@ -1,0 +1,17 @@
+flowchart TB
+    accTitle: Seven-field representation of one documented mechanism
+    accDescr: One central mechanism is examined through seven analytical questions: state substrate, control locus, transition trigger, persistence boundary, failure semantics, learning operator, and resource or governance policy. The fields are questions, not required runtime components.
+
+    K[One documented mechanism]
+    K --> S[S: State substrate]
+    K --> C[C: Control locus]
+    K --> T[T: Transition trigger]
+    K --> P[P: Persistence boundary]
+    K --> F[F: Failure semantics]
+    K --> L[L: Learning operator]
+    K --> R[R: Resource or governance policy]
+
+    classDef root fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.6px;
+    classDef field fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    class K root;
+    class S,C,T,P,F,L,R field;

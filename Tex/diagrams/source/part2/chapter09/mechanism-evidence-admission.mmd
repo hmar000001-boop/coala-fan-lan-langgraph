@@ -1,0 +1,25 @@
+flowchart TB
+    accTitle: Evidence admission for a mechanism comparison
+    accDescr: A candidate record is inspected for documented state and a trigger, control, or transition relationship. The comparison then tests node correspondence, edge correspondence, and a preserved invariant while recording what is missing. Shared nouns or similar outputs without control correspondence are insufficient.
+
+    A[Candidate record]
+    A --> B{Documented state?}
+    B -->|No| X[Do not admit as a mechanism claim]
+    B -->|Yes| C{Trigger and control or transition edge?}
+    C -->|No| X
+    C -->|Yes| D[Reconstruct the mechanism]
+    D --> E{Node and edge correspondence?}
+    E -->|No| X
+    E -->|Yes| F{At least one preserved invariant?}
+    F -->|No| X
+    F -->|Yes| G[Admit a bounded comparison claim]
+    G --> H[Record missing invariants and evidence limits]
+
+    classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.3px;
+    classDef decision fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef reject fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E,stroke-width:1.1px;
+    classDef accept fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.3px;
+    class A,D source;
+    class B,C,E,F decision;
+    class X reject;
+    class G,H accept;

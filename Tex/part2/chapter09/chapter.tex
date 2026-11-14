@@ -1,4 +1,255 @@
 \chapter{Why Feature-Level Descriptions Are Not Enough}
+\label{ch:feature-level-descriptions}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Two agent systems can both be described as having memory, planning, reflection, or tools and still operate in materially different ways. A \gls{featurelabel} tells us what broad capability a system appears to provide. It does not, by itself, explain which state the system uses, what activates an operation, where control authority resides, what transition follows, what persists, or whether the result changes later behavior. This chapter introduces the shift made by Fan and Lan: compare documented mechanisms rather than relying on feature names or architecture labels. We will also distinguish evidence of historical relation from the depth of a modern implementation, and examine what a bounded mapping review can and cannot establish.
+
+The examples in this chapter are explanatory readings of the paper. When we use a deliberately simplified system description, it is a \BookExampleLabel{} and not a claim about an unnamed product or framework.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain why feature labels are too coarse for mechanism comparison; recognize a documented mechanism through its state, trigger, control, and transition; distinguish purpose similarity from historical lineage; explain why evidence relation and migration depth answer different questions; apply a node--edge--invariant test to a comparison claim; and describe the limits of Fan and Lan's review without treating it as a universal benchmark or census.
+\end{learningbox}
+
+\section{A familiar label can hide a different operation}
+\label{sec:feature-labels}
+
+Imagine reading two architecture descriptions. Both say that the system has a memory component. At first, the descriptions appear comparable: each system can use information from earlier work. But the first description says only that a searchable store is available. The second describes typed memory state whose accessibility depends on activation, whose retrieval has latency, and whose utility influences later control. The word \emph{memory} gives us a useful starting point, but it does not tell us whether the two systems operate in the same way.
+
+This problem is not limited to memory. A system may advertise a planner, but the word planner could refer to a text generator that writes a sequence of steps, a search procedure that explores alternatives, a scheduler that allocates work, or a controller that decides whether an existing intention should continue. Each may contribute to what a user informally calls planning. Yet the state consumed, the trigger for action, the authority that controls the transition, and the consequences that persist can differ substantially.
+
+The same applies to labels such as reflection, tool use, collaboration, or learning. A feature name compresses a description into a convenient category. Compression is useful when the goal is orientation. It becomes a problem when we use the category as evidence that two systems contain the same mechanism.
+
+Consider three statements:
+\begin{enumerate}
+  \item ``The system has memory.''
+  \item ``The system retrieves stored information when a query arrives.''
+  \item ``A retrieval operation is triggered by a defined event, uses a particular state representation, changes the active information available to a controller, and may affect later retrieval or action choices.''
+\end{enumerate}
+
+The first statement is a feature description. The second names an operation but still leaves important questions open. The third begins to describe a mechanism: it connects state, activation, control, transition, and possible effects on future behavior. We do not need to know every implementation detail before asking these questions. We do need enough source evidence to avoid treating a broad noun as a complete explanation.
+
+\begin{tipbox}
+When a paper or product description uses a broad capability label, treat it as an index into the system, not as the explanation of the system. Ask what information the capability uses, what causes it to act, who controls the resulting change, and what remains different afterward.
+\end{tipbox}
+
+\BookDiagram[0.56\textheight]
+  {Tex/diagrams/generated/part2/chapter09/feature-labels-to-mechanisms.png}
+  {One feature label can cover different documented mechanisms. The branches are illustrative possibilities, not claims that every memory or planning system has the listed properties.}
+  {fig:feature-labels-to-mechanisms}
+
+The diagram begins with one familiar label and branches into different possible operational arrangements. Its purpose is not to classify real products. It shows why a label does not fix the details that determine how the system runs. Fan and Lan make this distinction central to their review: feature-level descriptions can hide different authoritative states, transition triggers, failure semantics, learning effects, and resource controls.\FanLanCite{Abstract; §I}
+
+\section{Same purpose does not establish the same mechanism}
+\label{sec:same-purpose-not-same-mechanism}
+
+The paper uses a precise contrast to make the problem concrete. A searchable store and ACT-R declarative memory may both provide access to information from the past. But the fact that both support access to prior information does not establish that they use the same retrieval mechanism. Fan and Lan point to differences that may include activation, retrieval latency, decay, competition among memories, and coupling to utility. Those properties describe how access is controlled, not merely where information is stored.\FanLanCite{§II-C, paragraph on searchable stores and ACT-R declarative memory}
+
+A searchable store could be implemented in many ways. It might rank items by textual similarity, filter them by metadata, or combine several retrieval signals. The label alone does not tell us which of these is true. It would therefore be too strong to say that every searchable store lacks activation or utility. The defensible point is narrower: the phrase \emph{searchable memory} is not enough evidence to determine whether those mechanisms are present.
+
+Likewise, mentioning ACT-R does not mean that every system with a memory module has adopted ACT-R. Fan and Lan use ACT-R as an example of why the same broad purpose can conceal different control semantics. The detailed ACT-R profile and the other historical mechanisms belong to Chapter 11. Here, we need only understand the comparison problem.
+
+A useful way to phrase the distinction is this:
+\begin{itemize}
+  \item \textbf{Purpose similarity:} two components help a system use information from the past.
+  \item \textbf{Mechanism correspondence:} the sources show how the components consume state, are activated, exercise control, and preserve or change relevant behavior.
+\end{itemize}
+
+Purpose similarity may justify asking whether two mechanisms are related. It does not answer the question. A comparison must examine the operation itself.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+The example in Fan and Lan does not establish that ordinary searchable stores are primitive or ineffective. It establishes that a storage or capability label does not reveal whether activation, latency, decay, retrieval competition, and utility coupling are part of the mechanism being described. Do not generalize beyond the evidence in the source.
 \end{notebox}
+
+\section{The documented mechanism becomes the unit of analysis}
+\label{sec:documented-mechanism-unit}
+
+Fan and Lan define the unit of analysis for their review as a \gls{documentedmechanism}. In their formulation, a mechanism is an operation that consumes explicit state, is activated by an identifiable trigger, exercises control over a transition, and may change later behavior. The definition is intentionally operational. It asks us to move from a name to a description of what happens.\FanLanCite{§II-A}
+
+Each phrase contributes something important.
+
+\subsection{An operation consumes explicit state}
+
+A mechanism does not act on an abstract feature label. It uses some state: a memory item, a buffer, an intention record, a task trace, a set of beliefs, a queue, or another representation that can be identified in the source. The state may be distributed across several structures. What matters is that the account identifies the state relevant to the operation rather than simply saying that the system has memory or context.
+
+The phrase \emph{explicit state} does not mean that all state must be stored in one visible database row. It means that the reviewer can point to the state the source documents as being consumed or maintained by the operation. If the source does not reveal the relevant state, the reviewer must not fill it in from intuition.
+
+\subsection{An identifiable trigger activates the operation}
+
+A mechanism is activated by something more precise than ``the agent decides to act.'' A trigger may be a match, an event, a condition, a state change, or another identifiable occurrence. A buffer match, a module event, a change on a blackboard, or a reconsideration event can be described as triggers when the source connects them to a control operation.
+
+The trigger matters because the same component can behave differently under different activation conditions. A scheduler that runs at a fixed interval and one that runs when a queue crosses a threshold may both be called schedulers. The label does not tell us which event causes the system to reschedule work.
+
+\subsection{The operation exercises control over a transition}
+
+The mechanism must do more than expose data or emit a message. It must exercise control over a transition: it determines, authorizes, selects, or otherwise governs a change in the system's state or activity. This question directs attention to authority. Which process actually controls the change? Which state is authoritative? Does the alleged mechanism decide, or does another component decide after receiving information from it?
+
+A component can store an intention without having authority to maintain it. A message bus can distribute messages without deciding which message wins access to a bounded workspace. A checkpoint can preserve state without creating a typed recovery subproblem. A guardrail can reject an action without being a broader meta-controller that changes the active method. Similar vocabulary does not prove equivalent control.
+
+\subsection{The outcome may change later behavior}
+
+A mechanism may have a consequence beyond its immediate operation. An outcome may change future retrieval, future selection, a learned policy, a stored intention, or another part of subsequent control. The phrase \emph{may change} is important: not every operation has a learning effect, and the source may not document one. The reviewer records what the mechanism does, including the possibility that no adaptive update is described.
+
+The paper's historical catalog summarizes mechanisms through a related chain: state consumed, trigger, control action, state transition, and learning consequence. This chain is a compact way to ask what the documented operation does. It is an analytical reading aid, not a universal software pipeline that every system must implement in a fixed order.\FanLanCite{§II-A; opening of §III}
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part2/chapter09/minimum-mechanism-chain.png}
+  {The minimum operational chain used to recognize a documented mechanism: state, trigger, control action, transition, and a possible later learning consequence.}
+  {fig:minimum-mechanism-chain}
+
+The diagram deliberately separates the operation's immediate transition from a possible learning consequence. The mechanism may alter current state without changing future policy. Or it may update something that affects later behavior. The reviewer should record the relationship documented by the source rather than assume that all operations learn.
+
+\section{Why authority and transitions are decisive}
+\label{sec:authority-transition}
+
+Feature descriptions often tell us which components exist but not which component has authority to change the system's state. This is one of the most consequential omissions. A stored value, a callable API, a checkpoint, a message, or a tool invocation may be part of a mechanism. None of those objects alone tells us where the control decision is made.
+
+Suppose a system stores a task status called \texttt{approved}. Does that field itself authorize an operation? Or does a separate controller read the field, validate its origin, check additional conditions, and decide whether the operation may proceed? Both systems may advertise an approval feature, but their control paths are different. This is a \BookExampleLabel{} designed to illustrate why a state representation and an authority to act must be distinguished.
+
+The same discipline applies to persistence. A durable checkpoint tells us that some information survives a boundary. It does not tell us whether that information is authoritative, whether it can trigger a transition, or how failure is represented. Persistence is relevant, but it is only one part of a mechanism account. Chapter 10 will provide a structured way to ask these questions without treating each one as an independent feature.
+
+A mechanism comparison should therefore identify at least three things:
+\begin{enumerate}
+  \item the relevant state or nodes;
+  \item the trigger and control edges that connect them;
+  \item the invariant that is preserved by the relationship.
+\end{enumerate}
+
+An invariant here means a property of the operation that remains true across the compared descriptions. For example, both systems may preserve a commitment record until an explicit release condition occurs. If the sources establish that state and that control rule, a meaningful comparison may be possible. If they only share the word \emph{intention}, the comparison remains at the level of terminology.
+
+\begin{takeawaybox}[The control question]
+Do not ask only whether a component exists. Ask which state it uses, what activates it, and who or what has authority to perform the consequential transition. Without those relationships, a feature description is not yet a mechanism explanation.
+\end{takeawaybox}
+
+\section{Similarity, lineage, and implementation depth are different questions}
+\label{sec:similarity-lineage-depth}
+
+Once a mechanism has been reconstructed, a reviewer may compare it with a mechanism in another system. Two distinct questions then arise. First, what is the relationship between the two mechanisms? Second, how deeply is the mechanism implemented in the modern system? Fan and Lan keep those questions on separate axes.\FanLanCite{§II-D; Table II}
+
+The first question concerns \gls{evidencerelation}. The paper distinguishes four relation types:
+\begin{description}
+  \item[E1 -- documented lineage.] The modern source explicitly identifies the historical architecture and connects it to the mapped mechanism.
+  \item[E2 -- structural migration.] The modern system contains implemented state and a corresponding control, transition, or learning edge.
+  \item[E3 -- functional approximation.] The modern system solves a comparable control problem and provides a comparable observable function, but uses materially different internal organization.
+  \item[E4 -- structural convergence.] The node-and-edge organization is comparable, but no evidence of transfer is found.
+\end{description}
+
+These labels describe kinds of relationship, not levels of maturity. E1 is not a higher score than E4. A documented lineage claim may be historically strong even when the modern implementation is shallow. A convergent system may implement a sophisticated mechanism without evidence that it inherited the historical design.
+
+The second question concerns \gls{migrationdepth}. The paper's D0--D4 scale asks how far the specific mapped mechanism has been implemented:
+\begin{description}
+  \item[D0 -- conceptual resemblance.] A comparable idea or label can be identified, but there is no callable interface or persistent mechanism state.
+  \item[D1 -- interface correspondence.] The runtime exposes a callable operation with a comparable role, but the mapped state-transition organization is not explicit.
+  \item[D2 -- state/component structure.] The mapped state objects and components are explicit, but a trigger does not autonomously exercise the historical control edge.
+  \item[D3 -- runtime control law.] An explicit trigger executes the mapped control action and changes state.
+  \item[D4 -- adaptive control law.] Experience updates future invocation, selection, or control policy.
+\end{description}
+
+The scale concerns the depth of the particular mapped mechanism. It is not a grade for an entire architecture or framework. In addition, the paper's exclusion tests matter: logging an outcome is not enough for D4 if the outcome does not change later policy. A stored intention may establish explicit state, but not necessarily an autonomous transition.\FanLanCite{§II-D; Table II}
+
+The two axes must not be merged. A modern system can have explicit lineage but implement only a callable interface. Another can implement an adaptive control law while converging independently. Thus, a high migration-depth description does not prove historical inheritance, and documented lineage does not guarantee deep migration.
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part2/chapter09/evidence-and-depth-are-independent.png}
+  {Evidence relation and migration depth answer separate questions. The figure is a conceptual map of independent classifications, not a two-dimensional performance score.}
+  {fig:evidence-and-depth-independent}
+
+The diagram uses two separate questions rather than a diagonal maturity ladder. Each comparison is assigned an evidence relation and a migration-depth assessment under the paper's rules. The detailed coding procedure, precedence conditions, and worked mapping ledger are reserved for Chapter 11.
+
+\section{A comparison claim needs more than shared nouns or similar outputs}
+\label{sec:claim-test}
+
+Fan and Lan require a comparison to establish node correspondence, edge correspondence, and at least one preserved invariant. Shared terminology, visually similar diagrams, or comparable outputs are insufficient when the authoritative state or control path cannot be identified.\FanLanCite{§II-E; Figure 1}
+
+A \emph{node correspondence} identifies the state objects or components that play comparable roles in the two systems. An \emph{edge correspondence} identifies the trigger, control, transition, or learning relationship that connects those objects. A \gls{preservedinvariant} identifies what behavior or control property remains true across the comparison. The paper also requires the reviewer to identify \gls{missinginvariant}: what the modern mechanism does not preserve from the historical account.
+
+The missing-invariant step prevents the reviewer from describing a partial correspondence as a complete migration. Imagine that two systems both retain a task intention. The first has an explicit lifecycle that decides when to continue or release that intention. The second stores a text field but does not use it to control continuation. The node may look similar. The edge and the invariant may be absent. The responsible conclusion is partial correspondence, not equivalent intention control.
+
+A disciplined \gls{claimpacket} therefore records what is established and what is not. Figure 1 in Fan and Lan summarizes this review logic: bounded evidence supports an architecture reconstruction; the claim test checks nodes, edges, and invariants; relation and depth are then coded; and a proposed migration becomes an experiment with a baseline, failure condition, and metric.\FanLanCite{§II-E; Figure 1}
+
+\BookDiagram[0.54\textheight]
+  {Tex/diagrams/generated/part2/chapter09/mechanism-evidence-admission.png}
+  {A mechanism comparison moves from bounded evidence to architecture reconstruction and a node--edge--invariant test before a relation/depth classification is admitted.}
+  {fig:mechanism-evidence-admission}
+
+The order in the figure is an explanation of the paper's review logic, not a claim that every research project must use identical tooling. What matters is that the claim is grounded in documented state and control relationships and that the limitations are made visible.
+
+\section{What the review covers, and what it does not claim}
+\label{sec:review-scope-limits}
+
+The Fan and Lan paper describes its work as a bounded mechanism-level mapping review. It is not a benchmark that ranks all architectures on a common task, a pooled-effect meta-analysis, or an exhaustive census of every agent system. Its analytical corpus was frozen on 26 July 2026. The paper reports ten historical architecture families, eight general language-agent runtime families, and forty-two mechanism-focused modern records. The groups serve different purposes: the general runtimes help identify possible insertion boundaries, while the specialized records provide more focused implementation evidence.\FanLanCite{§II-A}
+
+The inclusion logic is also more specific than a keyword search. A candidate record was retained for mechanism coding when its full text exposed a state object together with a control, transition, or learning edge. Broad feature claims, generic capability descriptions, unversioned product descriptions, and performance results that did not reveal a mechanism were not treated as sufficient mechanism evidence. When repository behavior mattered, the authors required an identifiable release, tag, or commit rather than treating repository popularity as evidence.\FanLanCite{§II-A--§II-B}
+
+This approach allows the authors to compare unlike systems through their operational relationships. It does not make the corpus exhaustive. The paper does not claim search recall or stable hit counts, and it does not make a PRISMA completeness claim. The corpus size should not be read as a measure of how common a mechanism is in the field. Nor does a mechanism's presence establish that it performs better than alternatives.
+
+The authors also disclose that the mapping remains interpretive. The seven fields, claim packet, exclusion tests, and missing-invariant requirement make judgments inspectable, but they do not replace independent coding. The manuscript does not claim inter-rater reliability for the current coding. In addition, the highest migration-depth instance is the highest reviewed case found under the paper's search and screening procedure, not a universal maximum that no later system can exceed.\FanLanCite{§II-E; §VII-C}
+
+Finally, the review does not establish that historical mechanisms cause improvements in reliability, efficiency, or generality when transferred to modern agents. Historical architectures and modern task-specific runtimes were designed for different purposes. Similar behavior can emerge from different internal processes, and a mechanism that is meaningful for cognitive modeling may introduce unnecessary engineering overhead in a particular application. Fan and Lan therefore frame residual mechanisms as hypotheses that need controlled interventions, not as guaranteed upgrades.\FanLanCite{§VII-C; §VIII}
+
+\begin{warningbox}
+Do not turn a bounded review into a field-wide leaderboard. Corpus counts do not estimate prevalence; the highest reviewed migration depth is not a universal ceiling; and a mechanism mapping is not a causal performance result. The paper's limitations are part of the evidence, not a footnote to ignore.
+\end{warningbox}
+
+\section{A worked reading: unpacking the word memory}
+\label{sec:worked-reading-memory}
+
+\BookExampleLabel{} Consider the statement: ``System A has memory.'' Before assigning a relation code or claiming that the system resembles a historical architecture, a reviewer should turn the statement into questions.
+
+\begin{enumerate}
+  \item \textbf{State:} What information is retained and in what representation? Is there an explicit memory item, a chunk, a buffer, a trace, or only a prompt assembled for one call?
+  \item \textbf{Operation:} What does the system do with that information? Does it search, retrieve, activate, summarize, rank, or update it?
+  \item \textbf{Trigger:} What event or condition causes the operation to occur?
+  \item \textbf{Control:} What process decides which information becomes available or which memory transition is applied?
+  \item \textbf{Persistence:} What survives a call, task, session, or other boundary?
+  \item \textbf{Failure:} What happens when retrieval fails, the requested item is absent, or the available information is inconsistent?
+  \item \textbf{Later behavior:} Do outcomes change future retrieval, admission, trust, or another control decision?
+\end{enumerate}
+
+The original statement does not answer these questions. It is not false; it is incomplete. If the evidence only says that a searchable store is present, we may report that fact and mark the rest as not established. We must not infer activation, latency, utility learning, or any other behavior from the word memory alone.
+
+Now contrast that incomplete description with the ACT-R summary used by Fan and Lan. Their ledger identifies typed buffers, chunks, and procedural productions as state; production matching and conflict resolution as the control locus; a buffer match or module event as a trigger; persistent chunks and learned utilities alongside transient buffers; retrieval failure, unavailable buffers, and the absence of an applicable production as failure semantics; activation and utility updates and procedural learning as learning; and buffer capacity, module timing, and a central production bottleneck as resource constraints. This compact record is enough to show how much operational detail a feature label leaves unstated. It is not a full tutorial on ACT-R, and we will examine the historical mechanisms systematically in Chapter 11.\FanLanCite{§III-A; Appendix A, Tables VII--VIII}
+
+A careful reviewer stops where the evidence stops. The correct result may be a partial account with several unknowns. That is not a weakness in the method. It is an honest description of the available evidence.
+
+\section{Common misreadings and the handoff to Chapter 10}
+\label{sec:chapter9-common-misreadings}
+
+Several tempting conclusions must be avoided.
+
+\begin{description}
+  \item[A feature label is a mechanism.] A feature label is a starting point. The mechanism requires documented state, trigger, control, transition, and possible later consequences.
+  \item[The same output proves the same mechanism.] Similar outputs can result from materially different internal organizations. The state and control path must be compared.
+  \item[Similarity implies historical inheritance.] Lineage requires explicit evidence. Structural or functional similarity alone does not demonstrate transfer.
+  \item[Implementation depth proves lineage.] Depth and evidence relation are separate axes. A highly developed mechanism may have converged independently.
+  \item[A bounded review is a universal ranking.] The paper's corpus and coding are bounded and interpretive. They do not establish prevalence or causal performance.
+  \item[An unknown field can be filled from architecture lore.] A familiar architecture name does not authorize the reviewer to invent missing evidence for a particular mechanism record.
+\end{description}
+
+Chapter 9 has moved the unit of comparison from a broad feature label to a documented operation. But the questions are still spread across the explanation. Chapter 10 will organize them into a single seven-field representation. It will show how state, control, trigger, persistence, failure, learning, and resources can be recorded for one mechanism without turning the representation into a mandatory software design or a maturity score.
+
+\begin{chapterrecap}
+A feature label is useful for orientation but too coarse to explain how an agent operates. Fan and Lan make a documented mechanism the unit of analysis: an operation that consumes explicit state, is activated by an identifiable trigger, exercises control over a transition, and may change later behavior. The paper distinguishes evidence relation from migration depth because lineage and implementation depth answer different questions. A comparison requires node and edge correspondence and at least one preserved invariant, while also recording what is missing. The review is bounded and interpretive; it does not claim exhaustive coverage, prevalence, or causal performance gains. The next chapter introduces the seven-field representation used to make mechanism anatomy inspectable.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item Why is ``the system has memory'' not yet a mechanism description?
+  \item Use the paper's searchable-store and ACT-R contrast to explain how two systems can share a purpose but differ in control semantics.
+  \item What four elements appear in Fan and Lan's definition of a documented mechanism?
+  \item Why is a durable checkpoint not automatically evidence of an intention-control mechanism?
+  \item Distinguish purpose similarity from documented lineage.
+  \item What question does the E1--E4 axis answer? What question does D0--D4 answer?
+  \item Give an example in which a system might have a high migration-depth description without documented historical lineage.
+  \item What are node correspondence, edge correspondence, and a preserved invariant?
+  \item Why does the paper not treat corpus size as a prevalence estimate?
+  \item Rewrite ``System A has a planner'' as at least five mechanism-level questions that a reviewer would need to investigate.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+The theoretical account in this chapter is grounded in Fan and Lan (2026), especially §§I, II-A--II-B, II-D--II-E, III, and VII, together with Figure 1 and Tables I--II. The searchable-store and ACT-R contrast is the example given by the paper. The System A exercise and explanatory illustrations are book-created teaching material. The seven-field representation is introduced systematically in Chapter 10, while the full historical catalog and detailed E/D coding procedure are reserved for Chapter 11. No claims from CoALA are reinterpreted through Fan and Lan, and no additional theoretical foundation is introduced.
+

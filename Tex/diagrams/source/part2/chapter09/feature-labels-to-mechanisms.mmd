@@ -1,0 +1,22 @@
+flowchart TB
+    accTitle: One feature label can hide different mechanisms
+    accDescr: A broad memory label branches into different possible mechanisms. One possibility is a searchable store. Another is activation-sensitive retrieval with latency and utility interactions. The branches illustrate why a shared feature label does not establish mechanism equivalence.
+
+    LABEL[Feature label: memory]
+    LABEL --> A[Searchable store]
+    LABEL --> B[Activation-sensitive retrieval]
+    A --> A1[Stored items and query]
+    A --> A2[Retrieval policy must be inspected]
+    B --> B1[Activation and competition]
+    B --> B2[Retrieval latency]
+    B --> B3[Utility interaction]
+    A2 --> C[Compare documented state and control]
+    B3 --> C
+    C --> D[Do not infer equivalence from the label]
+
+    classDef primary fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef alternative fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.3px;
+    class LABEL primary;
+    class A,B,A1,A2,B1,B2,B3 alternative;
+    class C,D result;

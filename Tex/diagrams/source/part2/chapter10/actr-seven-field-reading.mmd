@@ -1,0 +1,25 @@
+flowchart TB
+    accTitle: ACT-R mechanism as summarized across seven fields
+    accDescr: The Fan and Lan ACT-R ledger identifies typed buffers, chunks, and procedural productions as state; production matching and conflict resolution as control; buffer match or module event as trigger; persistent chunks and learned utilities with transient buffers; retrieval or production failures; activation, utility, and procedural learning; and capacity and timing constraints.
+
+    S[S: Typed buffers, chunks, procedural productions]
+    C[C: Production matching and conflict resolution]
+    T[T: Buffer match or module event]
+    P[P: Chunks and learned utilities persist; buffers are transient]
+    F[F: Retrieval failure, unavailable buffer, no applicable production]
+    L[L: Activation and utility updates; procedural learning]
+    R[R: Buffer capacity, module timing, central production bottleneck]
+
+    S --> C
+    T --> C
+    C --> P
+    C --> F
+    C --> L
+    R -. constrains .-> C
+
+    classDef state fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.3px;
+    classDef field fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef learning fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.2px;
+    class S,T state;
+    class C,P,F,R field;
+    class L learning;

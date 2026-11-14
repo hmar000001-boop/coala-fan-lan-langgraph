@@ -10,7 +10,7 @@
     "sourceinterpretation", "workedexample", "chapterrecap", "reviewquestions",
     "engineeringdecision", "implementationnote", "failuremode", "securitynote",
     "testingnote", "operationalnote", "diagramnote", "imakeidx", "pdffonts",
-    "pdfinfo", "pdftoppm", "pdftotext", "tlnet", "fontspec", "chngcntr"
+    "pdfinfo", "pdftoppm", "pdftotext", "tlnet", "ACT-R", "Soar", "CLARION", "Hearsay", "ICARUS", "MIDCA", "LIDA", "EPIC", "Sigma", "perplexity", "lineage", "migration", "invariant", "substrate", "governance", "codelet", "blackboard", "fontspec", "chngcntr"
   ],
   "ignorePaths": ["build/**", ".git/**", "LICENSE-CODE"]
 }

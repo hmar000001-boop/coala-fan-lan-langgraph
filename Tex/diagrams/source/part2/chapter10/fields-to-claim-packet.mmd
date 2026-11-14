@@ -1,0 +1,21 @@
+flowchart TB
+    accTitle: From seven-field extraction to a comparison claim packet
+    accDescr: The seven fields are extracted for historical and modern mechanisms. The reviewer compares matching state, triggers, control or learning edges, preserved invariants, and missing invariants. Evidence relation and migration depth are then coded as separate axes.
+
+    A[Historical mechanism] --> B[Seven-field extraction]
+    M[Modern mechanism] --> N[Seven-field extraction]
+    B --> C[Compare state and control relationships]
+    N --> C
+    C --> D[Record preserved invariant]
+    C --> E[Record missing invariant]
+    D --> F[Claim packet]
+    E --> F
+    F --> G[Evidence relation E1-E4]
+    F --> H[Migration depth D0-D4]
+
+    classDef primary fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.3px;
+    classDef compare fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.2px;
+    class A,B,M,N primary;
+    class C,D,E,F compare;
+    class G,H result;

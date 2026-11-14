@@ -9,7 +9,8 @@ for required in \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
   Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/bibliography/references.bib \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex \
+  Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
 done
@@ -41,13 +42,13 @@ for n in 01 02 03 04 05 06 07 08; do
     echo "Chapter $n does not contain prose." >&2; exit 1;
   }
 done
-# Part II Batch 1 has outlines only; prose remains blocked until both are approved.
+# Part II Batch 1 outlines are approved and Chapters 9-10 contain drafted prose.
 for n in 09 10; do
   outline="$ROOT/Tex/part2/chapter$n/outline/Chapter_${n}_Outline_Review_v1"
   test -s "$outline.tex" || { echo "Missing Part II chapter-local outline source: $outline.tex" >&2; exit 1; }
   test -s "$outline.pdf" || { echo "Missing Part II chapter-local outline PDF: $outline.pdf" >&2; exit 1; }
-  grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter$n/chapter.tex" || {
-    echo "Chapter $n has prose before outline approval; expected a placeholder." >&2; exit 1;
+  ! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter$n/chapter.tex" || {
+    echo "Chapter $n has an approved outline but still contains a prose placeholder." >&2; exit 1;
   }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-8 contain prose; Chapters 9-10 have chapter-local outline assets and remain prose placeholders pending approval."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-10 contain prose; all outlines are retained in their chapter-local folders."

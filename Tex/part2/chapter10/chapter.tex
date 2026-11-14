@@ -1,4 +1,237 @@
 \chapter{The Seven Fields of a Mechanism}
+\label{ch:seven-fields-mechanism}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Chapter 9 showed why a feature label cannot explain how an agent operates. We now need a consistent way to describe the operation itself. Fan and Lan represent each documented mechanism through seven fields: operative state substrate, control locus, transition trigger, persistence boundary, failure semantics, learning operator, and resource or governance policy. Together they form the tuple \(K = \langle S,C,T,P,F,L,R\rangle\). The fields are analytical questions, not seven required software components, a completeness score, or a maturity scale. We will learn them one at a time and then use the ACT-R record presented in the paper to see how they fit together.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to read and write the seven-field tuple; distinguish state from control and a trigger from a vague invocation; describe persistence, failure, learning, and resource governance without reducing them to storage or logging; apply the fields to a source-grounded ACT-R example; and preserve unknown information instead of filling it by inference. You should also be able to explain why the tuple is separate from the paper's evidence-relation and migration-depth codes.
+\end{learningbox}
+
+\section{Why one structured representation helps}
+\label{sec:seven-fields-why}
+
+Return to the two descriptions from Chapter 9. Both systems are called memory systems. One is described as a searchable store. The other is described through activation-sensitive retrieval, latency, decay, competition, and utility. If we compare them only by their feature names, we can say that both provide access to past information. We cannot yet explain how they control retrieval or how their operation affects what happens later.
+
+Writing a completely different narrative for every system makes comparisons difficult to inspect. A common set of questions helps expose the similarities and differences without forcing the systems into identical implementations. Fan and Lan introduce a seven-field mechanism representation for that purpose. For each mechanism, the reviewer records the operative state substrate (S), control locus (C), transition trigger (T), persistence boundary (P), failure semantics (F), learning operator (L), and resource or governance policy (R).\FanLanCite{§II-C}
+
+The tuple is:
+\[
+  K = \langle S, C, T, P, F, L, R \rangle.
+\]
+
+This notation is compact, but it should not be mistaken for a software interface. It does not say that every agent must implement seven modules, expose seven APIs, or store seven corresponding objects. A single runtime component might participate in several fields. Conversely, one field may involve multiple components or state objects. The tuple describes the mechanism for analysis; it does not prescribe the system's implementation.
+
+\BookDiagram[0.62\textheight]
+  {Tex/diagrams/generated/part2/chapter10/seven-field-mechanism-tuple.png}
+  {The seven-field mechanism representation. Each field is an analytical question about the same documented operation, not a required runtime component.}
+  {fig:seven-field-mechanism-tuple}
+
+The seven questions are related, but they are not seven consecutive steps. State and control are often tightly connected; a trigger may activate a control operation; persistence describes what survives beyond the immediate transition; failure and learning describe how outcomes are handled; and resource or governance policies constrain the operation. The relationships depend on the mechanism being examined.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+The tuple does not require every field to contain a fully specified value. A paper may describe the state and trigger clearly while saying little about learning or resource policy. An honest mechanism record preserves that gap. Missing documentation is not proof that a property is absent, and it is not permission to invent a plausible answer.
 \end{notebox}
+
+\section{State substrate (S): what the mechanism operates on}
+\label{sec:field-state}
+
+The first question is: what is the operative \gls{statesubstrate} that the mechanism consumes, maintains, or relies on? It is not simply the broad data category associated with a feature. It is the state involved in the operation being reconstructed.\FanLanCite{§II-C; Appendix A, Table VII}
+
+Suppose a description says that an agent has memory. That description does not identify the memory state. A more useful account might identify chunks and buffers, beliefs and intentions, a workspace and candidate coalitions, or a trace of prior execution. These examples are not interchangeable. Each identifies a different kind of state with different possible relationships to control.
+
+The reviewer should record only the state objects connected to the mechanism. If an architecture contains many data structures, the seven-field record is not an inventory of everything in the system. It focuses on the state consumed or maintained by the particular operation under study. A repository field or class name is not enough by itself; it must be linked to the operation and supported by the relevant source evidence.
+
+\subsection{State is not the same as a feature name}
+
+``Memory'', ``context'', ``plan'', and ``agent state'' are broad labels. A mechanism record should make them concrete. For example, the ACT-R entry in Fan and Lan's historical ledger identifies typed buffers, chunks, and procedural productions as state substrate. That is more informative than saying only that ACT-R has memory or rules.\FanLanCite{Appendix A, Table VII}
+
+This does not mean that the reviewer must reverse-engineer every internal object. The task is bounded by the source being analyzed. If the paper names only some parts of the state, record those parts and leave the rest unspecified. Do not use familiarity with an architecture to fill gaps that the paper does not fill in its particular record.
+
+\section{Control locus (C): who or what governs the transition}
+\label{sec:field-control}
+
+The second question is: where does the consequential control decision occur? The \gls{controllocus} identifies the process, component, or authority that governs the relevant choice or transition. This field is easy to confuse with state because a component may both hold information and participate in control. The reviewer must nevertheless ask which role the source actually assigns to it.\FanLanCite{§II-C}
+
+A database may store an approval flag, but a separate controller may decide whether the flag is valid and whether a transition is allowed. A message queue may hold work items, but another process may decide which item is dispatched. A checkpoint may preserve a previous state, but it may not decide how recovery proceeds. These are \BookExampleLabel{} distinctions between where information is stored and where control is exercised.
+
+The ACT-R summary identifies production matching and conflict resolution as the control locus. Its state includes typed buffers, chunks, and procedural productions, but the mechanism's control is not simply located in the storage objects. The matching and conflict-resolution process governs which applicable production is selected.\FanLanCite{Appendix A, Table VII}
+
+\begin{takeawaybox}[State versus control]
+State answers ``what information or structure is involved?'' Control answers ``which process or authority governs the relevant change?'' A component that stores a value does not automatically have authority to enforce the transition associated with that value.
+\end{takeawaybox}
+
+\section{Transition trigger (T): what activates the operation}
+\label{sec:field-trigger}
+
+The third question is: what identifiable event or condition activates the control operation? The \gls{transitiontrigger} is more precise than a statement such as ``the agent acts when needed.'' It names the occurrence that causes the mechanism to run or changes the conditions under which its control rule applies.\FanLanCite{§II-C}
+
+A trigger can be an event, a state change, a match, a condition becoming true, or a completion that enables another operation. In the paper's historical ledger, examples include a buffer match or module event for ACT-R, selection or a typed impasse for Soar, and a blackboard change that enables a knowledge source in Hearsay-II. These are examples from the paper's catalog; the point is that each ties activation to an identifiable condition.\FanLanCite{Appendix A, Table VII}
+
+A timestamp can be a trigger when the source explicitly connects that time condition to an operation. But the fact that a job runs on a schedule is not enough to establish a particular trigger semantics. A timer may wake a process; the process may then inspect other conditions before it exercises control. The reviewer should identify the event or condition that activates the actual transition being mapped, not merely the event that starts a surrounding program.
+
+Similarly, a model call is not automatically a trigger. It may be one step in an operation, a request made after a trigger, or an event that has no autonomous control significance. The source must connect it to the mechanism's transition.
+
+\section{Persistence boundary (P): what survives}
+\label{sec:field-persistence}
+
+The fourth question is: which parts of the state persist, for how long, and across which boundary? The \gls{persistenceboundary} describes the scope and lifetime of state. It may distinguish a short-lived buffer from information retained across multiple cycles, tasks, or sessions. Persistence is therefore not simply a yes/no property of the whole architecture. Different state objects in the same mechanism can have different lifetimes.\FanLanCite{§II-C; Appendix A, Table VII}
+
+The ACT-R row makes this distinction explicit. It records that chunks and learned utilities persist, while buffers are transient. The state substrate and the persistence boundary are connected, but they answer different questions. The first identifies what state is involved; the second identifies how long the relevant state remains available.\FanLanCite{Appendix A, Table VII}
+
+A durable database row or checkpoint does not, by itself, tell us what the mechanism treats as authoritative, when the state is released, or whether a later transition is controlled by it. The reviewer should record the boundaries described by the source and avoid assuming stronger persistence guarantees than the evidence supports.
+
+Persistence also should not be confused with learning. Information may persist unchanged. A log may survive indefinitely without affecting future control. The learning field asks whether outcomes change how the mechanism behaves later; the persistence field asks what state remains available across time or boundaries.
+
+\section{Failure semantics (F): what failure means to the mechanism}
+\label{sec:field-failure}
+
+The fifth question is: how does the mechanism represent, classify, or respond to failure? \Gls{failuresemantics} are more specific than the existence of an error message. An error may be recorded without changing control. A mechanism-level account asks whether a failure condition is represented in a way that affects what the system does next.\FanLanCite{§II-C; Appendix A, Table VIII}
+
+The ACT-R entry lists retrieval failure, an unavailable buffer, and the absence of an applicable production. These conditions are useful because they identify situations in which the normal operation cannot proceed as expected. The table's purpose is not to claim that every failure has one universal recovery strategy. It records the failure conditions associated with the mechanism in the paper's reconstruction.\FanLanCite{Appendix A, Table VIII}
+
+A failure log can help an operator understand what happened. But a log is not automatically a failure-control mechanism. To establish that connection, the source must show how the condition affects a transition: perhaps a process stops, an alternative is selected, a subproblem is created, or a method is reconsidered. The exact response must come from the documented mechanism.
+
+\begin{warningbox}
+Do not infer typed failure handling from the existence of exceptions, logs, retries, or error dashboards. Those may provide evidence for parts of a system, but the failure field asks how the mechanism represents failure and whether that representation participates in control.
+\end{warningbox}
+
+\section{Learning operator (L): how later behavior can change}
+\label{sec:field-learning}
+
+The sixth question is: how can experience or outcomes change later behavior or control? The \gls{learningoperator} records the mechanism by which experience updates something that affects future operation. Fan and Lan's field is broader than the act of writing information to storage. It asks how a result changes the behavior of the mechanism on a subsequent occasion.\FanLanCite{§II-C; Appendix A, Table VIII}
+
+The ACT-R summary records activation and utility updates, as well as procedural learning. In this account, what happened earlier can affect later retrieval or production behavior. The learning field thus connects an outcome to a future control policy or operation.\FanLanCite{Appendix A, Table VIII}
+
+This distinction prevents a common overclaim. Storing an execution trace is not automatically learning. Logging a success is not enough to show that later choices change. A memory write may preserve evidence; a learning operator uses experience to update later behavior, selection, or control. The record should identify the update relationship that the source supports.
+
+Learning also need not mean model fine-tuning. A system may change a parameter, adjust a utility, update a policy, refine a rule, or adapt another part of its operation. The field is about the operator and its effect, not a predetermined learning technology.
+
+\section{Resource or governance policy (R): what constrains operation}
+\label{sec:field-resources}
+
+The seventh question is: what resources, capacities, timing constraints, priorities, or governance rules constrain the mechanism? The \gls{resourcegovernancepolicy} makes these costs and constraints part of the mechanism description rather than treating them as unrelated implementation details.\FanLanCite{§II-C; Appendix A, Table VIII}
+
+The ACT-R row records buffer capacity, module timing, and a central production bottleneck. These constraints matter because an operation does not run in an unlimited space. Its available state capacity, module timing, or centralized control can affect what is possible and when.\FanLanCite{Appendix A, Table VIII}
+
+Resources are not limited to token budgets. Depending on the mechanism, relevant constraints may include memory capacity, latency, compute, timing, concurrency, queue capacity, or a limited workspace. Governance may include priorities, admission rules, or conditions on which actions can be taken. The reviewer must still stay close to the source: the field is not a license to attach every possible resource or policy concern to every mechanism.
+
+\begin{notebox}
+A field can be present in the analysis even when the source gives little detail. Record the actual constraint that is documented. If resource policy is not reported, say so; do not invent a token budget, scheduler, or governance policy to make the tuple look complete.
+\end{notebox}
+
+\section{A worked reading: ACT-R across all seven fields}
+\label{sec:actr-worked-reading}
+
+We can now read the ACT-R entry in Fan and Lan's historical ledger as one complete example. The account below uses the fields as the paper records them. It is not a full account of ACT-R, does not add details from external ACT-R sources, and should not be used as a substitute for the paper's original references.\FanLanCite{§III-A; Appendix A, Tables VII--VIII}
+
+\begin{description}
+  \item[State substrate (S).] Typed buffers, chunks, and procedural productions. These are the state structures the ledger identifies for the mechanism.
+  \item[Control locus (C).] Production matching and conflict resolution. The control question is not answered by listing the buffers; it is answered by identifying the process that resolves which applicable production governs the next operation.
+  \item[Transition trigger (T).] A buffer match or module event. The source identifies these as activation conditions for the mechanism.
+  \item[Persistence boundary (P).] Chunks and learned utilities persist, while buffers are transient. One mechanism therefore contains state with different lifetimes.
+  \item[Failure semantics (F).] Retrieval failure, an unavailable buffer, or no applicable production. These are the listed conditions under which the expected operation cannot proceed normally.
+  \item[Learning operator (L).] Activation and utility updates, together with procedural learning. The ledger records updates that can affect later behavior.
+  \item[Resource/governance policy (R).] Buffer capacity, module timing, and the central production bottleneck. These constraints shape the operational setting.
+\end{description}
+
+\BookDiagram[0.60\textheight]
+  {Tex/diagrams/generated/part2/chapter10/actr-seven-field-reading.png}
+  {The ACT-R record as summarized by Fan and Lan across the seven fields. The figure reproduces the analytical contents of the paper's ledger, not a deployment or implementation diagram.}
+  {fig:actr-seven-field-reading}
+
+The value of this reading is not that it gives ACT-R a score. It makes a mechanism inspectable. A reader can ask whether a different system has comparable state, which process controls production choice, what activates it, what persists, how failure appears, what is learned, and which capacity or timing constraints matter. Each answer may reveal a preserved property or a missing one.
+
+The fields also constrain one another. A trigger should be connected to a control operation over identifiable state. A persistence statement should specify which state survives. A learning statement should identify what outcome changes future behavior. A resource statement should describe a real constraint on the operation. If one of those connections cannot be supported, it should remain an open question rather than be completed by inference.
+
+\begin{takeawaybox}[What the ACT-R reading demonstrates]
+A seven-field record is a compact explanation of one mechanism. It shows the state involved, the control process, the trigger, the lifetime of state, the meaning of failure, the learning effect, and the operational constraints. It is a source-grounded analysis, not a claim that every mechanism must have the same structure.
+\end{takeawaybox}
+
+\section{The fields are related, but they are not a universal sequence}
+\label{sec:field-relationships}
+
+It is tempting to read the tuple as a pipeline: state is loaded, a trigger fires, a controller acts, information persists, failure is handled, learning occurs, and resources are checked. That interpretation would be misleading. The order in which the fields are written is a convenient way to organize questions. It is not a universal temporal sequence and it does not imply that all seven are exercised as one chain during every execution.
+
+For example, persistence may be a property of state that exists before a particular trigger occurs. Resource constraints may shape the control policy continuously rather than appearing only at the end of an operation. Failure semantics may be relevant only under certain conditions. Learning may occur after repeated outcomes or at a later update point. The relationships depend on the actual mechanism documented by the source.
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part2/chapter10/field-relationships.png}
+  {Conceptual relationships among the seven fields. The connections indicate analytical dependencies, not a mandatory execution order or a universal runtime schedule.}
+  {fig:field-relationships}
+
+The diagram is therefore a relationship map. It reminds us that a field should be interpreted in relation to the other fields where the source provides that connection. It should not be read as seven software boxes connected in a required architecture.
+
+\section{Unknown, absent, and not applicable are not interchangeable}
+\label{sec:unknown-fields}
+
+A structured representation can create pressure to fill every cell. If the reader sees a seven-column table, an empty cell may look unfinished. But filling it with an assumption would defeat the purpose of the method. The reviewer should distinguish at least three situations in working notes:
+
+\begin{description}
+  \item[Not reported in the available source.] The source does not provide enough information to make a positive claim about the field.
+  \item[Explicitly absent or not present in the described mechanism.] The source itself supports a claim that the mechanism lacks a property or operation.
+  \item[Not applicable to the mechanism as described.] The field may not apply in the same way to the operation being reconstructed, and that interpretation should be justified.
+\end{description}
+
+These are editorial ways to preserve uncertainty in the analysis. They are not additional codes introduced by Fan and Lan. The source paper's seven-field tuple remains exactly \(\langle S,C,T,P,F,L,R\rangle\). A blank or unknown field must not be silently converted into evidence of absence.\FanLanCite{§II-C; §VII-C}
+
+\begin{warningbox}
+Never fill an unknown field from a familiar architecture name, a framework feature, or a visually similar diagram. The representation exists to expose evidence gaps, not to conceal them behind plausible guesses.
+\end{warningbox}
+
+\section{From field extraction to a comparison claim}
+\label{sec:fields-to-claim-packet}
+
+Once the seven fields have been extracted for a historical mechanism and a modern case, a reviewer can compare the corresponding state and control relationships. Fan and Lan describe a claim packet that records the historical mechanism and primary source, the modern implementation and primary source, matching state, matching trigger, matching control or learning edge, preserved invariant, missing invariant, and then the separate evidence-relation and migration-depth codes.\FanLanCite{§II-C--§II-E}
+
+The seven fields support the reconstruction. They do not replace the comparison tests. A field-by-field resemblance alone does not establish that two mechanisms are the same. The reviewer must still determine whether the nodes and edges correspond and whether at least one invariant is preserved. Equally, the tuple is not a substitute for implementation evidence when a claim depends on actual executable behavior.
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part2/chapter10/fields-to-claim-packet.png}
+  {Seven-field extraction provides the mechanism description used in a later comparison packet. Evidence relation and migration depth remain independent classifications, not additional tuple fields.}
+  {fig:fields-to-claim-packet}
+
+The next chapter will apply this method across the ten historical architecture families and the modern system landscape reviewed by Fan and Lan. It will teach the detailed E1--E4 and D0--D4 coding rules, their evidence conditions, and the paper's historical-to-modern mapping ledger. This chapter has prepared the analytical language; it has not yet assigned codes to the full corpus.
+
+\section{Common misreadings and the handoff to Chapter 11}
+\label{sec:chapter10-common-misreadings}
+
+\begin{description}
+  \item[State and control are interchangeable.] State identifies the operative information or structure. Control identifies the process or authority that governs the relevant transition.
+  \item[A trigger is just a timestamp.] A trigger is an identifiable event or condition connected to the control operation.
+  \item[Persistence means every object is durable.] One mechanism can contain transient and persistent state with different boundaries.
+  \item[Failure means an exception was logged.] Failure semantics concern how the condition is represented and how it participates in the mechanism's response.
+  \item[Learning means writing a note.] The learning field asks whether an outcome changes later behavior or control, not merely whether information is stored.
+  \item[Resources mean token budget only.] The field can include capacity, timing, scheduling, bottlenecks, competition, and governance constraints where documented.
+  \item[The seven fields are the E/D codes.] No. The tuple reconstructs a mechanism. E1--E4 classify the evidence relation, and D0--D4 classify the implementation depth of a particular correspondence.
+\end{description}
+
+Chapter 10 has supplied a common representation for the anatomy of a documented mechanism. Chapter 11 will use that representation to reconstruct the historical architecture catalog and compare it with modern runtimes and mechanism-focused systems. It will also teach the precise evidence-relation and migration-depth coding rules. The five remaining residual mechanism bundles and the closed B5 case will be studied only after that mapping foundation is established.
+
+\begin{chapterrecap}
+Fan and Lan represent a documented mechanism with seven analytical fields: state substrate (S), control locus (C), transition trigger (T), persistence boundary (P), failure semantics (F), learning operator (L), and resource or governance policy (R). The tuple \(K=\langle S,C,T,P,F,L,R\rangle\) is not a software architecture, a score, or a mandatory component checklist. Each field asks a different question about one operation. The ACT-R example shows how the fields complement one another while preserving the source's limits. Unknown information must remain unknown rather than be inferred. The tuple supports mechanism reconstruction; the E1--E4 and D0--D4 axes separately classify evidence relation and migration depth. Chapter 11 will apply the method across the reviewed architectures and runtimes.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item Write the seven-field tuple in the correct order and explain what each symbol asks the reviewer to identify.
+  \item Why is state substrate not simply another name for a feature label?
+  \item A system stores an approval flag, while a separate controller validates it and authorizes the transition. Which field describes the stored state, and which describes the authority?
+  \item Give an example of an identifiable trigger and explain why ``the agent acts when needed'' is not a sufficiently precise trigger description.
+  \item How can one mechanism contain both transient and persistent state?
+  \item Why is an error log not automatically a failure semantics description?
+  \item Distinguish storing an outcome from learning from an outcome.
+  \item Name three possible resource or governance constraints that are not token budgets.
+  \item Reconstruct the ACT-R row from the paper across all seven fields. Which field records that buffers are transient?
+  \item Why must an unknown field remain unknown rather than being inferred from the architecture name?
+  \item Explain why the E1--E4 and D0--D4 axes are not fields in the seven-field tuple.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+This chapter is grounded in Fan and Lan (2026), primarily §II-C, with §II-A, §§II-D--II-E, §III-A, Appendix A (Tables VII--VIII), Appendix B, and §VII-C used for the mechanism definition, examples, comparison boundary, and validity limits. The ACT-R worked reading follows the paper's own ledger entries and does not attempt a complete account of ACT-R. The simplified approval, queue, and checkpoint illustrations are book-created examples. The seven-field tuple is attributed only to Fan and Lan; it is not a CoALA construct. The detailed historical-to-modern mapping and E/D coding rules are reserved for Chapter 11.
+

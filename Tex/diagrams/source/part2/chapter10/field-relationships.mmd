@@ -1,0 +1,27 @@
+flowchart TB
+    accTitle: Relationships among the seven mechanism fields
+    accDescr: The state substrate is acted on by a control locus when a trigger occurs. Persistence describes which state survives boundaries. Failure semantics describe relevant failure conditions and responses. Learning describes changes to later behavior. Resource and governance policy constrain operation. The drawing is a relationship map, not a fixed sequence.
+
+    S[S: State substrate]
+    T[T: Transition trigger]
+    C[C: Control locus]
+    P[P: Persistence boundary]
+    F[F: Failure semantics]
+    L[L: Learning operator]
+    R[R: Resource and governance]
+
+    S --> C
+    T --> C
+    C --> P
+    C --> F
+    C --> L
+    R -. constrains .-> C
+    P -. retained state may be available to later operation .-> S
+    L -. updates later behavior .-> C
+
+    classDef state fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.3px;
+    classDef field fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef learning fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.2px;
+    class S,T state;
+    class C,P,F,R field;
+    class L learning;

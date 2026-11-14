@@ -1,0 +1,18 @@
+flowchart LR
+    accTitle: Minimum operational chain of a documented mechanism
+    accDescr: The chain connects explicit state to an identifiable trigger, a control action, and a state transition. A possible learning consequence may change later behavior. The sequence is an analytical reading aid, not a mandatory software pipeline.
+
+    S[Explicit state]
+    T[Identifiable trigger]
+    C[Control action]
+    X[State transition]
+    L[Possible later learning consequence]
+    S --> T --> C --> X
+    X -. may affect later behavior .-> L
+
+    classDef state fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.4px;
+    classDef control fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px;
+    classDef learning fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class S,T,X state;
+    class C control;
+    class L learning;
