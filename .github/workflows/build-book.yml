@@ -18,10 +18,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create output directory
-        run: mkdir -p build
+      - name: Create output directory and index links
+        run: |
+          mkdir -p Tex/Output
+          ln -sfn Tex/Output/main.idx main.idx
+          ln -sfn Tex/Output/main.ind main.ind
 
-      - name: Verify repository placeholders
+      - name: Check repository structure
         run: bash scripts/check-scaffold.sh
 
       - name: Compile LaTeX (XeLaTeX via latexmk)
@@ -34,33 +37,32 @@ jobs:
               -halt-on-error \
               -file-line-error \
               -interaction=nonstopmode \
-              -output-directory=build \
-              main.tex
+              -output-directory=Tex/Output \
+              Tex/main.tex
 
-            # Run glossary and index generators when the source has entries.
-            if [ -f build/main.glo ]; then
-              makeglossaries -d build main
-            fi
-            if [ -f build/main.idx ]; then
-              makeindex -o build/main.ind build/main.idx
+            makeglossaries -d Tex/Output main
+            if [ -s Tex/Output/main.idx ]; then
+              makeindex -o Tex/Output/main.ind Tex/Output/main.idx
             fi
 
-            # Resolve any generated glossary/index files and finish the PDF.
             latexmk \
               -xelatex \
               -halt-on-error \
               -file-line-error \
               -interaction=nonstopmode \
-              -output-directory=build \
-              main.tex
+              -output-directory=Tex/Output \
+              Tex/main.tex
 
-            cp build/main.pdf build/book.pdf
+            cp Tex/Output/main.pdf Tex/Output/book.pdf
+
+      - name: Validate generated PDF and LaTeX log
+        run: bash scripts/quality-checks.sh Tex/Output/main.pdf Tex/Output/main.log
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: compiled-pdf
-          path: build/book.pdf
+          path: Tex/Output/book.pdf
           if-no-files-found: error
 
   release:
@@ -75,14 +77,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: compiled-pdf
-          path: build
+          path: release-assets
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG_NAME" build/book.pdf \
+          gh release create "$TAG_NAME" release-assets/book.pdf \
             --title "$TAG_NAME" \
             --generate-notes \
             --verify-tag

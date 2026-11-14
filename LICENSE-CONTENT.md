@@ -1,7 +1,7 @@
-# License for book text
+# Book content license
 
-The original book text in this repository, when added, is intended to be licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** license, unless a passage identifies another rights holder or license.
+Unless a specific item states otherwise, the original prose, diagrams, and other book content in this repository are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
 
-Legal code: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+License text: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 
-The author name and attribution statement will be completed when supplied. This license does not relicense quoted or referenced third-party works. This scaffold currently contains no chapter prose.
+Third-party papers and other quoted or referenced materials remain subject to their own rights and licenses. The use of citations does not transfer ownership of those works.

@@ -1,0 +1,50 @@
+%% Shared book-wide infrastructure layered on top of the author's preamble.
+%% Keep this file loaded once by Tex/main.tex; chapter fragments must not load it.
+
+\usepackage{calc} % Pandoc-generated longtable column dimensions.
+\usepackage[
+  backend=biber,
+  style=verbose-note,
+  autocite=footnote,
+  sorting=nyt,
+  maxbibnames=99
+]{biblatex}
+\addbibresource{Tex/bibliography/references.bib}
+
+% Paper labels remain explicit and are not interchangeable.
+\newcommand{\CoALACite}[1]{\footnote{\textsc{[CoALA]} See Sumers et al., \emph{Cognitive Architectures for Language Agents}, #1.}}
+\newcommand{\FanLanCite}[1]{\footnote{\textsc{[Fan \& Lan]} See Fan and Lan, \emph{From Cognitive Architectures to Language Agents}, #1.}}
+
+% The source paper is the theoretical basis in Parts I and II; examples and
+% engineering decisions are explicitly identified in the prose.
+\newcommand{\BookExampleLabel}{\textsc{[Book example]}}
+\newcommand{\EngineeringLabel}{\textsc{[Engineering decision]}}
+
+\usepackage[toc,nonumberlist]{glossaries}
+\makeglossaries
+\input{Tex/glossary/terms.tex}
+
+% Reusable review and recap blocks used throughout the book.
+\newtcolorbox{chapterrecap}{
+  colback=TakeawayBg, colframe=TakeawayBorder,
+  before skip=12pt, fonttitle=\sffamily\bfseries\small,
+  title={Chapter recap}, breakable, lines before break=3,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  boxrule=0.6pt, width=\linewidth
+}
+\newtcolorbox{reviewquestions}[1]{
+  colback=NoteBg, colframe=NoteBorder,
+  before skip=12pt, fonttitle=\sffamily\bfseries\small,
+  title={#1}, breakable, lines before break=3,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  boxrule=0.6pt, width=\linewidth
+}
+\providecommand{\tightlist}{}
+
+% Book-level metadata overrides the sample metadata retained in the supplied preamble.
+\hypersetup{
+  pdftitle={From Cognitive Architectures to Production Agentic Systems},
+  pdfauthor={Haythem Aber},
+  pdfsubject={CoALA, cognitive architectures, agentic systems, Java production engineering},
+  pdfkeywords={CoALA, Fan and Lan, cognitive architectures, agentic AI, Java, LangGraph4j, LangChain4j}
+}

@@ -1,0 +1,480 @@
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}\label{chapter-at-a-glance}
+
+A language model can produce an answer. A language agent can use a language model as part of a system that interacts with an environment. A cognitive language agent can additionally use the model in processes that manage the agent's own information and behavior. These are related, but they are not interchangeable descriptions.
+
+This chapter explains why that distinction matters, where the idea of a cognitive architecture comes from, and why the CoALA paper uses that history to organize language agents. We will work toward the framework through a concrete problem rather than beginning with a list of definitions.
+
+By the end of the chapter, you should be able to explain why an LLM alone is not a complete description of an agent system, why memory and control become important as agents grow more capable, and what CoALA contributes. You will also know what this chapter deliberately leaves for the chapters that follow.
+
+\section{A model call is not yet the whole system}\label{a-model-call-is-not-yet-the-whole-system}
+
+Imagine that a payment service in a software company has started returning errors. An engineer asks a language model:
+
+\begin{quote}
+The payment service is returning HTTP 500 errors. What could be wrong?
+\end{quote}
+
+The model might return a useful list of possibilities: a recent deployment, a database connection problem, an unavailable dependency, or an unexpected input. That answer can help the engineer think. But notice what has happened---and what has not happened.
+
+The model has received text and generated text. It has not inspected the service's logs. It has not checked whether a deployment occurred. It has not queried the database. It has not changed a configuration or restarted a process. Unless the relevant observations were included in the input, the model has no direct access to those facts in this interaction.
+
+This is not a defect in the answer. It is a boundary of the interaction we have described. The model call has an input and an output. The surrounding software determines what information is supplied, what happens to the output, and whether another operation follows.
+
+A \textbf{model call} is one invocation of a model with a particular input, producing an output. For a language model, that input is commonly a sequence of tokens representing a prompt, and the output is a continuation generated from it. A model call may be useful on its own. It may answer a question, summarize a passage, or draft a message. But a single call does not, by itself, describe a system that continuously observes and acts in the world.
+
+Now change the task. Instead of asking only for possible causes, the engineer asks a software system to investigate the incident. The system is expected to gather relevant evidence, decide which question to investigate next, perform permitted checks, interpret the results, and report what it recommends. It may need to repeat this process because the first observation does not settle the matter.
+
+The moment we describe that larger task, the model call is no longer the whole story. We must account for the rest of the system.
+
+\subsection{The environment, observations, and actions}\label{the-environment-observations-and-actions}
+
+The \textbf{environment} is the part of the world with which a system interacts. In the incident example, it includes the running payment service and the surrounding operational systems from which information can be obtained or to which an operation can be directed. In a robot, the environment might include the physical room, objects, people, sensors, and actuators. In a web agent, it may include web pages and the site with which the agent interacts.
+
+An \textbf{observation} is information the system receives from its environment. A service-health response, a log entry, a deployment record, or a human message could all be observations in our incident scenario. An observation does not automatically explain itself. It is information that becomes available for the system to use.
+
+An \textbf{action} is an operation the system takes. An action might request a health check, retrieve a record, send a message, or issue a command to an external system. The action is not the same thing as text that merely describes the action. If a model generates the words \code{check the database}, nothing has been checked yet. Some component of the surrounding system must interpret the output and actually perform the operation.
+
+That distinction matters because a language model can generate text that resembles an instruction without the instruction being valid, authorized, or executed. The model's output and the system's resulting behavior are separate parts of the overall process.
+
+For now, keep three questions in mind:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  What information does the system receive and retain?
+\item
+  What operations can it perform?
+\item
+  How does it decide which operation should happen next?
+\end{enumerate}
+
+These questions will lead us to CoALA. We will not answer them fully yet. First, we need to understand how language-model systems expanded beyond isolated input-output interactions.
+
+\section{How language-model systems move beyond a single response}\label{how-language-model-systems-move-beyond-a-single-response}
+
+The CoALA paper distinguishes several ways of using large language models. The differences are easier to understand as a progression in the organization of the system, not as a ranking in which every later design is automatically better for every task \CoALACite{Fig. 1 and §§3.2--3.3}.
+
+\subsection{From text input to text output}\label{from-text-input-to-text-output}
+
+The simplest pattern is familiar: provide text to a language model and receive text in return.
+
+\begin{lstlisting}
+       text input
+           |
+           v
+    +--------------+
+    | Language     |
+    | model        |
+    +--------------+
+           |
+           v
+       text output
+\end{lstlisting}
+
+The model uses the supplied context to generate an output. The application may display the output, store it, or pass it somewhere else, but those surrounding operations are not visible in this simple picture.
+
+This pattern is enough for many tasks. A system that translates a sentence, drafts a paragraph, or answers a question from supplied text may not need an elaborate agent architecture. The important point is not that a basic model call is inadequate. It is that its description is incomplete when the intended system must repeatedly interact with an environment.
+
+\subsection{Adding a sequence of model calls}\label{adding-a-sequence-of-model-calls}
+
+A second step is to organize more than one model call into a sequence. The output of one call can become part of the input to another. For example, a first call might draft an answer, while a later call reviews that draft or uses it to produce a more focused result.
+
+A \textbf{prompt} is the input provided to the model. It can contain a question, instructions, examples, observations, or text prepared by the surrounding program. \textbf{Prompt construction} is the work of assembling that input before the model is called.
+
+In a few-shot prompt, examples are placed before the current question so that the model has examples of the desired pattern in its input. In retrieval-augmented generation, information retrieved from an external source is added to the prompt before the model generates an answer. In a chained interaction, one model call can produce an intermediate result that is supplied to a later call.
+
+These techniques matter because they add structure around model generation. The system can prepare information, call the model, process the result, and call it again. The CoALA paper relates these forms of prompt construction and chaining to sequences of productions; we will develop that connection in Section 1.5.
+
+However, a predefined sequence of calls is not the same as an agent that decides what to do based on new observations from an environment. A fixed sequence may always perform step A, then step B, then step C. An interactive agent can receive a result from the environment and use it to determine what to do next. The difference is whether the next step is simply prescribed in advance or is selected in response to the evolving situation.
+
+\subsection{A language agent interacts with an environment}\label{a-language-agent-interacts-with-an-environment}
+
+A \textbf{language agent}, in the sense used by CoALA, is a system that uses a large language model as a core computation unit to reason, plan, and act \CoALACite{§2.4}. The key distinction in the paper's Figure 1 is that the model is placed in a feedback loop with an external environment \CoALACite{Fig. 1B and §3.3}.
+
+The environment provides an observation. The system represents that observation in a form the model can process. The model helps determine an action. The system carries out the action, and the environment may then provide another observation.
+
+\begin{lstlisting}
+       +----------------------+
+       |      Environment     |
+       +----------------------+
+          |              ^
+ observation              | action
+          v              |
+       +----------------------+
+       | Prepare input and    |
+       | interpret model      |
+       | output               |
+       +----------------------+
+                  |
+                  v
+       +----------------------+
+       |    Language model    |
+       +----------------------+
+\end{lstlisting}
+
+The arrows form a loop because an action can change what the system observes next. The next observation may confirm an expectation, contradict it, or reveal that another investigation is necessary. The agent is therefore not merely producing an answer to the original prompt. It is participating in an ongoing interaction.
+
+A feedback loop does not guarantee good decisions. It only describes the relationship between action and subsequent observation. The agent may still choose an unsuitable action, misinterpret evidence, or fail to account for relevant information. The architecture of the complete system matters precisely because the interaction has become more complex than one model call.
+
+\subsection{A cognitive language agent also manages internal information}\label{a-cognitive-language-agent-also-manages-internal-information}
+
+The CoALA paper then describes a further development: \textbf{cognitive language agents}. These agents do not only use the model to select actions in the external environment. They also use it in processes that manage the agent's internal state, including reasoning and learning \CoALACite{Fig. 1C and §3.3}.
+
+Consider the incident again. The system may need to compare the current symptoms with information retained from earlier incidents. It may reason over the evidence gathered so far. It may update information that could help it in a later interaction. Those operations are not identical to asking an external service for its current health or issuing a restart command. They concern the information maintained and processed within the agent system.
+
+The distinction can be summarized like this:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Pattern
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+What the model is doing as part of the system
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Language model used for text input/output & Producing a response from supplied text \\
+Language agent & Helping select actions in a feedback loop with an external environment \\
+Cognitive language agent & Also participating in internal processes such as reasoning and learning that manage the agent's internal state \\
+\end{longtable}
+
+This table is a high-level reading aid, not a claim that real systems always fit into three perfectly separate boxes. A system may combine several patterns. The point is to notice what has been added: not just more calls, but more kinds of information processing and control.
+
+The word \textbf{cognitive} can sound as though the system is being claimed to have human consciousness or subjective experience. That is not what the term means here. In this context, it refers to organizing processes associated with cognition---such as memory, reasoning, learning, and decision-making---within an artificial system. It is an architectural description, not a claim about consciousness.
+
+The paper's Figure 1 makes this progression visible. Its first pattern shows an LLM taking text input and producing text output. Its second places the LLM in a direct feedback loop with an external environment. Its third adds processes through which the LLM helps manage the agent's internal state, including reasoning and learning. The progression gives us a useful starting point: as the system takes on more responsibilities, describing it only by saying that it ``uses an LLM'' tells us less and less about how it works.
+
+\section{Why increasingly capable agents are difficult to describe consistently}\label{why-increasingly-capable-agents-are-difficult-to-describe-consistently}
+
+Imagine reading documentation for two systems. Both are described as having memory, using tools, and performing reasoning. At first glance, they appear similar.
+
+But in the first system, ``memory'' may mean a short history appended to each prompt. In the second, it may mean several organized stores that the agent can read from and write to over time. One system may call a tool whenever the model emits a particular command. Another may have a separate process that selects and executes actions according to its current state. The same feature labels do not tell us whether the underlying organization is the same.
+
+This is the problem the CoALA paper identifies. Language-agent research had begun to use many different terms for related processes: tool use, grounding, actions, reasoning, and memory. Individual works often introduced their own terminology. That variety makes it harder to compare systems, understand how the field is evolving, or design new agents with clean and consistent abstractions \CoALACite{§1}.
+
+A name such as ``memory'' is a useful beginning, but it is not a complete explanation. We need to ask what information is stored, how it is organized, when it is accessed, and how it affects what the agent does. Likewise, saying that a system uses ``tools'' does not tell us whether an operation reads from an external source, changes the outside world, or updates the system's own information.
+
+This does not mean that every project must use the same internal implementation. Two systems can be designed differently and still be compared meaningfully. A conceptual framework provides common questions and distinctions; it does not require every system to be built from identical components.
+
+CoALA's response is to organize language agents around three broad dimensions: information storage, action space, and decision-making procedure. Before we examine those dimensions, it helps to understand why the paper turns to the history of production systems and cognitive architectures.
+
+\section{The historical bridge: production systems and cognitive architectures}\label{the-historical-bridge-production-systems-and-cognitive-architectures}
+
+The CoALA paper does not present its framework as an arbitrary collection of software modules. It draws on ideas from the history of computing and artificial intelligence. The bridge begins with production systems.
+
+\subsection{A production rule: a condition followed by an action}\label{a-production-rule-a-condition-followed-by-an-action}
+
+A \textbf{production system} is built around rules that specify a precondition and an associated action. A precondition is a condition that must be satisfied before the action can be applied. When the condition is satisfied, the rule permits the associated action \CoALACite{§2.1}.
+
+Consider a thermostat. It receives information about the temperature and whether the furnace is currently running. A simplified rule might say:
+
+\begin{lstlisting}
+IF the temperature is below the lower threshold
+AND the furnace is off
+THEN turn the furnace on.
+\end{lstlisting}
+
+Another rule might say:
+
+\begin{lstlisting}
+IF the temperature is above the upper threshold
+AND the furnace is on
+THEN turn the furnace off.
+\end{lstlisting}
+
+These rules connect a description of the current situation to a possible operation. The example is intentionally small, but it already shows two important ingredients: the system has information about the world, and the rules specify what may be done when that information meets certain conditions.
+
+The word \textbf{production} comes from the idea that applying a rule can produce a new result. In early formal accounts discussed by CoALA, production systems were used to describe transformations of symbolic strings \CoALACite{§2.1}. A simple string-rewriting rule might replace one portion of a string with another:
+
+\begin{lstlisting}
+XYZ  ->  XWZ
+\end{lstlisting}
+
+Read this as: when the relevant pattern \code{XYZ} is present, it may be rewritten as \code{XWZ}. The rule describes a permitted transformation. It does not, by itself, tell us which rule should be selected when several rules could apply, or when the whole process should stop.
+
+That leads to the next idea.
+
+\subsection{Rules alone do not define the whole algorithm}\label{rules-alone-do-not-define-the-whole-algorithm}
+
+Suppose a system has ten rules, and several of them can apply to the current situation. Which one should run first? Does the system always use a fixed priority order? Does it compare the possible results? Can it create a new subtask when it cannot determine what to do?
+
+A set of production rules describes possible transformations. To obtain a particular algorithm or behavior, a system also needs \textbf{control flow}: the organization that determines how the rules are selected and applied over time \CoALACite{§2.2}.
+
+A simple example is a priority order. If rules are examined in a fixed order, the ordering itself influences the result. A more sophisticated system may compare candidate operations, select one, apply it, update its state, and then evaluate what should happen next.
+
+The lesson is broader than the thermostat. Knowing which operations are available is not enough to explain a system's behavior. We must also understand how the system chooses among them and how the process continues after an operation changes the situation.
+
+\subsection{From production systems to cognitive architectures}\label{from-production-systems-to-cognitive-architectures}
+
+Production systems became important in artificial intelligence as researchers used them to represent more complex problem-solving behavior. Their rules were no longer limited to rewriting strings. Preconditions could be checked against information about an agent's goals and its understanding of the world. Associated actions could modify internal information or interact with the environment.
+
+As these systems grew, they needed more elaborate control. They could be connected to sensors, actuators, and knowledge bases. A system that receives observations, maintains information, and performs operations needs a way to organize all these processes.
+
+A \textbf{cognitive architecture} is an organized account of the components and processes through which an artificial agent operates. In the historical line described by CoALA, such architectures explicitly represented processes associated with perception, memory, planning, and decision-making. They provided a way to reason about how these processes fit together and how control moves through the system \CoALACite{§2.3}.
+
+The word ``architecture'' is important. It shifts attention from a single rule or operation to the organization of the complete system. It asks how information is represented, what processes can use it, how those processes are coordinated, and how behavior unfolds over time.
+
+Again, ``cognitive'' does not mean conscious. The architecture is called cognitive because it organizes functions that are relevant to cognition. The term does not establish that the artificial system has human experiences, intentions, or understanding in the philosophical sense.
+
+\subsection{A historical illustration: the Soar architecture}\label{a-historical-illustration-the-soar-architecture}
+
+The CoALA paper uses Soar as a canonical example of a cognitive architecture built around production rules \CoALACite{§2.3}. We do not need to study Soar in detail here. It is useful because it shows how the pieces fit together.
+
+In the account presented by CoALA, Soar has working memory for the agent's current circumstances and long-term memory divided into procedural, semantic, and episodic forms. Productions are stored in procedural memory. Their conditions are checked against working memory. The decision procedure uses productions to propose and evaluate possible actions, selects an action, and then applies it. If the system cannot choose because no action is valid or several actions are tied, Soar can create a subgoal to resolve the impasse. Learning can also update what is retained in long-term memory or modify behavior.
+
+Do not mistake this short description for the complete CoALA framework. Soar is a historical example discussed in the paper, not the software framework that we will implement in this book. Its role here is to make a point: production rules become part of a much larger agent architecture when they are combined with memory, interaction with the environment, and a decision procedure.
+
+\subsection{What this history contributes}\label{what-this-history-contributes}
+
+The historical bridge gives us a way to understand why CoALA is concerned with more than the model's text output. Earlier cognitive architectures had to organize memory, possible actions, and control flow around production systems. The CoALA authors suggest that similar architectural principles can help organize systems built around language models.
+
+That is the motivation. The next question is why language models make this connection interesting rather than simply requiring us to copy an older architecture unchanged.
+
+\section{Why the production-system analogy is useful for language models}\label{why-the-production-system-analogy-is-useful-for-language-models}
+
+A language model receives text as context and produces a continuation. There may be many possible continuations. The model assigns different probabilities to them, and generation selects a continuation according to the model's distribution and the decoding process.
+
+The CoALA paper draws an analogy between this process and a production system \CoALACite{§3.1}. In a traditional production system, a rule specifies a possible way to transform a symbolic string. In a language model, the supplied text provides a context for possible continuations or modifications. From this perspective, the model defines a probability distribution over possible text-producing operations.
+
+The analogy is useful, but it has limits.
+
+\subsection{A probabilistic production system---not a literal rule engine}\label{a-probabilistic-production-systemnot-a-literal-rule-engine}
+
+A traditional production rule can be written down as an explicit condition and action. A developer or researcher can inspect the rule directly. A modern language model, by contrast, has learned its behavior through pretraining and stores that behavior in a large set of parameters. The model's internal parameters do not expose a simple list of human-readable productions.
+
+This creates an important contrast:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Traditional production system
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Language model, viewed through the paper's analogy
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Rules are explicit symbolic operations. & Possible continuations are represented probabilistically. \\
+A rule's precondition and action can be inspected directly. & The model's learned parameters are not a human-readable rule list. \\
+Control may be defined by explicit rule-selection procedures. & The prompt and generation process influence which continuation is produced. \\
+Behavior can be constrained by the specified rule set. & Pretraining gives broad flexibility, but the resulting behavior is less transparent and can be stochastic. \\
+\end{longtable}
+
+The analogy does not say that a language model literally contains a traditional production system. It gives us a way to compare two systems that transform or continue symbolic text, while keeping their differences visible.
+
+The paper highlights both sides of the comparison. Large-scale pretraining gives language models a broad prior over text continuations, allowing them to handle many tasks without a developer writing an individual rule for every situation. But the model's learned parameters are opaque compared with explicit symbolic rules, and its probabilistic behavior makes analysis and control more challenging.
+
+This tension is central to the motivation for architecture. The model brings flexible language-based computation. The surrounding agent system still needs an organized way to provide information, decide which operations to perform, and respond to what happens.
+
+\subsection{Prompts can organize control}\label{prompts-can-organize-control}
+
+A prompt is not merely a question. It can be constructed to influence what the model does next. The CoALA paper shows how several prompting methods can be understood as sequences of productions or as forms of control flow \CoALACite{§3.2}.
+
+In a zero-shot interaction, the system supplies the current question and asks for an answer. In a few-shot interaction, examples are added before the current question. Those examples change the context from which the model generates its answer. In retrieval-augmented generation, the system retrieves external information and places it into the prompt so that the model can use it while responding.
+
+A chained approach may also make more than one model call. For instance, the system can ask for a draft, then ask for a critique of that draft, then make another call that uses the critique. The calls form a sequence in which an intermediate result becomes input to the next step.
+
+These are examples of how prompt construction can influence the process around an LLM. They should not be confused with a full account of an agent's decision-making procedure. Some sequences are predefined. An interactive agent, in contrast, can use new observations from the environment to determine what to do next.
+
+The practical distinction is this:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Prompt construction} determines what information and instructions are presented to a model call.
+\item
+  \textbf{Prompt chaining} organizes multiple calls into a sequence.
+\item
+  \textbf{An agent feedback loop} connects model-supported decisions to actions and new observations from an environment.
+\item
+  \textbf{A cognitive language agent} may additionally use internal processes to manage information that influences future decisions.
+\end{itemize}
+
+These patterns can coexist. They describe different aspects of how a larger system is organized.
+
+\subsection{Why bring cognitive architectures into the language-model era?}\label{why-bring-cognitive-architectures-into-the-language-model-era}
+
+The CoALA authors argue that the history of cognitive architectures offers useful principles for designing LLM-based agents \CoALACite{§§2.3--3.3}. Earlier architectures had to organize memory, interactions with the world, learning, and decision-making around production systems. Language models change what can serve as the core computation: instead of requiring every behavior to be encoded as a hand-written rule, a model can generate flexible text and help perform reasoning tasks.
+
+But the need for organization does not disappear. If anything, greater flexibility makes it more important to understand how the system's parts work together. A language model can propose text, but the architecture must account for what information is available to it, what operations the system can perform, and how a generated proposal becomes part of the system's behavior.
+
+This is the bridge to CoALA. Before we introduce the framework formally, let's revisit the production incident and use it to make those questions concrete.
+
+\section{A running example: investigating a production incident}\label{a-running-example-investigating-a-production-incident}
+
+The following scenario is an illustrative example created for this book. It is not a case study from the CoALA paper.
+
+A company operates Product X, whose payment service has begun returning HTTP 500 errors. The incident report says that some payment requests are failing. The agent is asked to investigate and help determine an appropriate response.
+
+At first, the system has very little information. It knows that an incident has been reported, but it does not yet know whether the cause is a recent deployment, a database problem, a dependency failure, or something else. It should not treat any of these possibilities as established fact.
+
+\subsection{Question 1: What information is available?}\label{question-1-what-information-is-available}
+
+The initial report is one piece of information. More may become available from operational records, monitoring systems, prior incident records, service documentation, or people involved in the response.
+
+The system must distinguish what it currently knows from what it could retrieve. It must also keep track of information produced during the investigation. For example, a check may show that the payment service is reachable but its database connection pool is exhausted. That observation changes the information available for the next decision.
+
+We have not yet introduced CoALA's memory categories, and we should not pretend that this brief example defines them. It is enough to recognize the architectural question: where does the system keep the information that matters to the current investigation, and how can it obtain other information when needed?
+
+\subsection{Question 2: What can the system do?}\label{question-2-what-can-the-system-do}
+
+The system may be able to retrieve deployment history, inspect recent logs, request a service-health check, or ask an operator for clarification. These are possible operations. They are not all the same kind of operation: some obtain information from outside the agent, while others may involve internal processing of information already available to it.
+
+The system might also be able to issue a remediation command. But the fact that an operation exists does not mean it should always be carried out. A command that changes production state is different from a read-only check. The agent's architecture must make it possible to reason about what operations are available and how decisions about them are made.
+
+This book will later use the example to discuss engineering boundaries such as authorization and human approval. Those controls are important implementation decisions for a production system. They should not be misrepresented as requirements that CoALA itself prescribes.
+
+\subsection{Question 3: How does the system decide what to do next?}\label{question-3-how-does-the-system-decide-what-to-do-next}
+
+Suppose the first health check shows that the application is responding, but the database pool is exhausted. The agent might now retrieve database metrics, compare the observation with a recent deployment, or propose another diagnostic step. A new observation may change which possibilities deserve attention.
+
+A fixed list of steps may be useful for a routine procedure, but an investigation often needs to respond to new information. The system must decide what candidate operation is appropriate in its current situation and what to do after the operation returns a result.
+
+This is not just a question of which tool should be called. It is a question about how the system organizes its information, its possible actions, and the procedure by which it selects what happens next.
+
+\subsection{The architectural questions exposed by the incident}\label{the-architectural-questions-exposed-by-the-incident}
+
+The incident brings three questions into focus:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Question raised by Product X
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Architectural dimension we will study
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+What information does the agent have, and where is it maintained? & Information storage \\
+What can the agent do internally or through its environment? & Action space \\
+How does the agent choose and execute what happens next? & Decision-making procedure \\
+\end{longtable}
+
+This is the point of the running example. It gives us a practical reason to care about the distinctions that CoALA makes. It does not show that all production incident systems must be built in one particular way, and it does not make the details of this example part of the paper.
+
+\section{CoALA: a framework for organizing language agents}\label{coala-a-framework-for-organizing-language-agents}
+
+CoALA stands for \textbf{Cognitive Architectures for Language Agents}. The original paper proposes it as a conceptual framework for characterizing and designing general-purpose language agents \CoALACite{§4}. The framework positions the language model as the core component of a larger cognitive architecture, not as the complete agent by itself.
+
+CoALA organizes agents along three dimensions. We will introduce each one briefly here and devote later chapters to understanding it in detail.
+
+\subsection{Information storage: what information is maintained?}\label{information-storage-what-information-is-maintained}
+
+The first dimension concerns how the agent organizes information. CoALA distinguishes \textbf{working memory} from \textbf{long-term memory} \CoALACite{§4.1}.
+
+Working memory contains information that is active and readily available for the current decision cycle. It can include incoming observations, goals, information retrieved from long-term memory, and results produced during intermediate reasoning. Long-term memory is organized into different forms, including episodic, semantic, and procedural memory.
+
+For this chapter, the distinction is enough: the agent may need information that is active now, information retained from earlier experiences, factual knowledge, or knowledge about how to perform tasks. These are not simply different names for a single undifferentiated conversation history.
+
+We will study the types of memory and their roles in Chapters 2 and 3. Here, remember the architectural question: \textbf{what information does the agent maintain, and how is it organized?}
+
+\subsection{Action space: what operations are available?}\label{action-space-what-operations-are-available}
+
+The second dimension concerns the actions the agent can take. CoALA separates actions into external and internal actions \CoALACite{§§4.2--4.5}.
+
+\textbf{External actions} interact with an environment. Examples discussed by the paper include controlling a robot, communicating with a human, or navigating a website. The paper uses the term \textbf{grounding} for this interaction with the external environment \CoALACite{§4.2}.
+
+\textbf{Internal actions} interact with the agent's own memories. CoALA distinguishes three kinds \CoALACite{§§4.3--4.5}:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Retrieval} reads information from long-term memory.
+\item
+  \textbf{Reasoning} uses the LLM to update short-term working memory.
+\item
+  \textbf{Learning} writes information to long-term memory.
+\end{itemize}
+
+These terms describe different roles in the architecture. Retrieval is not simply any search operation, reasoning is not merely the production of a final answer, and learning does not necessarily mean changing the model's neural-network weights. In CoALA's framework, learning includes writing information to long-term memory. The exact details will be developed in Chapters 4 and 5.
+
+For now, remember the question: \textbf{what can the agent do to its own information, and what can it do through interaction with the outside world?}
+
+\subsection{Decision-making procedure: how is the next action chosen?}\label{decision-making-procedure-how-is-the-next-action-chosen}
+
+The third dimension concerns how the agent determines what to do. CoALA describes a repeated decision-making cycle with planning and execution \CoALACite{§4.6}.
+
+During a cycle, the agent can use retrieval and reasoning to support planning. Planning proposes and evaluates candidate learning or grounding actions. The best action is selected and executed. An observation may then be made, and the cycle begins again.
+
+The process is not simply ``think once, then act once.'' New observations can change what the system should consider next. Internal actions can contribute to planning, and the selected operation may affect either the external environment or the agent's long-term memory.
+
+We will study the exact roles of planning, proposal, evaluation, selection, and execution in Chapters 6--8. For this introduction, the central question is: \textbf{how does the agent determine what to do next, execute that operation, and continue in light of what happens?}
+
+\subsection{The three dimensions belong together}\label{the-three-dimensions-belong-together}
+
+It is tempting to think of the three dimensions as separate modules that can be understood in isolation. They are distinct questions, but an agent's behavior emerges from their interaction.
+
+The decision procedure uses information maintained in memory. It selects from the operations available in the action space. An action may produce an observation or update information that later becomes relevant to another decision. If we understand only the memory stores, we do not yet know how the agent uses them. If we know the tools, we do not yet know how the system selects among them. If we know the decision loop, we still need to understand what information and operations it can access.
+
+CoALA offers a common vocabulary for examining these relationships. Its purpose is not to force every agent into one fixed implementation. It gives researchers and developers a shared way to characterize the organization of different systems and to think about how new systems might be designed.
+
+\section{What CoALA is---and what it is not}\label{what-coala-isand-what-it-is-not}
+
+Before moving on, it is worth establishing a few boundaries. These boundaries will protect us from attributing more to the paper than it actually claims.
+
+\subsection{What CoALA contributes}\label{what-coala-contributes}
+
+The original paper makes several contributions relevant to this book \CoALACite{§§1 and 4--6}:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  It proposes a conceptual framework for organizing language agents using information storage, action space, and decision-making procedure.
+\item
+  It connects the development of language agents to the history of production systems and cognitive architectures.
+\item
+  It uses the framework to organize and compare a range of existing language-agent approaches.
+\item
+  It identifies directions for the development of more capable language agents.
+\end{enumerate}
+
+CoALA is therefore more than a diagram of memory boxes. The decision-making procedure is part of the framework. At the same time, CoALA is broader than one particular implementation or one fixed reasoning strategy.
+
+\subsection{What CoALA does not prescribe}\label{what-coala-does-not-prescribe}
+
+CoALA is not a ready-to-run software library, agent runtime, or deployment architecture. It does not require an implementation to use Java, LangGraph4j, LangChain4j, Maven, a particular database, or a particular model provider. Those are engineering choices that must be evaluated separately.
+
+The framework also does not imply that every agent must use every memory type or every possible action in an identical way. It provides distinctions that help describe and design agents. The way a particular system instantiates those distinctions depends on the task and its implementation.
+
+Likewise, mapping a program to CoALA does not prove that the program is reliable, safe, or production-ready. A conceptual architecture helps us ask the right design questions; it does not replace requirements analysis, testing, security engineering, or operational evaluation.
+
+This separation will matter in Part III. When we build production-oriented Java systems, we will identify which ideas come from CoALA, which come from Fan \& Lan, and which are engineering decisions made for the example system. The papers will remain the theoretical foundations. Framework APIs, build tools, and implementation libraries will be consulted only to write correct code, not treated as additional cognitive theories.
+
+\subsection{What this book will do with CoALA}\label{what-this-book-will-do-with-coala}
+
+We will first understand the framework on its own terms. Part I follows the concepts in a deliberate order: architecture, memory, actions, planning, evaluation, selection, and the iterative decision process. We will avoid importing mechanisms from later research into our explanation of the original CoALA paper.
+
+In Part II, we will study Fan \& Lan's mechanism-level analysis as a separate contribution. The purpose will not be to rewrite CoALA or claim that its original authors proposed every mechanism discussed there. We will preserve the distinction between the original framework and the later analysis.
+
+In Part III, we will apply the concepts while building ten complex systems with Java 21, Maven, LangGraph4j, and LangChain4j Agentic. Those implementations will be engineering case studies. They will illustrate choices and trade-offs; they will not be presented as implementations mandated by either paper.
+
+\section{Where we go next}\label{where-we-go-next}
+
+We began with a question about a failing payment service. A language model can suggest possible causes, but a system expected to investigate the incident must do more than generate a plausible response. It needs information, operations through which it can interact with its environment, and a procedure for deciding what happens next.
+
+We then followed the progression from simple model calls to language agents and cognitive language agents. We saw why prompt construction and prompt chaining add structure, why an external feedback loop is a further step, and why internal processes such as reasoning and learning introduce additional architectural questions.
+
+The history of production systems showed that rules alone do not explain a complete agent. A system also needs control over which operations are selected and how the process continues. Cognitive architectures emerged as a way to organize information, processes, and control. CoALA draws on that history to provide a framework for language agents.
+
+The next chapter will turn the three dimensions into a complete architectural picture. We will examine how information storage, action space, and decision-making fit together before studying each in depth. The questions from Product X will remain with us: what information is available, what can the system do, and how does it decide what to do next?
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Source and example note}\label{source-and-example-note}
+
+The theoretical account in this chapter is grounded in \textbf{{[}CoALA{]}} only. The Product X payment-incident scenario and all of its specific details are illustrative material created for this book; they are not presented as a case study from the paper. The thermostat and string-rewriting examples are used to explain the historical discussion as it is presented in \textbf{{[}CoALA{]}}. No mechanism from Fan \& Lan or from another research framework is introduced in this chapter.

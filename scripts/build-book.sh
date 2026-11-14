@@ -2,24 +2,27 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1704067200}"
-mkdir -p build
-latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error \
-  -outdir=build main.tex
+mkdir -p Tex/Output
 
-# Generate glossary and index files explicitly. This keeps auxiliary paths inside build/.
-if [[ -f build/main.glo ]]; then
-  makeglossaries -d build main
-fi
-if [[ -f build/main.idx ]]; then
-  makeindex -o build/main.ind build/main.idx
+# imakeidx invokes MakeIndex relative to the working directory, while the
+# selected build command places all generated files in Tex/Output. These
+# temporary links keep both paths consistent without polluting the repo.
+ln -sfn Tex/Output/main.idx main.idx
+ln -sfn Tex/Output/main.ind main.ind
+cleanup() { rm -f main.idx main.ind; }
+trap cleanup EXIT
+
+latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
+  -output-directory=Tex/Output Tex/main.tex
+
+makeglossaries -d Tex/Output main
+if [[ -s Tex/Output/main.idx ]]; then
+  makeindex -o Tex/Output/main.ind Tex/Output/main.idx
 fi
 
-latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error \
-  -outdir=build main.tex
-if [[ ! -s build/main.pdf ]]; then
-  echo "Expected build/main.pdf was not produced." >&2
-  exit 1
-fi
-cp build/main.pdf build/book.pdf
-printf 'Built %s\n' "$ROOT/build/book.pdf"
+latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
+  -output-directory=Tex/Output Tex/main.tex
+
+cp Tex/Output/main.pdf Tex/Output/book.pdf
+bash scripts/quality-checks.sh Tex/Output/main.pdf Tex/Output/main.log
+printf 'Built %s\n' "$ROOT/Tex/Output/book.pdf"

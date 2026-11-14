@@ -1,9 +1,8 @@
-# Contribution rules
+# Contributing
 
-1. Do not draft a chapter until its outline has been explicitly approved.
-2. Replace a chapter placeholder only with content approved for that chapter.
-3. Keep claims from CoALA and Fan & Lan faithful to the primary papers; distinguish paper claims, interpretation and engineering decisions.
-4. Reuse semantic environments and citation helpers from `styles/bookstyle.sty` rather than styling each chapter independently.
-5. Keep references in `bibliography/references.bib`; verify bibliographic metadata before adding an entry.
-6. Keep diagrams as editable Mermaid source in `diagrams/`; render generated assets under `build/` only.
-7. Never commit generated build output, temporary files, or unapproved chapter drafts.
+1. Preserve the author's shared preamble in `Tex/preamble.tex`; do not define chapter-local replacements for book-wide macros or environments.
+2. Put shared citation, glossary, and reusable semantic definitions in `Tex/shared-macros.tex`.
+3. Obtain approval for a chapter outline before writing that chapter, unless the author explicitly changes that approval gate.
+4. Keep claims from the papers separate from teaching explanations, book-created examples, and engineering decisions.
+5. Build with XeLaTeX and run the repository checks before proposing changes.
+6. Do not add content to placeholder chapters without an approved outline.
