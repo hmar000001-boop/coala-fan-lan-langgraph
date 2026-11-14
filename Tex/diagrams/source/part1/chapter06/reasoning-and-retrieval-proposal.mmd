@@ -1,0 +1,16 @@
+flowchart TB
+    accTitle: Reasoning and optional retrieval in proposal
+    accDescr: Current working information supports reasoning that generates candidate actions. Retrieval may optionally bring relevant long-term information into working memory as additional context.
+
+    WM[Current working information] --> REASON[Reasoning with the LLM]
+    LTM[Relevant long-term memory] -. optional .-> RET[Retrieval]
+    RET -. adds information .-> WM
+    REASON --> CAND[One or more action candidates]
+    CAND --> LATER[Later consideration outside this chapter]
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef context fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px;
+    class WM,LTM store;
+    class RET,REASON process;
+    class CAND,LATER context;

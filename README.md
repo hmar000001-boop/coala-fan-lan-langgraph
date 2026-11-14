@@ -6,10 +6,12 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 
 - **Chapter 1 — Why Do Language Agents Need Cognitive Architectures?** Drafted and integrated; retains its approved manuscript content, with consistency and presentation updates.
 - **Chapter 2 — The Architecture of CoALA.** Drafted and integrated from the reviewed outline.
-- **Chapter 3 — Understanding Memory.** Drafted from the reviewed outline; source-fidelity review completed against CoALA §4.1 and Figure 4A; author review pending.
-- **Chapter 4 — Internal Actions: Retrieval, Reasoning and Learning.** Drafted from the reviewed outline; source-fidelity review completed against CoALA §§4.3–4.5 and Figure 5 for the action boundary; author review pending.
-- Chapters 5–30 remain structural placeholders. Each receives its own detailed outline and approval before prose is written.
-- Chapters 1–4 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering.
+- **Chapter 3 — Understanding Memory.** Drafted from its approved outline; source-fidelity review completed against CoALA §4.1 and Figure 4A; author review pending.
+- **Chapter 4 — Internal Actions: Retrieval, Reasoning and Learning.** Drafted from its approved outline; source-fidelity review completed against CoALA §§4.3–4.5 and Figure 5 for the action boundary; author review pending.
+- **Chapter 5 — External Actions and Grounding.** Drafted from its author-approved outline; source-fidelity review completed against CoALA §4.2, Figure 5, and the action-space safety discussion in §6; author review pending.
+- **Chapter 6 — Planning: From a Problem to Candidate Actions.** Drafted from its author-approved outline; source-fidelity review completed against CoALA §4.6, Figure 4B, and the proposal discussion; author review pending.
+- Chapters 7–30 remain structural placeholders. Each receives its own detailed outline and approval before prose is written.
+- Chapters 1–6 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering.
 
 ## Author-supplied preamble
 
@@ -21,7 +23,7 @@ Book-wide citation macros, glossary setup, bibliography integration, additional 
 
 The authoritative entry point is `Tex/main.tex`. The repository uses the author's known-working GitHub Actions route: `xu-cheng/texlive-action@v2`, `scheme: full`, XeLaTeX through `latexmk`, and a PDF artifact. Pushes and pull requests build the full book; pushes of `v*` tags also publish the compiled PDF to GitHub Releases.
 
-The workflow compiles only the combined book PDF. Individual Chapter 1–4 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
+The workflow compiles only the combined book PDF. Individual Chapter 1–6 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
 
 Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, Node.js 22.13 or later, npm, Chromium/Puppeteer dependencies, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs Node 24, the TeX Gyre browser fonts, the pinned Mermaid CLI, and the full TeX Live scheme.
 
@@ -37,9 +39,9 @@ bash scripts/check-diagrams.sh
 bash scripts/build-book.sh
 ```
 
-The authoritative workflow renders all 14 Mermaid sources for Chapters 1–4 to PNG before LaTeX compilation. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; this local environment could not resolve `registry.npmjs.org`.
+The authoritative workflow renders all 22 Mermaid sources for Chapters 1–6 to PNG before LaTeX compilation. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; this local environment could not resolve `registry.npmjs.org`.
 
-To build Chapters 1–4 separately:
+To build Chapters 1–6 separately:
 
 ```bash
 bash scripts/build-chapters.sh
@@ -54,3 +56,8 @@ The PDF target is standard PDF; this project does not claim PDF/UA or tagged-PDF
 ## Repository setup
 
 Create the public GitHub repository named `cognitive-architectures-to-production-agents`, extract this archive, and push the repository contents manually. No remote or Git history is embedded in this archive.
+
+
+## Current batch status: Chapters 5–6 drafted
+
+The author approved both outlines on 14 November 2026. The approved outline PDFs and their LaTeX sources remain in `review/`. The source map and boundary review are recorded in `review/Batch_05-06_Source_Review.md`; drafting, source-fidelity, and consistency notes are recorded in `review/Batch_05-06_Drafting_Review.md`. Chapters 5 and 6 are now integrated into Part I and have independent build entry points. Eight additional Mermaid sources are stored under the two chapter-specific source directories. The actual Mermaid PNG rendering and printed-size figure inspection must be verified by the first GitHub Actions run because this local environment cannot resolve the npm registry.

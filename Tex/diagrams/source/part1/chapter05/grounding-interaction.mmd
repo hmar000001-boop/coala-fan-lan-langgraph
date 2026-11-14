@@ -1,0 +1,17 @@
+flowchart LR
+    accTitle: The grounding interaction
+    accDescr: Working information informs a grounding procedure. The procedure sends an external action into an environment. Feedback, when available, is processed into an observation represented in working memory.
+
+    WM[Working information] --> GP[Grounding procedure]
+    GP -->|sends| ACTION[External action]
+    ACTION --> ENV[External environment]
+    ENV -->|feedback, if available| GP
+    GP -->|processes and represents| OBS[Observation]
+    OBS --> WM2[Working memory]
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef external fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.5px;
+    class WM,WM2,OBS store;
+    class GP process;
+    class ACTION,ENV external;

@@ -1,0 +1,23 @@
+flowchart TB
+    accTitle: Different ways to generate candidate actions
+    accDescr: CoALA describes several proposal approaches: LLM-based sampling, enumerating a limited action set, program structures, and structured-simulator rollouts. The approaches are not ranked.
+
+    PROPOSAL[Proposal: generate possibilities]
+    PROPOSAL --> LLM[LLM-based sampling]
+    PROPOSAL --> ENUM[Enumerate a limited action set]
+    PROPOSAL --> CODE[Program branches or loops]
+    PROPOSAL --> SIM[Structured-simulator rollouts]
+    LLM --> CAND[Candidate set]
+    ENUM --> CAND
+    CODE --> CAND
+    SIM --> CAND
+    CAND --> BOUNDARY[Candidates are not evaluated or selected here]
+
+    classDef root fill:#1A4A8A,stroke:#1A4A8A,color:#FFFFFF,stroke-width:1.5px;
+    classDef method fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.2px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef note fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1px;
+    class PROPOSAL root;
+    class LLM,ENUM,CODE,SIM method;
+    class CAND result;
+    class BOUNDARY note;

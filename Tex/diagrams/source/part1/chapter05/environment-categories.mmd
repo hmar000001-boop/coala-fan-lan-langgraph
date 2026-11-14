@@ -1,0 +1,22 @@
+flowchart TB
+    accTitle: External environment categories in CoALA
+    accDescr: CoALA discusses physical environments, dialogue with humans or other agents, and digital environments as categories with which grounding actions interact.
+
+    GROUND[External grounding]
+    GROUND --> PHYSICAL[Physical environments]
+    GROUND --> DIALOGUE[Dialogue with humans or agents]
+    GROUND --> DIGITAL[Digital environments]
+
+    PHYSICAL --> P1[Robotic interaction]
+    PHYSICAL --> P2[Visual, audio, tactile input]
+    DIALOGUE --> D1[Instructions and replies]
+    DIALOGUE --> D2[Help and clarification]
+    DIGITAL --> G1[Websites and games]
+    DIGITAL --> G2[APIs and code execution]
+
+    classDef root fill:#1A4A8A,stroke:#1A4A8A,color:#FFFFFF,stroke-width:1.5px;
+    classDef category fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef example fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1px;
+    class GROUND root;
+    class PHYSICAL,DIALOGUE,DIGITAL category;
+    class P1,P2,D1,D2,G1,G2 example;

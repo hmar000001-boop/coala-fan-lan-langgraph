@@ -52,7 +52,9 @@ for expected in \
   'The Architecture of CoALA' \
   'Understanding Memory' \
   'Internal Actions' \
-  'Retrieval, Reasoning and Learning'; do
+  'Retrieval, Reasoning and Learning' \
+  'External Actions and Grounding' \
+  'Planning: From a Problem to Candidate Actions'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;

@@ -1,0 +1,25 @@
+flowchart TB
+    accTitle: Different observations, common working interface
+    accDescr: Physical perception, dialogue replies, and digital results can follow different representation paths before information becomes available in working memory.
+
+    subgraph INPUTS[External information]
+      direction LR
+      PHYS[Physical perception]
+      DIAL[Dialogue reply]
+      DIG[Digital result]
+    end
+    PHYS --> REP[Representation for the agent]
+    DIAL --> REP
+    DIG --> REP
+    REP --> WM[Working memory]
+
+    PHYS -.-> NOTE1[Image, audio, or tactile signal]
+    DIAL -.-> NOTE2[Natural-language response]
+    DIG -.-> NOTE3[Page, API response, or code result]
+
+    classDef input fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    class PHYS,DIAL,DIG,NOTE1,NOTE2,NOTE3 input;
+    class REP process;
+    class WM store;

@@ -1,4 +1,226 @@
 \chapter{Planning: From a Problem to Candidate Actions}
+\label{ch:planning-proposal}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+An agent can have a current goal, useful information in working memory, access to long-term memory, and a set of possible actions. It still needs a way to move from the situation it faces to concrete possibilities for what it might do next. CoALA places that work in the \gls{planningstage} of its decision-making procedure. One of the planning sub-stages is called \gls{proposal}: it generates one or more \gls{candidateaction}.\index{planning stage}\index{proposal}\index{action candidate}
+
+This chapter focuses on that proposal step. We will see how reasoning, sometimes supported by retrieval, can produce candidates; why a small action set may simply be enumerated; and how program structures or structured simulators can also generate possibilities. We will stop at the candidate set. Evaluating candidates, selecting one, and executing it are distinct responsibilities developed in Chapter 7, while the flexibility to interleave or iterate planning sub-stages is developed in Chapter 8.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain where proposal belongs in CoALA's decision procedure; distinguish a candidate from an evaluated, selected, or executed action; describe how reasoning and optional retrieval can support candidate generation; recognize enumeration, code structures, and structured simulators as alternative proposal approaches; and explain what the proposal stage does not decide.
+\end{learningbox}
+
+\section{The problem before the first candidate}
+\label{sec:problem-before-candidate}
+
+Return to Product X. The payment endpoint is returning HTTP 500 errors. The incident goal is to restore normal service, but the cause is not yet known. The agent has a current observation and some service context. It may have retrieved an earlier incident or reasoned about possible explanations. What should it do next?
+
+At this point, there may be several actions that are possible. It might inspect deployment metadata, query database connectivity, ask an operator about a recent configuration change, or examine another relevant service signal. Naming these possibilities is useful, but it is not yet a decision. The agent has not established which possibility is most valuable, which one should be chosen, or whether any proposed action should be carried out.
+
+CoALA makes this distinction explicit by describing a planning stage and dividing it into sub-stages. The first of these is proposal. Its job is to generate one or more action candidates that can be considered by subsequent parts of the decision procedure.\CoALACite{\S 4.6, ``Planning'' and ``Proposal,'' pp. 12--13}
+
+\section{Proposal's place in the decision cycle}
+\label{sec:proposal-decision-cycle}
+
+The decision-making procedure is the top-level or ``main'' program of a CoALA agent. It organizes repeated decision cycles. In the paper's account, the agent can use reasoning and retrieval during planning to develop alternatives. The decision procedure then moves through later planning work and executes the action that is selected. After execution, an observation may become available and the cycle can begin again.\CoALACite{\S 4.6, Figure 4B}
+
+The planning stage is therefore not just a synonym for generating a sentence that names an action. It is a part of the larger program that helps the agent work out what it might do. Proposal is one sub-stage within planning. Evaluation and selection are other sub-stages, but they answer different questions. Execution is different again: it applies an action by invoking the relevant procedure in the agent's code.
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part1/chapter06/proposal-in-cycle.png}
+  {Proposal within the broader decision cycle. The diagram locates proposal and marks evaluation, selection, and execution as later responsibilities; it is not a complete account of their mechanisms or a rigid one-pass ordering.}
+  {fig:proposal-in-cycle}
+
 \begin{notebox}
-Chapter placeholder. The detailed outline must be reviewed and approved before this chapter is written.
+This chapter uses the decision cycle only to locate proposal. It does not explain how candidates receive values, how one is selected, what happens when candidates are rejected, or how planning sub-stages can interleave and iterate. Those questions belong to Chapters 7 and 8.
 \end{notebox}
+
+\section{What is an action candidate?}
+\label{sec:action-candidate}
+
+Suppose the Product X agent produces the phrase ``inspect deployment metadata.'' Has the agent made its decision? Not yet. The phrase describes one action that may be possible. It is a candidate: a proposed possibility that can be considered by later parts of the decision procedure.
+
+A candidate should be understood in relation to the action space introduced in Chapter 2. CoALA's action space includes internal actions and external grounding actions. For the proposal description in Section 4.6, the paper says that the usual approach is to use reasoning, and optionally retrieval, to sample one or more external grounding actions from the LLM. The same section explains the larger cycle as ultimately yielding an external grounding action or an internal learning action. This chapter follows the proposal paragraph's specific emphasis on external grounding candidates and does not generalize that paragraph into a complete account of every possible learning-action proposal mechanism.\CoALACite{\S 4.6, ``Proposal,'' p. 13}
+
+It is helpful to distinguish four statuses:
+
+\begin{itemize}
+  \item A \textbf{candidate} is a possible action produced during proposal.
+  \item An \textbf{evaluated candidate} is a candidate to which a value has been assigned during the later evaluation sub-stage, when multiple actions are proposed.
+  \item A \textbf{selected action} is the candidate chosen by the selection sub-stage for what happens next.
+  \item An \textbf{executed action} is an action that has actually been applied by invoking its procedure.
+\end{itemize}
+
+These distinctions describe different points in the decision process. A candidate can exist without receiving an evaluation value. An evaluated candidate is not automatically selected. A selected action has not necessarily been executed until the relevant procedure is invoked. Chapters 7 and 8 will examine the later decision stages; for now, keep the proposal boundary clear.
+
+A candidate also differs from the procedure that implements it. ``Query deployment metadata'' is a description of a possible action. The agent's source code may contain a procedure that knows how to construct and send that query. The candidate is not itself the implementation. CoALA's architecture distinguishes the actions available to the agent from the code-based procedures through which those actions are carried out.
+
+\subsection{A candidate must be understood within an action space}
+
+A candidate is not an arbitrary sentence that happens to sound actionable. It is a possible action in the context of the agent's available action space. If the agent has no procedure for contacting a particular service and no available way to communicate with a person, simply generating the words ``contact the service'' or ``ask the engineer'' does not create that capability. The proposal description is about generating possibilities from the action space and procedures the agent has been given or can use, not about granting the agent a new ability merely by naming it.
+
+This point follows from the architecture map established in Chapter 2. The action space identifies the kinds of internal and external actions available to the agent. The proposal stage works with that space. The concrete representation of a candidate can vary: it may be expressed in natural language, a structured action description, or another form used by the agent's code. CoALA does not prescribe one universal candidate schema. What matters for this chapter is the role the candidate plays: it is a possible action generated for later consideration.
+
+\subsection{One candidate or several}
+
+The paper explicitly allows proposal to generate one or more candidates. A narrow situation may lead to one plausible next action. A less constrained situation may produce several possibilities. Neither case changes the definition of proposal.
+
+This is important because the number of candidates should not be confused with the sophistication of the overall decision procedure. A procedure that produces one candidate has still performed proposal. A procedure that produces several candidates has not necessarily performed evaluation or selection. The later stages may have more work to do when multiple alternatives are present, but that does not mean proposal itself has made a comparison.
+
+\begin{tipbox}
+When you see a list of actions, do not assume it is a ranked list or a set of recommendations. At the proposal stage, it is a set of possibilities. The word ``candidate'' is deliberately modest: it says that an action has been generated for consideration, not that the action is correct, safe, or chosen.
+\end{tipbox}
+
+\section{Using reasoning and retrieval to generate candidates}
+\label{sec:reasoning-retrieval-proposal}
+
+CoALA describes reasoning as the usual means of proposal. The LLM can process the current working information and produce one or more possible external grounding actions. Retrieval may also be used to bring relevant information from long-term memory into working memory, where it can provide additional context for reasoning. The paper's phrasing matters: reasoning and optionally retrieval. Retrieval can support proposal, but the text does not make it a mandatory precondition for every proposal.\CoALACite{\S 4.6, ``Proposal,'' p. 13; supporting action definitions in \S\S 4.3--4.4}
+
+Consider the Product X situation. Working memory contains the HTTP 500 observation, the incident goal, and known service context. The agent can reason over that information to generate a possible next action. If earlier incident experience is relevant, retrieval may bring it into working memory before or as part of the proposal process. Reasoning can then use both the current observations and the retrieved context to generate candidates.
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part1/chapter06/reasoning-and-retrieval-proposal.png}
+  {Reasoning can generate one or more action candidates from working information. Retrieval is shown as an optional source of additional context, not as a mandatory step in every proposal.}
+  {fig:reasoning-retrieval-proposal}
+
+The point is not that retrieval improves every proposal or that every action must be justified by a retrieved memory. Sometimes the current situation contains enough information to produce a possible action. Sometimes a prior episode or a stored fact can make a candidate more specific. The proposal description allows for this flexibility without defining one compulsory preparation sequence.
+
+Likewise, one candidate may be enough in some cases, while other situations call for several possibilities. The number of candidates depends on the agent's action domain and proposal procedure. A single proposal is still a proposal; multiple proposals do not, by themselves, tell us which one should be chosen.
+
+\subsection{Following the information path}
+
+It can help to follow the information rather than memorize the labels. The current problem is already represented in working memory. If the agent uses retrieval, information is read from long-term memory into working memory. That retrieval operation does not itself generate the action candidate. It changes the information available to the next reasoning operation. The LLM can then process the active information and generate a candidate description. The candidate becomes part of the proposal result.
+
+For example, suppose an earlier Product X incident involved a database connection-pool limit. Retrieval may make that episode available in working memory. Reasoning may then produce ``inspect current connection-pool configuration'' as one possible action. The earlier episode has informed the proposal, but it has not proved that the current incident has the same cause. A retrieved memory supplies context; it does not turn a possibility into a conclusion.
+
+The reverse is also possible. If the current working information already identifies a useful next diagnostic action, the agent may propose it without retrieving an earlier episode. This is why the source wording ``reasoning (and optionally retrieval)'' should not be rewritten as a mandatory two-step recipe. The agent's procedure can use the information it needs for the task at hand.
+
+The proposal mechanism is also not identical to the language model's raw output. A model may generate text that describes an action, but the surrounding agent procedure can parse or organize that output as an action candidate. This is consistent with the architecture's distinction between LLM reasoning and the explicit code that implements agent procedures. The chapter does not prescribe a particular parser or representation; it clarifies the function of the information produced.
+
+\subsection{What the Product X candidates do and do not say}
+
+\BookExampleLabel\ Given the current HTTP 500 observation, the agent might generate three possibilities:
+
+\begin{enumerate}
+  \item Inspect recent deployment metadata.
+  \item Query the payment service's database connectivity status.
+  \item Ask the on-call engineer whether a relevant configuration change occurred.
+\end{enumerate}
+
+Each candidate is an action description that can be related to the action space. The first two are digital grounding candidates. The third is a dialogue grounding candidate. The agent has not yet established that any of them will reveal the cause, and the list does not express an order or preference. The proposal stage has created possibilities, not a diagnosis.
+
+\section{When the action set is small: proposing all available actions}
+\label{sec:enumerating-action-set}
+
+It is tempting to assume that proposal always means asking the LLM to invent actions. CoALA explicitly gives a different possibility. In a simple domain with a limited set of available actions, the proposal stage may simply include all of them. The paper uses SayCan as an example: it discusses a fixed set of grounding skills in a robotic kitchen setting and notes that, for a simple domain with limited actions, proposal might include all actions.\CoALACite{\S 4.6, ``Proposal,'' p. 13; \S 5, SayCan case study}
+
+Imagine a small environment in which only three actions are available: inspect an inventory item, move to a marked location, or report that the requested item is unavailable. If the domain is deliberately limited, the proposal procedure can enumerate those actions rather than asking the LLM to generate a new list. The proposal result is the set of available possibilities.
+
+Enumeration is not evaluation. Listing all available actions does not assign a value to each one, compare their outcomes, or decide which action should be executed. It simply defines which possibilities are present for later consideration. This distinction is easy to lose when the action set is short: because all actions are visible, it may feel as though the decision has already been made. It has not.
+
+Enumeration also depends on the action domain being sufficiently defined. The example does not imply that every agent has a small, fixed, or exhaustively enumerable set of actions. CoALA presents this as one possible proposal approach for simple domains, not a universal rule.
+
+
+A small action set can make the boundary particularly easy to see. Imagine a service agent whose external action space for one narrow task contains exactly three diagnostic queries. A proposal procedure may put all three into the candidate set. At that moment the agent has not learned which query is most informative, which one is safest, or which one should be run first. The enumeration has answered only the availability question: what are the possible actions in this limited domain?
+
+The scope of the action set is therefore important. If the available actions change, the enumerated candidate set changes. If the domain is not well-defined or the available possibilities are not exhaustively known, simple enumeration may not describe the proposal procedure. CoALA's example is intentionally modest: it shows that candidate generation can be straightforward when the domain is constrained. It does not claim that enumeration is appropriate for every agent.
+
+\section{Program structures and structured simulators as proposal mechanisms}
+\label{sec:program-simulator-proposal}
+
+CoALA also describes more structured ways to generate candidates. The proposal process may use code structures such as \texttt{if--else} or \texttt{while--if} to produce possible actions. The paper further notes that agents deployed in well-defined domains may use structured simulators to generate plausible rollouts. These are examples of proposal mechanisms that are not limited to a fresh LLM sample.\CoALACite{\S 4.6, ``Proposal,'' p. 13}
+
+A branch in program code can encode conditions under which different actions are proposed. For example, a domain-specific procedure may include one candidate when a relevant signal is present and another when it is absent. A loop structure may allow a proposal procedure to generate actions repeatedly while some condition remains true. The important point for this chapter is modest: code structure can participate in generating candidates. We are not defining a universal program structure, nor claiming that all agents should use the same branching or looping pattern.
+
+A structured simulator offers another possibility in a domain where a model of the environment is available. It can generate plausible rollouts: possible sequences of states or events that may follow from a proposed course of action. In the proposal context, the simulator can help produce possibilities for consideration. The detailed use of simulations to evaluate outcomes or compare plans is outside this chapter. We will not turn this brief reference into a tutorial on search algorithms, planning languages, or simulator construction.
+
+
+These examples also show why proposal need not be implemented entirely inside a model prompt. A program branch can narrow or expand the set of possible actions according to a domain condition. A loop can repeat a generation step under a condition. A simulator can produce possible sequences in a domain for which structured simulation is available. In each case, code or a simulator contributes to producing possibilities. The conceptual role is still proposal, even though the mechanisms differ.
+
+The mention of structured simulators should not be mistaken for a claim that all candidate generation requires a complete world model. The paper identifies simulators as a possibility for well-defined domains. That is a qualification, not a universal requirement. Nor does a plausible rollout automatically tell us how valuable it is. A simulator-generated sequence may be included for later consideration, but the process of assigning values to alternatives and choosing what to do belongs to later parts of the decision procedure.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part1/chapter06/candidate-generation-methods.png}
+  {Four proposal approaches discussed in CoALA: LLM-based sampling, enumeration of a limited action set, code-structured generation, and structured-simulator rollouts. The figure compares ways candidates may be generated; it does not rank them.}
+  {fig:candidate-generation-methods}
+
+The four approaches answer the same narrow question: how might a set of possible actions be produced? They do not answer what value a candidate has, which candidate should be chosen, or whether the action should be executed. Keeping the question narrow prevents proposal from absorbing the work of the later planning stages.
+
+\section{A Product X proposal walkthrough}
+\label{sec:productx-proposal}
+
+\BookExampleLabel\ We can now follow the path from a current problem to an unranked set of possibilities. The working information contains the HTTP 500 observation, the active goal of understanding the service failure, and the service context already available to the agent. The action space includes digital grounding procedures and dialogue interactions that the agent can use.
+
+The proposal procedure reasons over the available working information. It may optionally retrieve a relevant prior incident or service fact if that information could help form a candidate. From this context, the agent might generate candidates such as inspecting deployment metadata, querying database connectivity, or asking an operator for clarification. The list illustrates the generation of possibilities; it does not establish which possibility is preferable or likely to solve the incident.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part1/chapter06/productx-candidate-set.png}
+  {A book-created Product X example showing current working information and available action types feeding proposal. The resulting candidates are explicitly unranked and unselected.}
+  {fig:productx-candidate-set}
+
+The chapter ends at this point. We have a candidate set. We have not assigned values to the candidates, compared their likely outcomes, selected one, or executed it. That stopping point is not an omission; it is the boundary that allows the next two chapters to explain the remaining parts without collapsing them into one vague idea of planning.
+
+
+Notice how little the candidate set tells us about the underlying incident. The inclusion of deployment metadata does not prove that the deployment caused the errors. The inclusion of a database-connectivity query does not establish that the database is involved. The option to ask the operator does not imply that a change occurred. Proposal converts the current situation and available action space into possibilities. It does not convert those possibilities into facts about the world.
+
+If the action space were narrower, the candidate set might look different. If it offered only a health query and an operator question, the proposal procedure could generate only those possibilities. If a relevant prior service fact were retrieved, reasoning might produce a more focused candidate. These variations alter the possibilities that are proposed; they do not change the boundary between proposal and later evaluation or selection.
+
+\begin{warningbox}
+A plausible candidate is not necessarily a good candidate, a safe candidate, or the action that will eventually be selected. Proposal creates possibilities. Avoid describing its output as ``the best action,'' ``the preferred action,'' or ``the approved action.'' Those phrases imply later judgments that have not yet occurred.
+\end{warningbox}
+
+\section{Common confusions and boundaries}
+\label{sec:proposal-boundaries}
+
+\begin{itemize}
+  \item \textbf{Proposal is not the whole planning stage.} It is one named sub-stage within planning.
+  \item \textbf{A candidate is not an evaluated option.} Evaluation assigns values when multiple actions are proposed; that work belongs to Chapter 7.
+  \item \textbf{A candidate is not a selected action.} Selection decides what to do with the candidate set; that work also belongs to Chapter 7.
+  \item \textbf{A candidate is not an executed action.} Execution applies an action by invoking the relevant procedure in the agent's code.
+  \item \textbf{Retrieval is optional support, not a mandatory gate.} CoALA describes reasoning and optionally retrieval for the usual LLM-based proposal approach.
+  \item \textbf{Proposal is not always open-ended generation.} A limited action space may be enumerated; program structures or structured simulators may also generate possibilities.
+  \item \textbf{The chapter does not define a rigid one-pass order.} CoALA's flexibility to interleave or iterate planning sub-stages is treated in Chapter 8.
+\end{itemize}
+
+One further boundary concerns the role of examples. The SayCan discussion appears in CoALA as an example of a domain with a limited set of grounding actions. We mention it only to illustrate the possibility of enumerating a limited action set. We do not introduce it as an additional theory or tutorial. Similarly, the reference to structured simulators is kept at the level at which CoALA uses it in the proposal discussion; detailed simulation-based evaluation belongs elsewhere.
+
+\section{Chapter recap}
+\label{sec:proposal-recap}
+
+\begin{chapterrecap}
+Proposal is the part of CoALA's planning stage that generates one or more candidate actions. A candidate is a possibility for later consideration, not an evaluated, selected, or executed action. CoALA describes reasoning as the usual way to sample external grounding candidates from the LLM, with retrieval as optional support. In simple domains with limited actions, the proposal stage may include all available actions. More structured agents may use program branches or loops, and well-defined domains may use structured simulators to generate plausible rollouts. The chapter stops once candidates exist; evaluation and selection belong to Chapter 7, and interleaving and iteration belong to Chapter 8.
+\end{chapterrecap}
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}P{0.24\linewidth}P{0.35\linewidth}X@{}}
+\toprule
+\textbf{Proposal approach} & \textbf{How candidates arise} & \textbf{What this approach does not decide} \\
+\midrule
+LLM-based sampling & Reasoning over working information, with optional retrieved context, produces one or more action descriptions. & Whether a candidate is valuable, selected, safe, or executed. \\
+Limited-set enumeration & The proposal procedure includes all actions in a small, defined action set. & Which of the available actions should be preferred. \\
+Program-structured generation & Branches or loops in agent code produce candidates under domain-specific conditions. & Whether the generated candidates should be executed. \\
+Structured-simulator rollouts & A simulator generates plausible sequences or possibilities in a well-defined domain. & The detailed evaluation or ranking of those possibilities. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item In CoALA, where does proposal sit in the decision procedure, and what does it produce?
+  \item Explain the difference between a candidate action and the procedure that implements it.
+  \item The Product X agent generates ``inspect deployment metadata'' and ``query database connectivity.'' Have these actions been evaluated or selected? Explain.
+  \item Why does CoALA describe retrieval as optional support for the usual LLM-based proposal approach rather than as a mandatory precondition?
+  \item When might the proposal stage simply include every available action? Why is that still different from evaluation?
+  \item Give an example of how an \texttt{if--else} structure could contribute to candidate generation without deciding which candidate should be executed.
+  \item What does a structured simulator contribute to proposal in a well-defined domain? What details are outside this chapter's scope?
+  \item Compare LLM-based sampling and limited-set enumeration. What assumptions differ between the two approaches?
+  \item \textbf{Classification exercise.} For each statement, identify whether it describes proposal, evaluation, selection, or execution: (a) ``inspect deployment metadata'' is added to a set of possibilities; (b) a value is assigned to each of three candidates; (c) one candidate is chosen for the next step; (d) the relevant procedure is invoked. Explain why only (a) belongs to this chapter.
+  \item Rewrite the statement ``the agent selected the database check'' so that it describes only a proposal-stage event. A suitable answer should say that the proposal included the database check as one candidate.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account is grounded primarily in \textsc{[CoALA]}, Section 4.6, especially the description of the planning stage and the proposal sub-stage, with Figure 4B used only to locate proposal within the decision cycle. Sections 4.3 and 4.4 are recalled to explain retrieval and reasoning as supporting internal actions; Section 4.2 is recalled only to orient the reader to grounding actions as candidate types. SayCan is named only as the limited-action-set example discussed by CoALA. Product X remains a book-created teaching example. The Mermaid figures are original teaching diagrams maintained as text sources and rendered to PNG during CI. No Fan \& Lan mechanisms are used to reinterpret CoALA in this chapter.

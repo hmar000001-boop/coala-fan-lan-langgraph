@@ -1,0 +1,25 @@
+flowchart TB
+    accTitle: Product X from current problem to candidate set
+    accDescr: The incident context and available action types inform proposal. Reasoning, optionally supported by retrieval, produces possible actions. All candidates remain unranked and unselected.
+
+    WM[HTTP 500 observation and incident goal]
+    ACTIONS[Available grounding actions: digital and dialogue]
+    LTM[Relevant prior incident or service fact]
+    LTM -. optional retrieval .-> WM
+    WM --> REASON[Reasoning for proposal]
+    ACTIONS --> REASON
+    REASON --> CAND[Candidate set]
+    CAND --> C1[Inspect deployment metadata]
+    CAND --> C2[Query database connectivity]
+    CAND --> C3[Ask operator about recent change]
+    STATUS[Unranked and unselected]
+    C1 --> STATUS
+    C2 --> STATUS
+    C3 --> STATUS
+
+    classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px;
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.4px;
+    classDef candidate fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    class WM,LTM store;
+    class REASON,ACTIONS process;
+    class CAND,C1,C2,C3,STATUS candidate;

@@ -102,4 +102,8 @@ Before delivering a chapter or batch:
 - Chapters 3 and 4 have now been drafted from their reviewed outlines. The author explicitly requested the additional review pass and drafting of this batch. The chapter drafts are ready for author review.
 - Eight Mermaid sources have been added for Chapters 3 and 4. The validator now covers all figures referenced by Chapters 1–4. The CI workflow is the authoritative real-render verification point because the local environment could not resolve the npm registry.
 - The latest author-supplied preamble remains the shared design baseline. It has a reusable `\BookDiagram` macro; no chapter-specific drawing package is allowed.
-- Chapters 5–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
+- Chapter 5 — External Actions and Grounding: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.2, Figure 5, and the action-space safety discussion in §6.
+- Chapter 6 — Planning: From a Problem to Candidate Actions: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.6, Figure 4B, and the proposal sub-stage.
+- Eight Mermaid sources have been added for Chapters 5 and 6. The diagram validator and standalone build script now cover Chapters 1–6 (22 Mermaid sources). The real Mermaid CLI render and final print-size visual verification still require a successful GitHub Actions run because the local npm registry is unreachable.
+- Chapters 1–6 each have a standalone LaTeX entry point. The PDF validation script now checks Chapters 1–6.
+- Chapters 7–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
