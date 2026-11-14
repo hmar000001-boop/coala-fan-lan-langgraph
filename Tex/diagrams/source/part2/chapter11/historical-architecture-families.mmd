@@ -1,0 +1,23 @@
+flowchart TB
+  accTitle: Ten historical architecture families grouped by control problem
+  accDescr: Ten architecture families are grouped into four teaching clusters. The clusters organize distinctive control mechanisms and do not assert equivalence or chronological descent.
+  subgraph G1["Selection, retrieval, and typed recovery"]
+    ACTR["ACT-R\nTyped buffers · activation · utility"]
+    SOAR["Soar\nOperators · impasses · substates · chunking"]
+  end
+  subgraph G2["Representation and workspace coordination"]
+    CLARION["CLARION\nExplicit–implicit cross-level learning"]
+    LIDA["LIDA\nCompetition · bounded workspace · broadcast"]
+    HEAR["Hearsay-II\nBlackboard · knowledge sources · agenda"]
+  end
+  subgraph G3["Commitment, meta-control, and grounded skills"]
+    BDI["BDI\nOptions · intentions · reconsideration"]
+    MIDCA["MIDCA\nObject/meta cycles · method authority"]
+    ICARUS["ICARUS\nGrounded concepts · hierarchical skills"]
+  end
+  subgraph G4["Resources and uncertainty"]
+    EPIC["EPIC\nParallel processors · timing · bottlenecks"]
+    SIGMA["Sigma\nFactor graph · message passing · decision"]
+  end
+  classDef node fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  class ACTR,SOAR,CLARION,LIDA,HEAR,BDI,MIDCA,ICARUS,EPIC,SIGMA node

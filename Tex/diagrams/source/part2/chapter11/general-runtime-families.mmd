@@ -1,0 +1,32 @@
+flowchart TB
+  accTitle: Eight general language-agent runtime families and their control surfaces
+  accDescr: The diagram maps each reviewed runtime family to the engineering boundary it exposes. The mapping does not imply that the runtime implements a historical cognitive mechanism.
+  subgraph R1["Persistent state and graph execution"]
+    LETTA["Letta / MemGPT\nLong-lived state · memory boundary"]
+    LANG["LangGraph\nGraph state · checkpoint · interrupt · resume"]
+  end
+  subgraph R2["Agent messaging and computer interaction"]
+    AUTOGEN["AutoGen\nAgents · events · messages · tools"]
+    AGENTSCOPE["AgentScope\nAgent · message · model · tool interfaces"]
+    OPENHANDS["OpenHands\nEvent-oriented agent–computer loop"]
+  end
+  subgraph R3["Workflow and governed run state"]
+    MS["Microsoft Agent Framework\nWorkflow · run state · approvals"]
+    OAI["OpenAI Agents SDK\nRun state · handoff · guardrail · resume"]
+  end
+  subgraph R4["Operating-system and resource boundary"]
+    AIOS["AIOS\nScheduling · context · memory · storage · access"]
+  end
+  NOTE["Runtime boundary ≠ proof of cognitive mechanism"]
+  LETTA -.-> NOTE
+  LANG -.-> NOTE
+  AUTOGEN -.-> NOTE
+  AGENTSCOPE -.-> NOTE
+  OPENHANDS -.-> NOTE
+  MS -.-> NOTE
+  OAI -.-> NOTE
+  AIOS -.-> NOTE
+  classDef runtime fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class LETTA,LANG,AUTOGEN,AGENTSCOPE,OPENHANDS,MS,OAI,AIOS runtime
+  class NOTE caution

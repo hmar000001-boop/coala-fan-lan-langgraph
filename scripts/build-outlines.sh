@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 for pair in \
   "part1 03" "part1 04" "part1 05" "part1 06" "part1 07" "part1 08" \
-  "part2 09" "part2 10"; do
+  "part2 09" "part2 10" "part2 11"; do
   read -r part n <<< "$pair"
   source="Tex/${part}/chapter${n}/outline/Chapter_${n}_Outline_Review_v1.tex"
   out="Tex/${part}/chapter${n}/outline"
@@ -12,4 +12,4 @@ for pair in \
   latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
     -output-directory="$out" "$source"
 done
-printf 'Chapter-local outline PDFs for Chapters 3–10 were built in their matching chapter folders.\n'
+printf 'Chapter-local outline PDFs for Chapters 3–11 were built in their matching chapter folders.\n'

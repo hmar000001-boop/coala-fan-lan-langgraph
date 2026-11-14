@@ -1,4 +1,562 @@
 \chapter{From Historical Cognitive Architectures to Modern Agents}
+\label{ch:historical-to-modern-agents}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Chapters 9 and 10 established why feature labels are not enough and introduced a common way to describe a documented mechanism. This chapter applies that vocabulary to the landscape reviewed by Fan and Lan. It first explains the paper's bounded corpus, then examines ten historical cognitive-architecture families and eight general-purpose language-agent runtime families. A third layer contains forty-two mechanism-focused modern records. The paper also records four explicit historical--modern bridges. These are different analytical roles, not four mutually exclusive product lists.
+
+The chapter then explains two independent ways of coding a comparison. Evidence relation asks what kind of historical relationship is documented. Migration depth asks how far the particular mechanism is implemented. A specific correspondence therefore receives one E-code and one D-code. Neither code describes an entire framework, and neither is a general ranking of systems.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain the paper's frozen corpus and its separate analytical layers; describe the distinctive mechanisms of the ten historical architecture families; identify the control surfaces exposed by the eight general runtime families; distinguish those runtimes from specialized mechanism-focused records; explain the four E-codes and five D-levels precisely; reconstruct an evidence packet for a specific correspondence; and state what the bounded review can and cannot establish.
+\end{learningbox}
+
+\section{The comparison problem: two different architectural worlds}
+\label{sec:ch11-comparison-problem}
+
+Imagine two descriptions of an agent system. The first says that it has memory, planning, reflection, and tools. The second says that it maintains a typed working state, triggers a control rule when a condition is met, preserves a commitment until a reconsideration condition is reached, and changes a future selection policy when execution outcomes arrive. Both descriptions may refer to the same broad application area. They do not, however, tell us the same amount about how the system operates.
+
+The difficulty becomes clearer when we compare systems built in different periods and with different implementation substrates. A historical cognitive architecture may describe buffers, productions, operators, intentions, workspaces, or meta-level controllers. A modern agent runtime may expose checkpoints, messages, event streams, run state, tool calls, handoffs, approvals, or resource managers. Similar words can appear in both descriptions, but the underlying control relationships may differ.
+
+A checkpoint can preserve state without deciding how a failure should be resolved. A message bus can transport information without deciding which partial solution deserves access to a capacity-limited workspace. A handoff can transfer work without expressing a persistent commitment and the conditions under which that commitment should be reconsidered. A guardrail can reject an action without having authority to replace the active reasoning method. The feature label alone cannot settle any of these comparisons.
+
+Chapter 9 introduced the problem: a feature label is a broad description, not a mechanism. Chapter 10 introduced the seven-field representation
+\[
+  K = \langle S,C,T,P,F,L,R\rangle,
+\]
+which provides a common set of analytical questions about operative state, control, transition, persistence, failure, learning, and resource or governance policy. We will use that representation as a shared vocabulary, not as a claim that every system contains seven corresponding software components.\FanLanCite{\S I; \S II-A; \S II-C}
+
+The central question of this chapter is therefore narrower than ``Which architecture is better?'' It is: when a historical mechanism and a modern system appear to address a similar problem, what evidence shows that they are related, what part of the mechanism is actually represented, and which control properties are preserved or missing?
+
+\begin{takeawaybox}[The unit of comparison]
+Compare documented operations, not labels. A useful comparison identifies the state involved, the trigger, the authority that controls a transition, at least one preserved invariant, and any important invariant that is not preserved. Only then is it meaningful to discuss lineage, approximation, convergence, or implementation depth.
+\end{takeawaybox}
+
+Fan and Lan frame their work as a bounded mechanism-level mapping review. They do not rank historical architectures on a shared benchmark, estimate pooled performance effects, or claim that the reviewed corpus contains every relevant agent system. Their contribution is a structured catalog, an auditable evidence-and-depth coding method, and a set of residual control hypotheses derived from the comparison. Those boundaries matter because the rest of the chapter describes the paper's reviewed evidence, not an unrestricted census of the field.\FanLanCite{Abstract; \S I; \S II-A; \S II-E}
+
+\section{The corpus has layers, not one flat list}
+\label{sec:ch11-corpus-layers}
+
+Before meeting the systems, we need to understand how the paper organizes its evidence. A \gls{corpusstratum} is an analytical layer with a particular role in the review. Fan and Lan freeze the analytical corpus on 26 July 2026. Within that snapshot, they distinguish three principal strata and record explicit historical--modern bridges separately. Each layer has a different purpose.\FanLanCite{\S II-A--II-B; Appendix F-A, Table XII; Appendix F-B, Table XIII}
+
+\subsection{Corpus H: historical architecture families}
+
+Corpus H contains ten historical cognitive-architecture families: ACT-R, Soar, CLARION, LIDA, Hearsay-II and blackboard systems, BDI, MIDCA, ICARUS, EPIC, and Sigma. These are the historical sources from which the review reconstructs distinctive control mechanisms. Their role is not to serve as ten interchangeable templates. The point is to identify what each one specifies about state, authority, transitions, learning, or resources.
+
+\subsection{Corpus M-A: general runtime families}
+
+The first modern layer, M-A, contains eight \glspl{generalruntimefamily}: Letta, LangGraph, AutoGen, AgentScope, OpenHands, Microsoft Agent Framework, the OpenAI Agents SDK, and AIOS. The paper uses these systems to locate engineering boundaries at which control can be represented: persistent state, graph execution, events and messages, computer interaction, workflow state, handoffs, approvals, interruption, resumption, and scheduling.
+
+These are not eight modern cognitive architectures by definition. A runtime may expose real state and control interfaces without implementing a particular historical mechanism. The interface is a possible substrate for control; it is not proof that the historical control law exists there.
+
+\subsection{Corpus M-B: mechanism-focused modern records}
+
+The second modern layer, M-B, contains forty-two \glspl{mechanismfocusedrecord}. These are specialized papers, systems, or design frameworks used to examine how deeply particular control properties have been represented. They are not all general-purpose runtimes, and they do not all have the same evidentiary status. Some are evaluated research prototypes, some are partial implementations, and some are design frameworks or supporting analyses.
+
+The paper groups them by mechanism area: adaptive memory; failure and execution recovery; content competition and workspace coordination; commitment and BDI-like control; meta-level adaptation; skill induction, composition, governance and compilation; resource governance; and uncertainty-conditioned control. We will review those groups after the ten historical families and eight runtime families.
+
+\subsection{Corpus B: explicit historical--modern bridges}
+
+The paper separately records four \glspl{explicitbridge}: CoALA, LLM-ACTR, Bootstrapping Cognitive Agents, and a hybrid BDI--LLM system. These cases provide documented lineage or integration evidence. They should not be treated as a fourth disjoint population of products, nor should a bridge be taken to mean that every mechanism of the historical architecture has migrated.
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part2/chapter11/corpus-strata-and-bridges.png}
+  {The paper's three principal corpus strata and separately recorded historical--modern bridge cases. Analytical roles can overlap; they are not mutually exclusive populations.}
+  {fig:ch11-corpus-strata}
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+The counts are analytical roles, not a sum of mutually exclusive systems. AIOS appears in M-A as a general runtime and is cross-indexed in M-B as a resource-governance mechanism case. The hybrid BDI--LLM system appears as an explicit bridge and as mechanism evidence. Magentic-One and Agent Spec are supporting cases, not additions to the eight general runtime families. Do not add the four displayed counts and call the result the number of unique systems in the review.\FanLanCite{\S II-A; \S IV-A--IV-B; Appendix F-A, Table XII; Appendix F-B, Table XIII}
 \end{notebox}
+
+The review's search and screening process combines title and abstract searches, citation chasing, primary-paper reference snowballing, and official repository inspection for runtime interfaces. Candidate searches are organized around six mechanism-oriented query blocks. A record is admitted when its source exposes state plus a control, transition, or learning edge. Generic capability claims, unversioned product descriptions, standalone retrieval augmentation without a mechanism, performance results that do not expose the operation, and analogies without an agent mechanism are not enough for mechanism coding.\FanLanCite{\S II-B; \S II-C; Appendix F}
+
+This means the chapter should be read as a map of the paper's reviewed evidence, frozen at a specified date. It is not a continuously maintained directory of the latest product releases. A system's name may remain familiar while its implementation changes; the review's claims refer to the documented version or source state admitted into the paper's corpus.
+
+\section{The ten historical architecture families}
+\label{sec:ch11-historical-families}
+
+The historical catalog is useful because it describes distinctive ways of organizing control. Each \gls{historicalarchitecture} profile highlights a different relation among state, trigger, and control. The architecture names are not a timeline in which one system simply replaces another. Nor does the paper claim direct transfer between all ten families. It groups them for analysis by the recurring control problems their mechanisms make visible.
+
+\BookDiagram[0.60\textheight]
+  {Tex/diagrams/generated/part2/chapter11/historical-architecture-families.png}
+  {The ten historical architecture families grouped by distinctive control problems for teaching. The clusters do not imply equivalence or a chronological lineage.}
+  {fig:ch11-historical-families}
+
+\subsection{Selection, retrieval, and typed recovery: ACT-R and Soar}
+\label{sec:ch11-actr-soar}
+
+\subsubsection{ACT-R: buffers, activation, and utility}\index{ACT-R}
+
+ACT-R represents parts of the current cognitive state through typed buffers, including goal, retrieval, perceptual, and motor buffers. Declarative knowledge is represented as chunks, while procedural knowledge is expressed through productions. A buffer state can match production conditions and trigger production competition. The selected production may change a buffer, request a module operation, or initiate an action.
+
+A central distinction in the paper's ACT-R profile is the separation between applicability and desirability. A production may be applicable because its conditions match the current state, while learned utility contributes to which applicable production is preferred. Declarative chunks also have activation-dependent availability and retrieval latency. Thus, the architecture does not merely store facts and select rules. It links memory accessibility, the time required to retrieve information, and the value associated with an action or production.
+
+The control problem is bounded access to memory and value-sensitive action under timing constraints. This is why a searchable knowledge store is not automatically an ACT-R-like mechanism. The comparison would need to identify how candidate memories become accessible, how retrieval timing is determined, how applicable actions compete, and how outcomes alter later activation or utility. Chapter 12 will return to the particular coupling among activation, retrieval latency, and action utility; this chapter introduces only the historical profile.\FanLanCite{\S III-A; Figure 2; Table III; Appendix A; Appendix F-A, Table XII}
+
+\subsubsection{Soar: operators, impasses, substates, and chunking}\index{Soar}
+
+Soar represents the current problem in working memory and proposes operators as candidate state transitions. Preferences contribute to operator selection. When the system cannot resolve the choice in the ordinary way, it can represent the difficulty as a typed impasse. The paper identifies conditions such as a tie, conflict, rejection, or missing choice as examples of why a decision may become an impasse.
+
+An impasse is not simply an error message. It changes the control organization: Soar creates a child substate in which a more local problem can be addressed while the parent state is protected. The result of that child problem can return to the parent. Chunking can then compile the dependencies that mattered to the successful resolution into a production that may help in a later, sufficiently similar situation.
+
+The distinctive chain is an unresolved operator decision, a typed impasse, a scoped substate, a typed return to the parent, and possible compilation of the resolution. This addresses a specific control problem: recovering from an impasse without discarding the broader problem state, while making a successful resolution reusable. A retry loop or a model-generated reflection may contain one of these ideas, but it does not establish the complete Soar mechanism unless the protected parent--child relationship, resolution boundary, and compilation conditions are present. Chapter 13 will examine this bundle directly.\FanLanCite{\S III-A; Figure 2; Table III; Appendix A; Appendix F-A, Table XII}
+
+\subsection{Representation and workspace coordination: CLARION, LIDA, and Hearsay-II}
+\label{sec:ch11-clarion-lida-hearsay}
+
+\subsubsection{CLARION: explicit and implicit knowledge}\index{CLARION}
+
+CLARION distinguishes explicit knowledge, such as rules that can be represented symbolically, from implicit knowledge, such as learned action tendencies. Both levels can contribute to behavior. The paper describes cross-level integration: context can activate candidates at both levels; bottom-up learning can extract an explicit regularity from successful implicit behavior; and top-down learning can train lower-level behavior from explicit instructions or rules.
+
+This arrangement addresses a trade-off between deliberate flexibility and practiced execution. Explicit rules can be inspected and modified, while learned tendencies can support behavior without reconstructing every decision through a long symbolic chain. The important point for the historical catalog is not that every modern skill library is CLARION. It is that the architecture makes the relationship between explicit specifications and learned behavior a control and learning question. Chapter 16 will revisit the reviewed modern evidence around skill and method authority; Chapter 11 does not teach that residual bundle.\FanLanCite{\S III-B; Figure 3; Table III; Appendix A}
+
+\subsubsection{LIDA: competition for a bounded workspace}\index{LIDA}
+
+LIDA organizes specialized codelets into coalitions that compete for access to a capacity-limited global workspace. The winning content is broadcast to memory, action, and learning processes. The broadcast is meaningful because it makes selected content broadly available to processes that may use it in the next part of the cycle. Learning can also change later admission and action behavior.
+
+The mechanism solves a coordination problem under limited shared capacity: among many possible contributions, which content should become globally available? A message bus is not enough to establish this organization. A transport channel can move messages from one component to another, but LIDA's workspace requires a limited resource, competition for access, a selected winner, a broadcast consequence, and learning from admission outcomes. If any of those relationships are missing, the resemblance is partial.
+
+This distinction will matter again in Chapter 14, which examines bounded content competition and broadcast.\FanLanCite{\S III-B; Figure 3; Table III; Appendix A; \S IV-B; \S V-A}
+
+\subsubsection{Hearsay-II and blackboard control}
+
+Hearsay-II is associated with a blackboard containing layered partial hypotheses. Knowledge sources can contribute to a developing partial solution. A new hypothesis or a state change may enable additional knowledge sources, and an agenda scheduler decides which enabled contribution should run next.
+
+The distinctive object is not merely the message channel. It is the evolving shared problem representation: partial hypotheses are posted, changes in that representation make some knowledge sources eligible, and a scheduler selects the next contribution. This is useful when no single fixed pipeline can predict the best order in which heterogeneous expertise should be applied.
+
+A modern event or message runtime may preserve contributions and route them to agents. That can be a meaningful structural correspondence, but it does not by itself establish a blackboard mechanism. The mapping must ask whether there is a shared representation of the partial solution and whether scheduling depends on that evolving representation. The worked comparison later in this chapter uses Hearsay-II and message-oriented runtimes to demonstrate the distinction.\FanLanCite{\S III-B; Figure 3; Table III; Appendix A; \S IV-A; \S V}
+
+\subsection{Commitment, meta-control, and grounded skills: BDI, MIDCA, and ICARUS}
+\label{sec:ch11-bdi-midca-icarus}
+
+\subsubsection{BDI: intentions that constrain later deliberation}\index{BDI}
+
+BDI architectures distinguish beliefs, desires, options, intentions, and plans. Beliefs represent what the agent takes to be true; desires describe outcomes it may pursue; options are candidates considered for adoption; intentions are commitments that constrain later deliberation; and plans describe ways of acting in service of those intentions. The important control relationship is that an intention can remain active across later decision cycles rather than being replaced whenever a new proposal appears.
+
+Commitment strategies determine when an intention should be released or reconsidered. The paper notes variants that differ in how success, impossibility, goal relevance, and the cost of reconsideration affect this decision. The mechanism addresses goal drift and repeated deliberation that would otherwise dissolve long-running commitments. A task field or handoff record is not automatically an intention. The relevant question is whether it carries a durable commitment and whether a defined condition authorizes continuation, reconsideration, delegation, suspension, or abandonment.
+
+The hybrid BDI--LLM case will be discussed as an explicit bridge later in the chapter. The detailed residual lifecycle problem, including live method authority, belongs to Chapter 15.\FanLanCite{\S III-C; Figure 3; Table III; Appendix A; \S V}
+
+\subsubsection{MIDCA: meta-level control over the method}\index{MIDCA}
+
+MIDCA separates object-level activity from a meta-level cycle. The object level performs task reasoning and action. The meta-level inspects traces of that activity. When it detects an anomaly, it can diagnose the situation and change the active planner, strategy, goal handling, or another object-level method.
+
+This makes monitoring consequential. A log that records an error is not the same as a controller that can change how the system proceeds. A monitor may be accurate and still have no authority to alter the active method. MIDCA's distinctive property is that meta-level diagnosis can affect object-level control. The recurring problem is how an agent can inspect its own behavior and use that inspection to select a different method when the current one is not working.
+
+The paper connects this family to modern design-time workflow adaptation, including systems that search over agent or workflow designs using evaluation feedback. It also notes an important limit: design-time improvement across trials is not automatically the same as live, in-run authority to replace the current method. Chapter 15 will examine this distinction more deeply.\FanLanCite{\S III-C; Figure 3; Table III; Appendix A; \S IV-B; \S V-B--V-D}
+
+\subsubsection{ICARUS: grounded concepts and hierarchical skills}\index{ICARUS}
+
+ICARUS connects symbolic concepts to perceptual state and represents skills hierarchically. Goals and recognized situations can activate applicable skills. A skill may decompose into subskills and eventually primitive actions that affect the environment. Skill structures can be acquired or refined through problem solving.
+
+The important mechanism is not simply storing a procedure. The procedure has applicability conditions tied to a recognized situation, a decomposition into lower-level operations, and a relationship to environmental state changes. A text description of a successful workflow may be useful, but a stronger skill mechanism needs to know when the skill applies and how its execution advances the goal. The historical problem is reusable, grounded procedural knowledge.
+
+The paper later compares ICARUS with several modern skill induction, composition, governance, and compilation cases. Chapter 17 will focus on the closed B5 candidate and GraSP; the other skill-related control questions are reserved for the specialized chapters.\FanLanCite{\S III-C; Figure 3; Table III; Appendix A; \S IV-B; \S V}
+
+\subsection{Resources and uncertainty: EPIC and Sigma}
+\label{sec:ch11-epic-sigma}
+
+\subsubsection{EPIC: parallel processors and bottlenecks}\index{EPIC}
+
+EPIC models perceptual, cognitive, and motor processors with explicit processing times, parallel pathways, and bottlenecks. An event can initiate activity in a processor; processor duration and shared bottlenecks constrain which operations can overlap and which must wait. Resource use is therefore part of the architecture's execution semantics rather than an unlimited background assumption.
+
+The control problem is to represent feasible parallelism, latency, and interference. In a modern agent runtime, a token budget, tool limit, or concurrency limit may be exposed as a configuration option. That alone is not an EPIC-like mechanism. A stronger correspondence requires the runtime to connect task state and resource demand to scheduling, waiting, or preemption. The paper uses EPIC as a historical reference for reasoning about explicit timing and bottlenecks.\FanLanCite{\S III-D; Figure 4; Table III; Appendix A; \S V}
+
+\subsubsection{Sigma: shared probabilistic and symbolic state}\index{Sigma}
+
+Sigma uses factor graphs as a shared substrate for symbolic, probabilistic, and decision computations. Evidence can trigger message passing; updated beliefs can support action selection; and learning may update parameters or graph structure. The architecture's contribution is not simply that it can represent uncertainty. It gives uncertainty a place in a shared representation that can influence more than one stage of processing.
+
+A confidence value attached to a single tool result is a local signal. Sigma's stronger organization is that uncertainty can be propagated through inference and decision. A modern system may estimate uncertainty and use it to ask for help, invoke a tool, explore, or stop. The comparison then asks whether the uncertainty state remains available and authoritative across the stages that need it, rather than being discarded after one decision. Chapter 16 will return to uncertainty and resource control.\FanLanCite{\S III-D; Figure 4; Table III; Appendix A; \S IV-B; \S V}
+
+\subsection{The historical catalog in one view}
+
+The following table condenses the ten profiles. The final column describes the distinctive control problem emphasized by the review. It is not a performance judgement, a ranking, or a claim that the architecture solves the problem better than another one.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Ten historical architecture families and the distinctive mechanisms emphasized in Fan and Lan's catalog.}
+\label{tab:ch11-historical-catalog}
+\begin{tabularx}{\textwidth}{@{}p{0.16\textwidth}p{0.40\textwidth}X@{}}
+\toprule
+\textbf{Family} & \textbf{Mechanism profile} & \textbf{Control problem highlighted}\\
+\midrule
+ACT-R & Typed buffers, declarative chunks, activation-sensitive retrieval, production competition, and learned utility. & Bounded access to memory and value-sensitive action under timing constraints.\\
+Soar & Operator proposals and preferences; typed impasses; child substates; chunking. & Recover from a specific decision impasse while making successful resolutions reusable.\\
+CLARION & Explicit symbolic rules and implicit learned tendencies, with cross-level integration and learning. & Combine deliberate flexibility with practiced behavior.\\
+LIDA & Codelet coalitions compete for a limited global workspace; the winner is broadcast. & Coordinate specialized processes under limited shared attention.\\
+Hearsay-II & Partial hypotheses on a blackboard enable knowledge sources; an agenda scheduler selects contributions. & Opportunistically combine heterogeneous expertise without a fixed pipeline.\\
+BDI & Beliefs and desires generate options; filtering creates persistent intentions governed by commitment strategies. & Preserve goal commitment while controlling reconsideration.\\
+MIDCA & An object-level cycle is monitored by a meta-level cycle that may change the active method. & Give monitoring and diagnosis authority over reasoning-method selection.\\
+ICARUS & Percept-grounded concepts and hierarchical skills connect goals to subgoals and primitive actions. & Reuse executable procedures grounded in recognized situations.\\
+EPIC & Parallel perceptual, cognitive, and motor processors with explicit timing and bottlenecks. & Represent latency, interference, and feasible parallelism.\\
+Sigma & Factor graphs support shared probabilistic, symbolic, and decision computations. & Propagate uncertainty through inference and action.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+These profiles reveal why the historical catalog is more useful than a list of names. ACT-R and Soar are both associated with production-based control, yet one emphasizes activation, retrieval latency, and utility while the other emphasizes typed impasses, protected substates, and compilation. LIDA and Hearsay-II both coordinate multiple contributors, but one organizes competition for a bounded workspace and broadcast, while the other organizes partial hypotheses and opportunistic scheduling. BDI and MIDCA both constrain later behavior, but one protects goal commitment and the other grants authority to alter the method. Similarity at the feature level does not erase these differences.\FanLanCite{\S III-A--III-D; Figures 2--4; Table III; Appendix A}
+
+\section{Eight general runtime families: where modern control is exposed}
+\label{sec:ch11-general-runtimes}
+
+The modern runtime layer serves a different analytical purpose from the historical catalog. Fan and Lan use general runtimes to identify engineering boundaries: where state is held, how events or messages are routed, how workflows proceed, how tools are invoked, where approvals occur, how an execution can be interrupted or resumed, and how resources are managed. These interfaces are important because a control mechanism must operate somewhere. But an exposed boundary does not prove that the runtime implements a particular historical mechanism.\FanLanCite{\S IV-A; Figure 5; Appendix E-A}
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part2/chapter11/general-runtime-families.png}
+  {Eight general runtime families and the engineering boundaries they expose in the paper's frozen review. Interfaces are substrates for mechanisms, not proof of cognitive equivalence.}
+  {fig:ch11-runtime-families}
+
+\subsection{Letta and the MemGPT line: long-lived state and memory boundaries}
+
+Letta makes persistent agent state and memory management first-class runtime concerns. The paper includes it in the general-runtime layer because it exposes where long-lived state and memory operations enter an agent's execution. That is an important engineering boundary. It does not, on its own, establish ACT-R-style activation, latency, decay, production utility, or a learned admission policy. Those properties require specific state and control evidence beyond the existence of memory interfaces.\FanLanCite{\S IV-A; Appendix E-A}
+
+\subsection{LangGraph: stateful graph execution}
+
+LangGraph represents execution through a stateful graph and exposes checkpoint, interrupt, and resume boundaries. Its graph structure can make transitions explicit, while persistence supports continuation after an interruption. This is a meaningful runtime surface. A checkpoint, however, is not automatically a typed Soar impasse, and a resume operation does not by itself define the conditions under which a parent problem may be altered or a child recovery result returned. The mapping must examine the actual control semantics.\FanLanCite{\S IV-A; Appendix E-A}
+
+\subsection{AutoGen: agent messaging and orchestration}
+
+AutoGen provides agent, message, event, and tool interfaces for orchestrated execution. Those boundaries allow components or agents to communicate and contribute to a task. Messaging does not automatically reproduce Hearsay-II's evolving partial-solution representation or LIDA's capacity-limited competition and broadcast. The relevant question is what shared state the messages modify and how the next contributor is selected.\FanLanCite{\S IV-A; \S IV-C; Appendix E-A}
+
+\subsection{AgentScope: agent, message, model, and tool interfaces}
+
+AgentScope provides developer-facing interfaces around agents, messages, models, and tools. The review treats it as a general orchestration runtime. As with AutoGen, the existence of message routing is a boundary at which coordination can be implemented, not evidence by itself of a blackboard agenda or global-workspace mechanism. A correspondence requires the state and control path to be shown, not inferred from familiar component names.\FanLanCite{\S IV-A; \S IV-C; Appendix E-A}
+
+\subsection{OpenHands: event-oriented agent--computer interaction}
+
+OpenHands exposes an event-oriented interaction between an agent and a computer environment. This makes action and observation boundaries visible: the agent issues a computer-related operation, and the environment may produce events or results that can be incorporated into later execution. The review uses it as a general runtime boundary. Its interaction loop should not be mistaken for a complete cognitive architecture or for proof of a specific historical mechanism.\FanLanCite{\S IV-A; Appendix E-A}
+
+\subsection{Microsoft Agent Framework: workflow and governed run state}
+
+The Microsoft Agent Framework exposes workflow and run-state boundaries, including orchestration and governed execution surfaces described in the paper. Those interfaces are relevant to state transitions and controlled workflows. A workflow graph does not automatically establish a cognitive mechanism such as BDI commitment or MIDCA method authority. A specific mapping would need to show which state is authoritative, what event triggers the transition, and which control operation follows.\FanLanCite{\S IV-A; Appendix E-A}
+
+\subsection{OpenAI Agents SDK: run state and governed handoff}
+
+The OpenAI Agents SDK exposes run state, tools, handoffs, guardrails, approvals, cancellation, and resumption as engineering interfaces. These are consequential runtime boundaries because they determine how work can move between agents or be constrained, interrupted, and continued. Yet a handoff is not automatically a BDI intention: it does not establish the persistence of a goal commitment or the reconsideration conditions that release it. Likewise, a guardrail is not automatically MIDCA-style method authority unless diagnosis can cause a change to the active reasoning method.\FanLanCite{\S IV-A; \S IV-C; Appendix E-A}
+
+\subsection{AIOS: an operating-system layer for agent resources}
+
+AIOS proposes an operating-system layer for agent execution, with managers for scheduling, context, memory, storage, tools, and access control. The paper includes AIOS in the general runtime layer because it locates cross-cutting resource and execution boundaries. It is also cross-indexed in the mechanism-focused layer as evidence related to resource governance. This is one reason the corpus layers cannot be summed as unique, disjoint populations.
+
+The presence of managers makes resources explicit, but it does not prove that all cognitive resource questions have been integrated. Scheduling, memory capacity, context compaction, tool budgets, time constraints, uncertainty, risk, and preemption may still be governed by separate policies. The later B6 chapter will examine the coupling question.\FanLanCite{\S II-A; \S IV-A--IV-C; \S V-D; Appendix E-A}
+
+\begin{warningbox}
+A runtime interface exposes an engineering boundary. It does not automatically implement a historical cognitive mechanism. A checkpoint is not a typed impasse; a message bus is not a global workspace; a handoff is not a durable intention; and a guardrail is not meta-level method authority. Each comparison requires evidence about the state, trigger, transition, and authority involved.
+\end{warningbox}
+
+The paper also discusses Magentic-One and Agent Spec as supporting orchestration and specification cases. It does not add them to the eight-family M-A count. They help clarify the surrounding runtime landscape but occupy different analytical roles.\FanLanCite{\S IV-A; Appendix E-A}
+
+\section{The forty-two mechanism-focused modern records}
+\label{sec:ch11-mechanism-records}
+
+M-B is not simply a longer list of frameworks. It is a layer of specialized modern records used to locate implementations or analyses of particular mechanism properties. These records differ in scope and maturity. Some are evaluated prototypes; others are partial mechanism implementations, design frameworks, or studies that expose a failure mode. The paper uses them to ask how deeply a mapped mechanism is represented, not to claim that all forty-two are portable production runtimes.\FanLanCite{\S II-A--II-B; \S IV-B--IV-C; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Adaptive memory policy}
+
+The memory group includes AgeMem, Memory-R1, MemCon, DeltaMem, DAM, A-MAC, and CURATOR. Across these records, the paper identifies work on adaptive memory operations, retrieval and consolidation policies, admission decisions, online helpfulness, and resource-aware retention. AgeMem, Memory-R1, MemCon, and DeltaMem are described as methods in which outcomes or optimization affect later memory operations. A-MAC optimizes a structured admission policy using signals such as predicted future utility, confidence, novelty, recency, and content type. CURATOR connects online helpfulness and retrieval propensity with harm and storage cost to govern retention, sharing, and trust. DAM contributes a decision-theoretic design framework, but the paper distinguishes it from an evaluated control algorithm.
+
+The important lesson is not that these systems collectively reproduce ACT-R. They show that adaptive memory policy is already an active modern mechanism area. The specific ACT-R residual concerns the unified coupling among activation, retrieval time, downstream action utility, and maintenance cost; it is not a claim that modern systems have no adaptive memory policy.\FanLanCite{\S IV-B; \S V-A; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Failure diagnosis, execution recovery, and learning from failure}
+
+This group includes PALADIN, AgentHER, Reflexion, AgentDebugX, and Shepherd. The records cover different pieces of a failure-handling chain: classification of tool failures and retrieval of possible recovery actions; relabeling or reuse of failed trajectories; language-based reflection that changes later behavior; diagnosis and rerun; and reversible or forkable execution traces. They are not one unified implementation, and their control authority differs.
+
+The paper's Soar comparison illustrates why this distinction matters. Diagnosis, recovery content, reversible execution, and learning from failure have modern precedents. The remaining B2 coupling is more specific: a typed impasse creates a protected substate, a typed resolution returns to the parent, and the dependencies that made the resolution valid can be compiled for future use. Chapter 13 will study that narrower bundle.\FanLanCite{\S IV-B; \S V-A--V-B; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Content competition, workspace, and topology selection}
+
+The records in this group include DyLAN, adaptive graph pruning, and Global Workspace Agents. DyLAN and adaptive graph pruning learn which agents or communication edges should remain active. Global Workspace Agents implements bounded working state, attention selection, broadcast, and proposal write-back, with an entropy-conditioned drive described by the paper.
+
+These are meaningful precedents for competition and selection, but the candidates being selected differ. In team or topology selection, the candidates are agents or edges: the decision changes who participates. In a LIDA-like workspace, the candidates are content coalitions: the decision changes which information is broadcast to relevant processes. Both involve limited coordination capacity, but the object of competition and the broadcast invariant are not the same. The residual B3 is specifically about outcome-dependent admission learning over typed content coalitions inside a bounded broadcast cycle.\FanLanCite{\S IV-B; \S V-A; \S V-D; Table IV; Appendix F-B, Table XIII}
+
+\subsection{BDI, intentions, and commitment-related control}
+
+The paper groups a hybrid BDI--LLM system, a self-aware BDI agent, Devil's Advocate, Cognitive Control Architecture, goal-drift evaluation, and premature-commitment diagnosis in this area. Together they expose explicit deliberation structures, plan revision, intent graphs, deviation triggers, adjudication, and the risks of abandoning goals or committing too early.
+
+The cases address different slices of the problem. The hybrid and self-aware BDI systems preserve explicit belief, desire, intention, plan, or deliberation structures. Devil's Advocate revises plans through anticipatory reflection and backtracking. Cognitive Control Architecture uses an intent graph, deviation trigger, and adjudicator. Goal-drift and premature-commitment studies examine complementary failure modes. The paper's B4 residual is narrower than the presence of any one of these elements: it concerns a portable lifecycle that combines continuation, reconsideration, delegation, suspension, abandonment, and authority to change methods without silently changing the committed goal.\FanLanCite{\S IV-B; \S V-A; \S V-D; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Meta-level adaptation}
+
+ADAS, AFlow, and MetaReflection are grouped as examples of meta-level adaptation. ADAS and AFlow search over code-represented agent or workflow designs using evaluation feedback. MetaReflection learns reusable instructions from past reflections. These records show that outcomes can affect the design of future workflows or instructions.
+
+The paper distinguishes this kind of adaptation across trials from live, in-run authority. A system that improves a workflow between tasks does not necessarily give an active diagnosis the authority to replace the current planner, tool policy, scheduler, or stopping rule during execution. This distinction connects to MIDCA without implying that modern design-time search is a complete MIDCA implementation.\FanLanCite{\S IV-B; \S V-A; \S V-D; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Skill induction, composition, governance, and compilation}
+
+This is the largest group. It includes SGDR, SCALAR, Voyager, Agent Workflow Memory, SkillComposer, SkillOps, GraSP, Agentic Compilation, SkVM, SkillSmith, and SkCC. The records cover state-grounded retrieval of reusable skills, explicit--learned coordination, workflow induction, task-conditioned skill composition, typed library governance, structured skill selection, compilation into lower-cost or bounded runtime forms, cross-invocation monitoring, rollback, and fallback.
+
+The review treats this group as diverse. Voyager demonstrates verified behaviors becoming reusable skills. SGDR and Agent Workflow Memory induce workflows from experience or interaction traces. SCALAR links explicit preconditions and effects with learned policies and trajectory-based updates. SkillComposer learns task-conditioned skill subsets and ordering. SkillOps adds typed preconditions, artifacts, validators, failure modes, filtering, substitution, repair, and trace-driven library updates. Agentic Compilation, SkillSmith, and SkCC address compile-and-execute paths, bounded interfaces, and security-checked representations. SkVM monitors outcomes across invocations and can trigger recompilation, rollback, promotion of stable code paths, or fallback to model execution.
+
+GraSP is central because it closes the review's B5 candidate. The paper describes calibrated multi-skill routing, typed precondition--effect DAGs, node verification, bounded typed repair, and escalation to global replanning or ReAct when repair fails. The authors therefore do not retain B5 as a residual gap in the frozen corpus. Chapter 17 will examine this negative case and its methodological importance.\FanLanCite{\S IV-B; \S V-A--V-B; \S VI-B; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Resource governance}
+
+AIOS, AgentRM, and budget-aware value search are the resource-focused records. They make scheduling, admission, compaction, search, or execution budgets explicit. The systems differ in the resource dimensions they govern and in the control authority they exercise. A resource manager is not evidence that tokens, time, tools, concurrency, memory, risk, and cognitive preemption are already governed by one unified policy. The paper notes that those resource dimensions remain separate in the reviewed landscape.\FanLanCite{\S IV-B; \S V-A; Table IV; Appendix F-B, Table XIII}
+
+\subsection{Uncertainty-conditioned control}
+
+This group includes UALA, KnowNo, Calibrate-Then-Act, and Utility-Guided Agent Orchestration. These records use uncertainty or related signals to trigger tool use, ask for help, explore, verify, or stop. They show that uncertainty can have an operational consequence rather than remaining a descriptive confidence number.
+
+The review's Sigma comparison asks a broader question: does uncertainty persist as shared state across memory, planning, tools, execution, and stopping? A local uncertainty estimate may be useful and still leave the rest of the runtime unaware of it. B6 concerns the composition of uncertainty with resources, interruption, and stopping, not the absence of every uncertainty-aware method.\FanLanCite{\S IV-B; \S V-A; \S V-D; Table IV; Appendix F-B, Table XIII}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{The forty-two mechanism-focused records grouped by the review's principal mechanism areas. The groups describe analytical roles and do not imply equal maturity.}
+\label{tab:ch11-modern-records}
+\begin{tabularx}{\textwidth}{@{}p{0.23\textwidth}X@{}}
+\toprule
+\textbf{Mechanism area} & \textbf{Records named in the review}\\
+\midrule
+Adaptive memory policy & AgeMem; Memory-R1; MemCon; DeltaMem; DAM; A-MAC; CURATOR.\\
+Failure and execution recovery & PALADIN; AgentHER; Reflexion; AgentDebugX; Shepherd.\\
+Content competition and workspace & DyLAN; adaptive graph pruning; Global Workspace Agents.\\
+BDI and commitment control & Controlled yet natural (hybrid BDI--LLM); a self-aware BDI agent; Devil's Advocate; Cognitive Control Architecture; goal-drift evaluation; premature-commitment diagnosis.\\
+Meta-level adaptation & ADAS; AFlow; MetaReflection.\\
+Skill induction, composition, governance, and compilation & SGDR; SCALAR; Voyager; Agent Workflow Memory; SkillComposer; SkillOps; GraSP; Agentic Compilation; SkVM; SkillSmith; SkCC.\\
+Resource governance & AIOS; AgentRM; budget-aware value search.\\
+Uncertainty-conditioned control & UALA; KnowNo; Calibrate-Then-Act; Utility-Guided Agent Orchestration.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The list is useful because it lets the reader see that modern work has addressed many individual control properties. It should not be read as a statement that all records are equally mature or that the review has established a single common implementation standard. For example, the paper explicitly distinguishes DAM as a design framework from evaluated control algorithms, and it treats some runtime interfaces as structural boundaries rather than completed cognitive mechanisms. The chapter's task is to make those distinctions visible before the detailed mechanism chapters begin.\FanLanCite{\S IV-B--IV-C; Table IV; Appendix F-B, Table XIII}
+
+\section{Explicit bridges: when the historical relationship is documented}
+\label{sec:ch11-explicit-bridges}
+
+A bridge record is different from a correspondence inferred only by comparing two otherwise independent systems. It is an explicit historical--modern connection recorded by the paper. Fan and Lan identify four bridge cases: CoALA, LLM-ACTR, Bootstrapping Cognitive Agents, and a hybrid BDI--LLM system.\FanLanCite{\S II-A; Appendix F-A, Table XII}
+
+\subsection{CoALA}
+
+CoALA explicitly imports and organizes cognitive-architecture ideas for language agents. Part I of this book has already explained the original CoALA framework on its own terms. Here, CoALA appears only as a bridge record in Fan and Lan's evidence map. We do not use the later review to reinterpret the original framework, and we do not infer that every historical mechanism described in Part II has been implemented by systems that use CoALA's vocabulary.
+
+\subsection{LLM-ACTR}
+
+LLM-ACTR is recorded as a hybrid study connecting an LLM with ACT-R-like architectural control. The bridge is relevant because it documents an explicit relationship rather than requiring the reviewer to infer one from visual or functional similarity. That does not mean that every ACT-R mechanism, such as activation-dependent retrieval, latency, and production utility, is reproduced in full. A specific mechanism still needs its own evidence packet and E/D classification.
+
+\subsection{Bootstrapping Cognitive Agents}
+
+Bootstrapping Cognitive Agents is another hybrid case connecting LLM-based agents with cognitive-architecture ideas. The chapter should state the bridge role recorded in the review without expanding it into a general claim that all mechanisms from the historical architecture family have migrated. The evidence supports the specific relationship discussed by the source, not a blanket equivalence.
+
+\subsection{The hybrid BDI--LLM system}
+
+The hybrid BDI--LLM case places LLM components within a rule-based BDI controller. It matters twice in the review: it is an explicit bridge and it is also included among mechanism-focused modern evidence. This cross-indexing is not a counting mistake. It reflects two different analytical questions: whether the modern work documents a historical relationship, and what particular control mechanism it implements.
+
+\begin{notebox}
+An explicit bridge is not a certificate of complete migration. A paper may cite and integrate an architecture while implementing only a subset of its mechanisms. E and D codes are assigned to a particular correspondence, not to an entire paper, product, or architecture family. A bibliography mention alone is not enough for E1; the modern source must connect the historical architecture to the mechanism being mapped.\FanLanCite{\S II-A; \S II-D; Appendix F-A, Table XII}
+\end{notebox}
+
+\section{Evidence relation: what kind of correspondence is documented?}
+\label{sec:ch11-evidence-relation}
+
+The first coding question is relational: what kind of \gls{evidencerelation} connects the historical mechanism and the modern case? Fan and Lan use E1 through E4. These are categories, not steps on a quality scale. E1 is not ``better'' than E4 in the sense of being a more mature implementation. E1 says something about a documented relationship; E4 says that a structural similarity is observed without evidence of transfer.\FanLanCite{\S II-D; Table II}
+
+\subsection{E1: documented lineage}\index{documented lineage}
+
+E1 applies when the modern source explicitly names the historical architecture and connects it to the mechanism being mapped. A historical paper appearing in the bibliography is not enough. The modern source must make a mechanism-level attribution or integration claim. The code concerns the relationship between two specific mechanism instances, not the reputation or intellectual ancestry of the entire system.
+
+\subsection{E2: structural migration}\index{structural migration}
+
+E2 applies when the modern system implements source-like state together with a corresponding control, transition, or learning edge. This is stronger than sharing an output or using a familiar term. The mapping must identify state structures and the control relationship that connects them. A modern system may structurally migrate a mechanism without an explicit lineage claim, provided the implemented correspondence is evidenced.
+
+\subsection{E3: functional approximation}\index{functional approximation}
+
+E3 applies when the modern system solves a comparable control problem and provides an observably comparable function, but its internal organization is materially different. The comparison focuses on what problem is controlled and what function can be observed, while preserving the fact that the implementation is organized differently. Shared terminology alone does not establish E3.
+
+\subsection{E4: structural convergence}\index{structural convergence}
+
+E4 applies when a node-and-edge organization is comparable, but no transfer evidence is found. The lack of lineage evidence must be stated explicitly. E4 is not a weaker form of documented inheritance; it is a different kind of relationship claim. It says the reviewer sees a structural correspondence without evidence that the modern system received or deliberately migrated the historical mechanism.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part2/chapter11/evidence-relation-codes.png}
+  {E1--E4 are four different evidence-relation categories. They are not a maturity ladder or ordered scores.}
+  {fig:ch11-evidence-codes}
+
+\subsection{The precedence rule and one-code requirement}
+
+The paper gives an evidentiary precedence rule for cases in which more than one description may appear plausible. Assign E1 when the modern source explicitly attributes the mapped mechanism to the historical architecture. If that evidence is absent, assign E2 when source-like state and control structure are implemented. If that is absent but the modern system solves the same control problem through materially different organization, assign E3. If the comparison is based on a comparable node-and-edge structure without transfer evidence, assign E4.
+
+Each correspondence receives exactly one E-code. E-codes are categorical relation types, not numeric maturity levels. Writing an interval such as E2--E4 for one correspondence hides which evidence claim is actually being made. If a table row combines heterogeneous modern cases, the paper's rule is to split the row or state case-specific codes rather than assign one code to an undifferentiated group.\FanLanCite{\S II-D; Table II}
+
+\section{Migration depth: how much of the specific mechanism is implemented?}
+\label{sec:ch11-migration-depth}
+
+The second coding question is about \gls{migrationdepth}. It asks how deeply the particular mapped mechanism is represented and exercised in the modern system. D0 through D4 are thresholds in the evidence for a specific mechanism. They do not rate an entire framework, product, architecture, or research team.\FanLanCite{\S II-D; Table II}
+
+\subsection{D0: conceptual resemblance}
+
+D0 marks a comparable idea or label. There is no callable interface or persistent mechanism state shown. A system description that says it supports reflection or memory may establish a conceptual resemblance, but it does not yet show an implemented mechanism with a concrete state and control path.
+
+\subsection{D1: interface correspondence}
+
+D1 marks a callable operation with a comparable role. A runtime may expose a memory API, a tool interface, or a workflow call. The interface matters because it can be invoked, but the mapped state-transition organization is not yet explicit. A callable operation is a boundary; it is not necessarily a control law.
+
+\subsection{D2: explicit state and component structure}
+
+D2 requires mapped state objects and components to be explicit. The system now represents more than a callable interface. However, the trigger does not autonomously exercise the historical control edge. A stored intention record, for example, may make an intention-like state visible without showing that an authoritative continuation or reconsideration rule uses it.
+
+\subsection{D3: runtime control law}
+
+D3 requires an explicit trigger to execute the mapped control action and change state. This is the point at which the mechanism has an operational control consequence, rather than existing only as a record or interface. The evidence must connect the trigger to the transition. The fact that a process could be invoked manually is not enough to show that the system's own runtime control law exercises it.
+
+\subsection{D4: adaptive control law}
+
+D4 requires an outcome or experience to update future invocation, selection, or control policy. Logging an outcome, storing a reflection, or writing a new text note does not by itself meet this condition. The later policy must change in a way connected to experience. The paper uses examples such as adaptive memory and skill policies to illustrate this threshold.\FanLanCite{\S II-D; Table II; \S V}
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part2/chapter11/migration-depth-levels.png}
+  {D0--D4 describe increasing implementation depth for one mapped mechanism, from a concept to an experience-adapted control law. They do not rate the whole system.}
+  {fig:ch11-migration-depth}
+
+\subsection{Why D4 does not mean complete migration}
+
+The paper is explicit that a high D-level does not imply that all historical invariants have migrated. SCALAR, for example, can reach D4 for bidirectional symbolic--policy updating while still lacking cross-domain portability, calibrated invocation, and a reliable explicit-planning fallback. Conversely, a modern source may explicitly cite and connect a historical mechanism but implement only a shallow interface. An E1/D1 correspondence is therefore possible; so is an E4/D4 correspondence when a strong adaptive control mechanism converges independently.
+
+This asymmetry is crucial. E describes the evidence relationship. D describes how deeply the specific mechanism is implemented. They answer different questions, and the reader should resist any urge to combine them into a single maturity score.\FanLanCite{\S II-D; Table II; \S V-B--V-C}
+
+\section{How E and D work together: a complete evidence packet}
+\label{sec:ch11-evidence-packet}
+
+A mechanism comparison is not a resemblance score. It is a packet of claims that can be inspected. Fan and Lan record the historical mechanism and its primary source; the modern implementation and its primary source; the matching state object; the matching trigger; the matching control or learning edge; the invariant that is preserved; the invariant that is missing; implementation evidence when executable behavior is part of the claim; and the independent E-code and D-code.\FanLanCite{\S II-C--II-E; Table II}
+
+The claim-adjudication test requires node correspondence, edge correspondence, and at least one preserved invariant. A shared noun, a visually similar diagram, or a similar output is insufficient when the authoritative state or control path cannot be identified. Strong D3 and D4 claims require stronger evidence: the historical primary source, the modern primary source, implementation evidence when available, and an explicit account of the missing invariant.
+
+\BookDiagram[0.60\textheight]
+  {Tex/diagrams/generated/part2/chapter11/evidence-packet-and-independent-codes.png}
+  {A mechanism comparison proceeds from source evidence through state, trigger, and control-edge analysis to preserved and missing invariants, then assigns independent E and D codes.}
+  {fig:ch11-evidence-packet}
+
+\subsection{Worked comparison: Hearsay-II and message-oriented runtimes}
+
+Hearsay-II stores partial hypotheses on a blackboard. Changes in the partial solution can enable knowledge sources, and an agenda scheduler determines which enabled contribution runs next. AutoGen and AgentScope expose message and event routing, agent coordination, and shared-state interfaces. Those interfaces preserve some aspects of contribution exchange and shared visibility. The review's mapping records E4/D2 for the Hearsay-II correspondence: a structural convergence is inferred, and explicit shared-state or component structure is present, but the full blackboard control semantics are not established.
+
+The preserved property is that one component's contribution can become available to other parts of an orchestrated process. The missing invariant is more specific: a common partial-solution representation changes which knowledge sources become eligible, and an agenda scheduler selects among those enabled contributors based on that evolving representation. Message routing alone does not establish that agenda.
+
+This is a bounded comparison of the reviewed correspondence. It is not a claim that every release of AutoGen or AgentScope has the same implementation, or that all message-oriented runtimes should receive the same E/D code.\FanLanCite{\S III-B; \S IV-A; \S IV-C; \S V; Table IV; Appendix E-B; Appendix F-A, Table XII}
+
+\subsection{Worked comparison: the explicit BDI--LLM bridge}
+
+The hybrid BDI--LLM system is recorded as an explicit bridge. The modern work places LLM components within a rule-based BDI controller. In the paper's mapping, the correspondence is E1/D3: E1 because the historical relationship is explicit, and D3 because the reviewed implementation exercises a runtime control loop over explicit BDI state.
+
+The code does not mean that all BDI commitment strategies are implemented, nor that every LLM-agent runtime has BDI semantics. The evidence applies to the specific hybrid correspondence described in the paper. It illustrates why E1 and D3 are independent: the lineage claim comes from the source relationship, while the depth claim comes from the implemented control behavior.\FanLanCite{\S II-A; \S II-D; \S IV-B; Table IV; Appendix F-A, Table XII}
+
+\subsection{Worked comparison: a high-depth mechanism is not an entire architecture}
+
+SCALAR provides an example of why D4 must be narrowly interpreted. The paper describes explicit specifications and learned policies updating one another through trajectories. That is an experience-dependent control update and therefore supports a D4 classification for the mapped mechanism. But the review also identifies missing properties, including cross-domain applicability, calibrated invocation, a cheap fast path, and a reliable explicit-planning fallback.
+
+The correct statement is not ``CLARION has migrated into the modern system.'' It is that a particular explicit--learned coordination mechanism has a high-depth modern correspondence, while other aspects of the historical architecture remain outside that mapping. A D4 code cannot be promoted into a claim about the whole architecture.\FanLanCite{\S IV-B; \S V-A--V-B; Table IV; Appendix F-B, Table XIII}
+
+\subsection{The evidence packet as a repeatable review procedure}
+
+The chapter's three examples suggest a practical sequence. First, identify one historical mechanism and locate its primary description. Second, identify one modern implementation and locate its primary description or versioned implementation evidence. Third, name the state object in each system. Fourth, identify the event or condition that activates the operation. Fifth, identify which process has authority to make the transition. Sixth, compare the control edge and state exactly enough to say what is preserved. Seventh, record what is missing or not documented. Finally, assign one E-code and one D-code to that correspondence.
+
+The sequence is an explanatory checklist for applying the paper's protocol; it does not replace the more detailed claim-adjudication and coding rules in the source. If the evidence is incomplete, the correct outcome may be an unresolved or weaker claim rather than an inferred field.\FanLanCite{\S II-C--II-E; Table II; Appendix C}
+
+\section{The migration landscape: what the ten-family map shows}
+\label{sec:ch11-migration-landscape}
+
+After the individual profiles and the coding method, we can return to the paper's migration ledger. Across the frozen corpus, state stores, tools, execution loops, checkpoints, message routing, memory operations, and workflow structures are widely present in the reviewed runtimes. Specialized modern systems also implement meaningful parts of adaptive memory policy, typed failure recovery, workspace selection, commitment, meta-level adaptation, skill induction and governance, resource scheduling, and uncertainty-conditioned control.
+
+The result is uneven rather than all-or-nothing. A modern system can preserve one edge while omitting another. The strongest case for a particular mechanism may be a research prototype rather than a general-purpose runtime. A high D-code can be valid for a narrow control property and still leave other historical invariants absent. The following table summarizes the paper's migration ledger at the level needed for this chapter. The E/D entries report the paper's coded mappings; they are not architecture-wide ratings.\FanLanCite{\S V; Figure 6; Table IV}
+
+\begin{table}[tbp]
+\centering
+\scriptsize
+\caption{Summary of the paper's ten-family migration ledger. Codes apply to the specific mapped mechanisms and cases named, not to the whole architecture.}
+\label{tab:ch11-migration-ledger}
+\begin{tabularx}{\textwidth}{@{}p{0.12\textwidth}p{0.25\textwidth}p{0.16\textwidth}X@{}}
+\toprule
+\textbf{Historical family} & \textbf{Strongest reviewed modern evidence} & \textbf{Reported relation/depth} & \textbf{Breakpoint emphasized in the review}\\
+\midrule
+ACT-R & AgeMem; Memory-R1; MemCon; DeltaMem; A-MAC; CURATOR; DAM. & E3/D4 for experience-dependent memory control. & The unified link among activation, retrieval time, downstream action utility, and maintenance cost is still missing.\\
+Soar & PALADIN; AgentDebugX; Shepherd; AgentHER; Reflexion. & E2/D3 and E3/D3--D4 across different cases. & No reviewed system couples typed impasse, protected branch, typed return, and condition-safe compilation.\\
+CLARION & SCALAR. & E2/D4 for the mapped explicit--learned update. & Cross-domain applicability, calibrated invocation, fast path, and reliable fallback are not jointly guaranteed.\\
+LIDA & Global Workspace Agents; DyLAN; adaptive graph pruning. & E2/D3 and E3/D4 across different cases. & Outcome-dependent admission of typed content coalitions is not integrated with the bounded broadcast cycle.\\
+Hearsay-II & AutoGen; AgentScope. & E4/D2. & No common partial-solution value model and opportunistic agenda scheduler are established.\\
+BDI & Hybrid and self-aware BDI--LLM; CCA; Devil's Advocate. & E1/D3, E2/D3, and E3/D3 across distinct correspondences. & No portable commitment lifecycle joins continuation, reconsideration, delegation, suspension, abandonment, and method authority.\\
+MIDCA & ADAS; AFlow; MetaReflection. & E3/D4 for design-time adaptation. & The reviewed systems do not give live diagnosis authority to replace the active planner or other method in-run.\\
+ICARUS & SGDR; Agent Workflow Memory; Voyager; SkillComposer; SkillOps; SkVM; GraSP; static compilers. & E3/D4 for several induction/governance/compilation cases; E3/D3 for static compilers. & B5 is closed in the corpus by GraSP; remaining concerns are lineage, source fidelity, and cross-domain validity.\\
+EPIC & AIOS; AgentRM; budget-aware value search. & E3/D3. & Token, time, tools, concurrency, memory, risk, and cognitive preemption remain separate resource policies.\\
+Sigma & UALA; KnowNo; Calibrate-Then-Act; Utility-Guided Orchestration. & E3/D3. & One calibrated uncertainty state is not propagated through memory, planning, tools, execution, and stopping.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Several details deserve emphasis. First, the table records multiple codes for some historical families because different modern cases preserve different parts of their mechanisms. It would be misleading to replace those case-specific results with a single architecture score. Second, the paper's depth value is the highest-depth instance admitted by its recorded search and screening procedure, not a prevalence estimate or universal maximum. Third, the residual bundles are extracted from the missing invariants after current precedents have been considered; they are not selected simply because a historical architecture contains an interesting mechanism.
+
+The paper's residual analysis initially generated six candidates. Closest-baseline screening then identified GraSP as already implementing the selection--verification--repair--fallback chain proposed in B5. The review therefore treats B5 as closed within the frozen corpus and retains five residual bundles: B1, B2, B3, B4, and B6. This conclusion is conditional on the reviewed evidence and the paper's provisional coding; it is not a universal claim that no other system can implement the same properties. Chapter 17 will examine this closed candidate in detail.\FanLanCite{\S II-D--II-E; \S IV-B; \S V--VI; Figure 6; Table IV}
+
+\section{What the review can establish, and what it cannot}
+\label{sec:ch11-validity}
+
+A careful reader should treat the validity boundary as part of the method rather than as a disclaimer at the end. The paper's claims are meaningful because it documents a review procedure and the evidence used in its mappings. They are also bounded by what that procedure has and has not established.\FanLanCite{\S II-A--II-E; \S VII-C; Appendices C, E, and F}
+
+\subsection{A frozen, bounded mapping review}
+
+The corpus is frozen on 26 July 2026. It is not an exhaustive inventory of every historical architecture or every language-agent runtime. The search and screening process is documented, and query templates are described as replayable, but result counts were not frozen. The paper therefore does not report a search-recall estimate and does not claim PRISMA completeness. The forty-two M-B count is the number of mechanism-focused records in that analytical layer, not a complete count of all current work in the field.
+
+\subsection{Provisional single-coder evidence and depth codes}
+
+The paper discloses that coding proceeded in two passes: seven-field extraction followed by adversarial review of the claimed edge, preserved invariant, and missing invariant. It does not claim independent inter-rater reliability. A second-author recoding of D3 and D4 claims, with disagreement reporting and adjudication, is retained as future work. The reported codes are therefore provisional and should be interpreted with that disclosure in view.
+
+\subsection{No prevalence, causal, or universal performance claim}
+
+The highest D-level admitted by the review is not a prevalence estimate and not a universal maximum. The paper does not claim that historical mechanisms will necessarily improve reliability, efficiency, generality, or autonomy when inserted into modern runtimes. It also does not report completed comparative experiments validating the five residual bundles. Those bundles are research hypotheses expressed as falsifiable interventions, not finished results.
+
+\subsection{Versioned evidence matters}
+
+For executable behavior, a repository is admissible as implementation evidence only when the analyzed state can be identified through a release, tag, or commit. Repository popularity is not scientific evidence. A framework name or a moving default branch does not tell a reader which implementation was reviewed. The paper's versioning discipline is part of its attempt to keep the mechanism mapping auditable.\FanLanCite{\S II-B; \S II-E; Appendix E; Appendix F}
+
+\begin{warningbox}
+The five residual bundles are conditional on the paper's frozen corpus, its documented search and screening procedure, and provisional single-coder E/D assignments. They should be read as testable control hypotheses within that evidence boundary, not as proof that the wider literature contains exactly five missing mechanisms.
+\end{warningbox}
+
+\section{Common misreadings and boundaries}
+\label{sec:ch11-common-misreadings}
+
+\begin{enumerate}
+  \item \textbf{The ten historical architectures form one lineage.} The catalog groups distinctive architectures; it does not establish a direct evolutionary chain among all ten families.
+  \item \textbf{The eight general runtimes are eight modern cognitive architectures.} They are runtime families used to locate engineering boundaries. Their interfaces do not automatically implement historical cognitive mechanisms.
+  \item \textbf{The corpus layers are mutually exclusive.} They are analytical roles. AIOS and hybrid BDI--LLM are deliberately cross-indexed.
+  \item \textbf{Magentic-One and Agent Spec increase the eight-family count.} They are supporting cases in the paper, not additions to M-A.
+  \item \textbf{E1 through E4 are ordered maturity levels.} They describe evidence relations. They are not a low-to-high ladder.
+  \item \textbf{D4 means that a historical architecture has been rebuilt.} D4 applies to an outcome-dependent update in a specific mapped mechanism.
+  \item \textbf{A framework interface proves a control law.} A state, message, handoff, or approval API can be a substrate without controlling the historical transition being compared.
+  \item \textbf{A high-depth result proves prevalence or completeness.} The paper reports the highest-depth admitted instance under its bounded screening, not the frequency of that mechanism across all systems.
+  \item \textbf{The review proves the five residual bundles are useful.} It proposes falsifiable interventions and boundaries; it does not report completed comparative experiments validating them.
+\end{enumerate}
+
+\section{Chapter recap, review questions, and handoff}
+\label{sec:ch11-recap}
+
+\begin{chapterrecap}
+This chapter applied the mechanism vocabulary of Chapters 9 and 10 to Fan and Lan's bounded review. The frozen corpus contains ten historical architecture families (H), eight general runtime families (M-A), and forty-two mechanism-focused modern records (M-B). Four explicit bridge cases are recorded separately, and analytical roles can overlap. The ten historical families contribute distinctive control organizations: ACT-R's activation and utility; Soar's typed impasses and substates; CLARION's explicit--implicit coordination; LIDA's bounded workspace and broadcast; Hearsay-II's blackboard and agenda; BDI's persistent intention; MIDCA's meta-control; ICARUS's grounded skills; EPIC's timing and bottlenecks; and Sigma's shared uncertainty representation.
+
+The eight general runtime families expose engineering state and control boundaries, but those interfaces do not automatically implement historical mechanisms. The specialized M-B records provide evidence for individual modern control properties and differ in implementation status. The paper codes a specific correspondence along two independent axes: E1--E4 describes the evidence relationship, while D0--D4 describes the depth of the mapped mechanism. A defensible comparison records sources, state, trigger, control edge, preserved invariant, missing invariant, implementation evidence, and then the two codes. The review remains bounded by its corpus freeze, screening procedure, provisional single-coder coding, and lack of causal validation for residual hypotheses.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item What are the three principal corpus strata in Fan and Lan's review, and what analytical role does each one play?
+  \item Name the ten historical architecture families and group them by the distinctive control problem used in this chapter.
+  \item Why are the eight general runtime families not automatically eight modern cognitive architectures?
+  \item What distinguishes the forty-two mechanism-focused modern records from the eight general runtime families?
+  \item Why does AIOS appear in more than one analytical role without becoming two independent systems?
+  \item What evidence is needed for E1, and why is a bibliography mention alone insufficient?
+  \item How does E3 differ from E4? Explain without using the words ``better'' or ``worse.''
+  \item What additional condition separates D3 from D2? What additional condition separates D4 from D3?
+  \item Can a correspondence be E1/D1 or E4/D4? Explain why the two axes are independent.
+  \item Apply the evidence packet to Hearsay-II and a message-oriented runtime: identify one preserved property and one missing invariant.
+  \item Why does a D4 result not prove that a whole historical architecture has migrated?
+  \item List three validity limits that prevent the paper's results from being interpreted as a universal benchmark or exhaustive census.
+\end{enumerate}
+\end{reviewquestions}
+
+The following chapters move from the landscape to focused mechanism studies. Chapter 12 begins with the ACT-R-inspired question of how activation, retrieval latency, and action utility interact. Chapter 13 examines typed impasses, substates, and resolution compilation. Chapter 14 studies content competition and workspace broadcast. Chapter 15 turns to persistent intentions and method authority. Chapter 16 studies uncertainty, resources, interruption, and stopping. Chapter 17 examines the B5 candidate that the paper closes through GraSP. Chapter 18 synthesizes the dependencies after those mechanisms have been examined individually.
+
+\section*{Source and example note}
+The theoretical account in this chapter is grounded in Fan and Lan's 2026 review, especially Sections I--V and VII-C, Figures 1--7, Tables I--IV, and Appendices A, C, E, and F. The corpus is frozen on 26 July 2026. The book's Product X scenario is a teaching example and is not evidence from Fan and Lan. Named architectures, runtimes, and specialized systems appear only as cases discussed by the review; they are not introduced here as additional theoretical foundations.\FanLanCite{\S I--V; \S VII-C; Figures 1--7; Tables I--IV; Appendices A, C, E, and F}

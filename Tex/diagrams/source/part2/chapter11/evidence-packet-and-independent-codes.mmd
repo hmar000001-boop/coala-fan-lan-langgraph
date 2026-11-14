@@ -1,0 +1,22 @@
+flowchart TB
+  accTitle: Evidence packet and independent E and D classifications
+  accDescr: Historical and modern primary sources feed a comparison of state, trigger, control edge, implementation evidence, and preserved and missing invariants. The correspondence then receives separate evidence relation and migration depth codes.
+  H["Historical mechanism\nPrimary source"] --> N["Compare state / node"]
+  M["Modern implementation\nPrimary source / versioned evidence"] --> N
+  N --> T["Compare trigger"]
+  T --> C["Compare control or learning edge"]
+  C --> I["Record preserved invariant"]
+  I --> X["Record missing invariant"]
+  X --> Q["Adjudicate claim packet"]
+  Q --> E["E-code\nEvidence relationship"]
+  Q --> D["D-code\nImplementation depth"]
+  E --- INDEP["Independent questions\nNo combined score"]
+  D --- INDEP
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class H,M source
+  class N,T,C,I,X,Q process
+  class E,D output
+  class INDEP caution

@@ -1,0 +1,409 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 11 Outline Review: From Historical Cognitive Architectures to Modern Agents},pdfsubject={Detailed chapter outline for author approval},pdfkeywords={Fan and Lan, historical cognitive architectures, agent runtimes, lineage, convergence, migration depth}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 11 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE From Historical Cognitive Architectures to Modern Agents\par}
+\vspace{0.8cm}
+{\large Part II -- Fan \& Lan: From Cognitive Architectures to Mechanism-Level Understanding\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Approved by the author on 14 November 2026. This document records the approved chapter plan.
+
+\textbf{Primary theoretical source:} Fan and Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), especially Sections II--V, Figures 1--7, Tables I--IV, and Appendices A and F.
+
+\textbf{Chapter role:} Apply the mechanism vocabulary and seven-field representation introduced in Chapters 9--10 to the paper's historical and modern landscapes. The chapter catalogs the ten historical architecture families, the eight general runtime families, the mechanism-focused modern evidence layer, and explicit bridge cases; then it teaches how the paper separates evidence relation from migration depth.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\setcounter{chapter}{11}
+\section{Chapter purpose and role in the book}
+Chapters 9 and 10 have prepared two tools for reading Fan and Lan's review. Chapter 9 explained why broad feature labels are not enough to compare agent systems. Chapter 10 introduced the seven-field representation \(\mathcal{K}=\langle S,C,T,P,F,L,R\rangle\), which makes a mechanism's state, authority, trigger, persistence, failure, learning, and resource policy explicit. Chapter 11 uses those tools to examine the historical architectures and modern runtime landscape that form the empirical and analytical basis of the review.
+
+The chapter begins with a practical comparison problem. A modern agent framework may expose checkpoints, messages, handoffs, tools, or approval boundaries. A historical cognitive architecture may expose buffers, operators, intentions, workspaces, or meta-level controllers. The names and implementation substrates differ. The reader needs a disciplined way to ask what each system actually controls, which states are authoritative, what activates a transition, what persists, and whether outcomes alter later behavior.
+
+The chapter's central task is not to rank historical architectures against modern frameworks. It is to reconstruct the paper's bounded corpus and its comparison method. The reader will meet the ten historical architecture families as distinctive mechanism organizations; distinguish the eight general runtime families from specialized mechanism-focused systems; understand why explicit bridges are recorded separately; and learn how a particular correspondence receives an evidence-relation code and an implementation-depth code. The chapter ends with a source-grounded migration map that prepares the focused mechanism studies in Chapters 12--17.
+
+\begin{takeawaybox}[Chapter thesis]
+Historical cognitive architectures and modern language-agent systems can be compared responsibly only when the comparison is made at the level of documented mechanisms. The paper's ten historical families, eight general runtime families, and forty-two mechanism-focused modern records are different analytical layers. Evidence of lineage and the depth of an implementation are separate questions; neither a shared feature label nor a high depth code proves that an entire historical architecture has migrated.
+\end{takeawaybox}
+
+\section{Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain why Fan and Lan separate historical architectures, general runtime families, and mechanism-focused modern systems into different corpus layers.
+  \item Recognize the ten historical architecture families and summarize the distinctive mechanism each contributes to the review.
+  \item Describe the eight general runtime families at the level of their documented runtime boundaries without treating them as equivalent cognitive architectures.
+  \item Explain the role of the mechanism-focused modern evidence layer and why its records do not all have the same evidentiary status.
+  \item Distinguish explicit historical--modern bridge cases from similarities inferred by comparing two systems.
+  \item Apply the E1--E4 evidence-relation codes to a specific correspondence and explain why the codes are categorical relations, not maturity levels.
+  \item Apply the D0--D4 migration-depth codes to a specific mapped mechanism, not to an entire architecture or framework.
+  \item Explain how E and D codes can coexist independently and why a D4 mechanism does not establish complete historical migration.
+  \item Reconstruct the paper's evidence packet: historical mechanism, modern implementation, matching state, trigger, control edge, preserved invariant, missing invariant, implementation evidence, and E/D codes.
+  \item State the paper's corpus freeze date and its key validity limits without claiming exhaustiveness, prevalence, inter-rater reliability, or causal performance.
+\end{enumerate}
+
+\section*{Proposed chapter structure}
+
+\section{The comparison problem: two different architectural worlds}
+\textbf{Opening problem:} A developer sees that a modern agent framework supports persistent state, message routing, tool execution, checkpoints, and handoffs. A reader of historical cognitive architectures sees working-memory buffers, productions, operators, intentions, workspaces, and meta-level control. Are these the same mechanisms under different names, or are they different mechanisms that solve partly overlapping problems?
+\begin{itemize}
+  \item Reconnect to the distinction from Chapter 9: feature labels orient the reader but do not establish mechanism correspondence.
+  \item Reconnect to Chapter 10: the seven-field representation is now the common descriptive instrument, not a claim that every architecture uses the same software structure.
+  \item Explain the paper's bounded synthesis claim: modern agents have operationalized substantial portions of the cognitive substrate, but important control couplings remain unevenly represented or fragmented.
+  \item Define the question of this chapter: how does the paper build a comparable map across historical architectures and modern runtime systems without assuming that similar terms indicate inheritance?
+  \item Preview the chapter's three main layers and the separate bridge records.
+\end{itemize}
+\FanLanCite{Abstract; \S I; \S II-A}
+
+\section{The corpus has layers, not one flat list}
+The reader should understand the paper's research object before encountering its catalog. Fan and Lan freeze the analytical corpus on 26 July 2026 and divide it into three principal strata, with explicit historical--modern bridges recorded separately.
+\begin{enumerate}
+  \item \textbf{Corpus H -- ten historical architecture families.} These are the historical sources from which distinctive control mechanisms are reconstructed.
+  \item \textbf{Corpus M, Layer M-A -- eight general runtime families.} These systems reveal the engineering boundaries at which mechanisms could be represented or controlled.
+  \item \textbf{Corpus M, Layer M-B -- forty-two mechanism-focused modern records.} These specialized cases are used to assess how deeply particular mechanisms have been implemented, including prototypes, design frameworks, and diagnostic studies.
+  \item \textbf{Corpus B -- explicit historical--modern bridges.} These records provide documented lineage or integration evidence and are not simply another runtime category.
+\end{enumerate}
+\begin{notebox}
+The paper's analytical roles are not a set of disjoint product populations. AIOS is intentionally cross-indexed as a general runtime and a resource-governance mechanism case. The hybrid BDI--LLM system also appears as an explicit bridge and as mechanism evidence. Supporting records such as Magentic-One and Agent Spec are not added to the eight general runtime families. The chapter must explain this overlap rather than silently add the counts together.
+\end{notebox}
+\textbf{Planned Mermaid figure 11.1:} \emph{The three corpus strata and the bridge records}. Show H, M-A, M-B, and B as analytical roles. Use overlap/annotation where the paper cross-indexes records; do not draw the groups as mutually exclusive Venn partitions or sum them into a total system count. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/corpus-strata-and-bridges.mmd}.
+\FanLanCite{\S II-A; Appendix F-A, Table XII; Appendix F-B, Table XIII}
+
+\section{The ten historical architecture families}
+The historical catalog is not a parade of architecture names. Each profile should explain the distinctive operational organization identified by Fan and Lan: the key state representation, the trigger or condition that matters, the control action, the relevant persistence or learning consequence, and the recurring problem the mechanism is designed to solve. The profiles should be substantial enough to make the families distinguishable, but should not turn into independent histories of the original architectures or detailed teaching of B1--B6.
+
+\subsection{Selection, retrieval, and typed recovery: ACT-R and Soar}
+\textbf{ACT-R.}
+\begin{itemize}
+  \item Introduce typed working-state buffers and their role in matching production rules.
+  \item Explain how buffer state can trigger production competition; distinguish logical applicability from utility-based desirability.
+  \item Describe declarative chunks, activation-dependent accessibility, retrieval latency, and the role of module outcomes in later retrieval or production utility.
+  \item State the control problem solved: bounded access to memory and value-sensitive action under timing constraints.
+  \item Preview B1 only as a later focused study; do not develop its residual bundle here.
+\end{itemize}
+\textbf{Soar.}
+\begin{itemize}
+  \item Explain working memory, operator proposals, preferences, and operator selection.
+  \item Introduce typed impasses arising from unresolved operator choice, including tie, conflict, rejection, or missing choice.
+  \item Explain how an impasse creates a scoped child substate, how its result returns to the parent, and how chunking may compile the resolution into a future production.
+  \item State the control problem solved: recover from a specific decision impasse while making a successful resolution reusable.
+  \item Preview B2 only; do not turn this section into the full typed recovery proposal.
+\end{itemize}
+\FanLanCite{\S III-A; Figure 2; Appendix A; Appendix F-A, Table XII}
+
+\subsection{Representation and workspace coordination: CLARION, LIDA, and Hearsay-II}
+\textbf{CLARION.}
+\begin{itemize}
+  \item Distinguish explicit rules from implicit learned tendencies.
+  \item Explain cross-level integration: current context can activate both forms; bottom-up extraction can make a regularity explicit, while top-down assimilation can train lower-level behavior from instruction or rules.
+  \item State the cost--flexibility problem this organization addresses.
+\end{itemize}
+\textbf{LIDA.}
+\begin{itemize}
+  \item Introduce specialized codelets and coalitions competing for a capacity-limited global workspace.
+  \item Explain the winner's broadcast to memory, action, and learning processes.
+  \item Distinguish transport or message exchange from workspace control: scarcity, competition, winner selection, broad availability, and learning from admission outcomes all matter.
+  \item State the coordination problem solved: selecting which content gains access to a limited shared workspace.
+\end{itemize}
+\textbf{Hearsay-II and blackboard control.}
+\begin{itemize}
+  \item Explain a shared blackboard containing layered partial hypotheses.
+  \item Describe how a new hypothesis or state change can enable knowledge sources and how an agenda scheduler selects the next enabled contribution.
+  \item Distinguish the evolving partial solution from the communication channel that carries contributions.
+  \item State the problem solved: opportunistically coordinate heterogeneous sources of expertise when a fixed pipeline cannot determine the useful order in advance.
+\end{itemize}
+\FanLanCite{\S III-B; Figure 3; Appendix A; Appendix F-A, Table XII}
+
+\subsection{Commitment, meta-control, and grounded skills: BDI, MIDCA, and ICARUS}
+\textbf{BDI.}
+\begin{itemize}
+  \item Explain beliefs, desires, options, intentions, and plans associated with intentions.
+  \item Show why an intention can constrain later deliberation until a commitment strategy releases it.
+  \item Introduce reconsideration conditions, not as a generic periodic replan but as conditions governing success, impossibility, relevance, and the cost of reconsideration.
+  \item State the problem solved: prevent goal drift and repeated deliberation from dissolving long-running commitments.
+\end{itemize}
+\textbf{MIDCA.}
+\begin{itemize}
+  \item Distinguish object-level activity from the meta-level cycle that inspects traces of object-level activity.
+  \item Explain how diagnosis of an anomaly can give the meta-controller authority to change the active planner, strategy, goal handling, or another method.
+  \item Distinguish monitoring/logging from consequential method control.
+\end{itemize}
+\textbf{ICARUS.}
+\begin{itemize}
+  \item Explain how symbolic concepts are grounded in perceptual state.
+  \item Describe hierarchical skills that connect goals to subgoals and primitive actions.
+  \item Explain how recognized situations and goals activate applicable skills, and how skill acquisition or refinement supports reusable grounded procedures.
+\end{itemize}
+\FanLanCite{\S III-C; Figure 3; Appendix A; Appendix F-A, Table XII}
+
+\subsection{Resources and uncertainty: EPIC and Sigma}
+\textbf{EPIC.}
+\begin{itemize}
+  \item Explain perceptual, cognitive, and motor processors with explicit timing, parallel pathways, and bottlenecks.
+  \item Describe how processing time and shared bottlenecks constrain overlap and waiting.
+  \item State the problem solved: represent feasible parallelism, latency, and interference rather than treating resources as an unlimited background.
+\end{itemize}
+\textbf{Sigma.}
+\begin{itemize}
+  \item Introduce the factor graph as a shared substrate for symbolic, probabilistic, and decision computations.
+  \item Explain message passing from evidence to updated beliefs and the use of those beliefs in action selection.
+  \item Describe parameter or structure updates only to the extent reported in the source.
+  \item State the problem solved: propagate uncertainty through perception, inference, and decision instead of isolating confidence at one tool boundary.
+\end{itemize}
+\FanLanCite{\S III-D; Figure 4; Appendix A; Appendix F-A, Table XII}
+
+\textbf{Planned Mermaid figure 11.2:} \emph{Ten historical architectures grouped by distinctive control problem}. Organize the ten profiles under the four teaching clusters above. The figure must not imply that architectures within a cluster are equivalent or form a historical evolutionary sequence. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/historical-architecture-families.mmd}.
+
+\section{Eight general runtime families: where modern control is exposed}
+The modern runtime layer is not a list of cognitive architectures in contemporary clothing. Fan and Lan use these systems to locate real engineering boundaries: where state is stored, messages or events are routed, workflows are resumed, tools are called, approvals are handled, or resources are scheduled. The prose should explain each family's reviewed role and then state what the interface alone does not establish.
+
+\begin{enumerate}
+  \item \textbf{Letta/MemGPT -- long-lived state and memory boundary.} Describe persistent agent state and memory management as a first-class runtime concern. Do not infer a complete activation/latency/utility mechanism from the existence of a memory-management interface.
+  \item \textbf{LangGraph -- stateful graph execution.} Describe graph state, checkpoint, interrupt, and resume boundaries. A checkpoint provides persistence and resumption; it does not automatically create typed impasses or a scoped recovery substate.
+  \item \textbf{AutoGen -- actor/event messaging and orchestration.} Describe message and event coordination, agent roles, and tool execution boundaries. Do not treat message exchange alone as a blackboard agenda or global-workspace competition mechanism.
+  \item \textbf{AgentScope -- agent, message, model, and tool interfaces.} Explain its developer-facing orchestration surfaces while separating message transport from a shared partial-solution representation and scheduler.
+  \item \textbf{OpenHands -- event stream and agent--computer action boundary.} Explain the event-oriented interaction between an agent and a computer environment; do not infer a general cognitive control architecture from the interaction loop.
+  \item \textbf{Microsoft Agent Framework -- workflow and governed run state.} Describe workflow, state, checkpoint, and approval boundaries at the level reported in the paper.
+  \item \textbf{OpenAI Agents SDK -- run state and governed handoff.} Describe run state, tools, handoffs, guardrails, approval, cancellation, and resume as engineering interfaces; distinguish them from BDI commitment or MIDCA method authority unless a specific mechanism mapping is supported.
+  \item \textbf{AIOS -- operating-system layer and resource management.} Describe scheduling, context, memory, storage, tools, and access-control managers. State its dual analytical role: it appears among the general runtime families and is cross-indexed as a resource-governance mechanism case; it should not be counted as two independent systems.
+\end{enumerate}
+
+\begin{warningbox}
+A runtime interface can expose genuine state and control boundaries without implementing a historical cognitive mechanism. A checkpoint is not automatically a Soar impasse; a handoff is not automatically a BDI intention; a message bus is not automatically a LIDA workspace; a guardrail is not automatically MIDCA-style meta-control. The comparison must identify the specific state, trigger, authoritative edge, and preserved invariant.
+\end{warningbox}
+
+\textbf{Supporting cases, not additions to the eight:} Magentic-One is used as a supporting orchestration case, while Agent Spec is a supporting agent-specification case. The paper also discusses an adjacent agentic software architecture review as context. These should be named only to clarify their analytical role and must not be silently added to the eight-family count.
+
+\textbf{Planned Mermaid figure 11.3:} \emph{Eight runtime families and their documented control surfaces}. Show a neutral map from family to exposed boundary (state, workflow, message/event, computer action, handoff/approval, scheduler). Use annotations to show that a boundary is not proof of a corresponding cognitive mechanism. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/general-runtime-families.mmd}.
+\FanLanCite{\S II-A; \S IV-A; \S IV-C; Appendix E-A; Appendix F-A, Table XII}
+
+\section{The forty-two mechanism-focused modern records}
+Layer M-B is not a second list of general-purpose frameworks. It contains forty-two mechanism-focused records used to assess how deeply particular control properties appear in specialized modern work. The chapter should present the categories and representative cases as an evidence landscape, while reserving the detailed B1--B6 analysis for Chapters 12--17.
+
+The records should be grouped by the mechanism family in which Fan and Lan use them:
+\begin{enumerate}
+  \item \textbf{Adaptive memory policy:} AgeMem, Memory-R1, MemCon, DeltaMem, DAM, A-MAC, and CURATOR. Distinguish evaluated control prototypes from a conceptual decision-theoretic framework such as DAM.
+  \item \textbf{Failure and execution-state recovery:} PALADIN, AgentHER, Reflexion, AgentDebugX, and Shepherd. Distinguish runtime recovery, reversible traces, and learning from failed trajectories.
+  \item \textbf{Competition and workspace:} DyLAN, adaptive graph pruning, and Global Workspace Agents. Explain that team/edge admission and content-level workspace competition are related but not interchangeable.
+  \item \textbf{Commitment and BDI-related control:} the hybrid BDI--LLM system, the self-aware BDI agent, Devil's Advocate, Cognitive Control Architecture (CCA), the goal-drift evaluation, and the premature-commitment study. Distinguish implemented control from diagnostic evidence about a failure mode.
+  \item \textbf{Meta-level adaptation:} ADAS, AFlow, and MetaReflection. Distinguish design-time search or cross-trial instruction learning from live method authority during an executing task.
+  \item \textbf{Skill induction, composition, and governance:} SGDR, SCALAR, Voyager, Agent Workflow Memory, SkillComposer, SkillOps, GraSP, Agentic Compilation, SkVM, SkillSmith, and SkCC. Explain only their role in the paper's migration analysis; Chapter 17 will treat the B5/GraSP closure separately.
+  \item \textbf{Resource governance:} AIOS, AgentRM, and budget-aware value search. Note the intentional AIOS cross-indexing.
+  \item \textbf{Uncertainty-conditioned control:} UALA, KnowNo, Calibrate-Then-Act, and Utility-Guided Agent Orchestration. Distinguish an uncertainty signal that actually changes a tool/help/verify/stop decision from a confidence number that is merely displayed.
+\end{enumerate}
+
+The chapter should make clear that the forty-two records do not share one evidentiary status. The paper includes research prototypes, a conceptual design framework, released interfaces, diagnostic studies, and other bounded records. A record's inclusion does not mean every mechanism is fully implemented, portable, or independently validated. The strongest details will be drawn from the paper's tables and evidence ledger; the chapter will not claim to repeat a fresh survey of all projects or to update their state beyond the paper's corpus freeze.
+\FanLanCite{\S II-A--II-B; \S IV-B--IV-C; \S V; Appendix F-B, Table XIII}
+
+\section{Explicit bridges: when the historical relationship is documented}
+The paper records four explicit historical--modern bridge cases: CoALA, LLM-ACTR, Bootstrapping Cognitive Agents, and the hybrid BDI--LLM system. The chapter should explain why a bridge record differs from a similarity inferred by comparing two otherwise independent corpora.
+\begin{itemize}
+  \item \textbf{CoALA:} a conceptual architecture for language agents that explicitly imports and organizes cognitive-architecture ideas. Do not use it to redefine the original CoALA content already taught in Part I.
+  \item \textbf{LLM-ACTR:} a hybrid study connecting an LLM with ACT-R-like architectural control. Describe the paper's stated bridge role without claiming that it reproduces every ACT-R mechanism.
+  \item \textbf{Bootstrapping Cognitive Agents:} a hybrid combination of LLM and cognitive-architecture ideas. State only the bridge contribution recorded by Fan and Lan.
+  \item \textbf{Hybrid BDI--LLM:} a rule-based BDI controller around LLM components. It is also a mechanism-focused case, illustrating why a record can have more than one analytical role.
+\end{itemize}
+
+\begin{notebox}
+An explicit bridge does not automatically prove that every historical mechanism has migrated. The E/D codes are assigned to a specific correspondence and mechanism, not to an entire paper, product, or architecture family. A bibliography mention alone is not lineage evidence; the source must connect the historical architecture to the mechanism being mapped.
+\end{notebox}
+\FanLanCite{\S II-A; \S II-D; \S IV-A; Appendix F-A, Table XII}
+
+\section{Evidence relation: what kind of historical--modern correspondence is documented?}
+Chapter 9 introduced the idea that lineage and implementation depth are different questions. This section now teaches the exact E-code definitions and the paper's precedence rule. An E-code describes the relation between a specific historical mechanism and a specific modern correspondence; it is not a quality rating.
+\begin{enumerate}
+  \item \textbf{E1 -- documented lineage.} The modern source explicitly names the historical architecture and connects it to the mapped mechanism. A bibliography citation without a mechanism-level connection is not enough.
+  \item \textbf{E2 -- structural migration.} The modern system implements source-like state together with a corresponding control, transition, or learning edge. Similar output alone is insufficient.
+  \item \textbf{E3 -- functional approximation.} The modern system solves a comparable control problem and provides an observable comparable function, but its internal organization is materially different.
+  \item \textbf{E4 -- structural convergence.} A node-and-edge organization is comparable, but no transfer evidence is found. The lack of lineage evidence must be stated explicitly.
+\end{enumerate}
+
+Explain the paper's evidentiary precedence rule: use E1 when the modern source explicitly attributes the mapped mechanism to the historical architecture; otherwise use E2 when implemented source-like state and control structure are present; otherwise use E3 when a materially different organization solves the same control problem; otherwise E4 when similarity is inferred from node--edge structure without transfer evidence. Each correspondence receives exactly one E-code. E-codes are categorical relation types; they are not ordered maturity levels and must not be written as an interval or added together.
+
+\textbf{Planned Mermaid figure 11.4:} \emph{Four evidence relations, four different claims}. Show E1--E4 as four distinct relation categories with the minimum evidence required for each; do not show them as a low-to-high ladder. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/evidence-relation-codes.mmd}.
+\FanLanCite{\S II-D; Table II; \S II-E}
+
+\section{Migration depth: how much of the specific mechanism is implemented?}
+The D-code asks a different question: how deeply is the mapped mechanism represented and exercised in the modern system? The chapter should teach the thresholds exactly and emphasize that depth applies to the specific mechanism being mapped, never to an entire architecture, product, or framework.
+\begin{enumerate}
+  \item \textbf{D0 -- conceptual resemblance.} A comparable idea or label is present, but no callable interface or persistent mechanism state is shown.
+  \item \textbf{D1 -- interface correspondence.} The runtime exposes a callable operation with a comparable role, but no explicit mapped state-transition organization is shown.
+  \item \textbf{D2 -- explicit state/component structure.} Mapped state objects and components are present, but the trigger does not autonomously exercise the historical control edge.
+  \item \textbf{D3 -- runtime control law.} An explicit trigger executes the mapped control action and changes state.
+  \item \textbf{D4 -- adaptive control law.} Experience or an outcome updates future invocation, selection, or control policy. Logging or storing a result without changing future policy is not enough.
+\end{enumerate}
+
+The chapter must explain the paper's key asymmetry: D4 does not mean complete migration. A modern system can adapt a narrow policy and still lack portability, calibrated invocation, a reliable fallback, or another historical invariant. Conversely, an explicit lineage relationship can be shallow (for example, E1 with D1). A high D-code is not evidence of historical transfer, and an E1 code is not evidence of deep implementation.
+
+\textbf{Planned Mermaid figure 11.5:} \emph{Migration depth as a mechanism-specific progression}. Show D0--D4 as thresholds of increasing implemented control depth, while annotating that it is not a whole-system maturity ladder. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/migration-depth-levels.mmd}.
+\FanLanCite{\S II-D; Table II; \S II-E}
+
+\section{How E and D work together: a complete evidence packet}
+The reader should now see that one comparison is reported using two independent codes. E answers how the historical and modern instances are related; D answers how deeply the specific mapped mechanism is implemented. The chapter should show the two axes side by side and apply them to carefully chosen cases from the paper.
+
+\subsection{A correspondence is a packet of claims, not a resemblance score}
+For every mapped relationship, Fan and Lan record:
+\begin{enumerate}
+  \item the historical mechanism and its primary source;
+  \item the modern implementation and its primary source;
+  \item the matching state object;
+  \item the matching trigger;
+  \item the matching control or learning edge;
+  \item the invariant that is preserved;
+  \item the invariant that is missing;
+  \item official implementation evidence when executable behavior is part of the claim; and
+  \item the E-code and D-code assigned to that specific correspondence.
+\end{enumerate}
+
+Explain the paper's claim-adjudication test: a comparison must show node correspondence, edge correspondence, and at least one preserved invariant. Similar nouns, visually similar diagrams, or comparable outputs do not pass if the authoritative state or control path cannot be identified. Strong D3/D4 claims require stronger support, including primary sources and implementation evidence when the mechanism depends on executable behavior.
+
+\subsection{Worked comparison A: Hearsay-II and modern message-oriented runtimes}
+Use Hearsay-II versus AutoGen/AgentScope as a bounded teaching case. Both may expose messages or shared state, but Hearsay-II's distinctive mechanism includes partial hypotheses on a blackboard, knowledge sources enabled by state changes, and agenda scheduling. Modern message transport and orchestration can structurally converge without reproducing that full control organization. The paper's mapping records E4/D2 for the reviewed Hearsay-II correspondence. Explain exactly what is preserved (shared contributions or exposed state) and what is not established (the same partial-solution representation and opportunistic agenda control). Do not generalize this mapping to every AutoGen or AgentScope release.
+
+\subsection{Worked comparison B: explicit BDI--LLM bridge}
+Use the hybrid BDI--LLM case to contrast an explicit bridge with inferred convergence. The paper records an E1/D3 precedent for a hybrid BDI controller around LLM components. Explain why this is evidence of documented relation and an implemented runtime control loop, but not proof that every BDI commitment strategy or every modern LLM-agent system has migrated BDI semantics.
+
+\subsection{Worked comparison C: a high-depth mechanism is not a complete architecture}
+Use SCALAR or another paper-selected example to explain D4 for a particular cross-level learning edge while preserving the paper's stated missing invariants. Avoid presenting the D4 result as a claim that an entire architecture has been ported. The detailed mechanism and residual bundles will be revisited in later chapters.
+
+\textbf{Planned Mermaid figure 11.6:} \emph{The evidence packet from reconstruction to E/D classification}. Show historical source and modern source feeding state, trigger, and control-edge comparison; then preserved and missing invariants; finally, two separate outputs, E-code and D-code. Proposed source path: \path{Tex/diagrams/source/part2/chapter11/evidence-packet-and-independent-codes.mmd}.
+\FanLanCite{\S II-C--II-E; \S IV-C; \S V; Table IV; Appendix E-B; Appendix F-A, Table XII}
+
+\section{The migration landscape: what the ten-family map shows}
+After the profiles and coding method, return to the paper's frozen-corpus migration ledger. The chapter should guide the reader through the overall pattern rather than exhaust the later mechanism chapters.
+\begin{itemize}
+  \item Explain that state stores, tools, execution loops, checkpoints, message routing, memory operations, and workflow structures are widely present in the reviewed runtimes.
+  \item Explain that specialised modern systems also implement meaningful parts of adaptive memory, failure recovery, workspace selection, commitment, meta-level adaptation, skill induction/governance, resource scheduling, and uncertainty-conditioned control.
+  \item Show why migration is uneven: a system can preserve one edge while omitting another, and the strongest modern implementation may be a research prototype rather than a portable general-purpose runtime.
+  \item Introduce the residual breakpoints only as a map for later chapters: ACT-R/B1, Soar/B2, LIDA/B3, BDI/MIDCA/B4, EPIC/Sigma/B6, and the closed B5 candidate. Do not teach the bundle internals here.
+  \item State the paper's result that B5 is closed within the frozen corpus by GraSP, while five residual bundles remain. Emphasize that this is conditional on the review's corpus and coding, not a universal claim that no other system exists.
+\end{itemize}
+
+A compact migration table should contain one row per historical family with the strongest reviewed modern evidence, the paper's reported E/D status where specified, the preserved property, and a short pointer to the later chapter. Avoid a single numeric score, a ranking of architectures, or a claim that every family has the same kind of modern counterpart.
+\FanLanCite{\S I; \S V; Table IV; \S VI}
+
+\section{What the review can establish, and what it cannot}
+The chapter must teach the paper's validity boundaries as part of the method, not as a token disclaimer.
+\begin{itemize}
+  \item The corpus is a bounded mapping review frozen on 26 July 2026, not an exhaustive census of every cognitive architecture or language-agent system.
+  \item The search procedure is described and its query templates are replayable, but result counts were not frozen; the paper makes no search-recall estimate and no PRISMA completeness claim.
+  \item The E/D coding is provisional and single-coder; independent second-author recoding and disagreement adjudication have not yet been produced.
+  \item The paper does not claim causal performance gains for the historical mechanisms or for the five residual bundles; the proposed bundles are falsifiable research hypotheses, not completed experimental results.
+  \item The reported depth is the highest-depth instance admitted by the recorded review procedure, not a prevalence estimate or a universal maximum.
+  \item Runtime version/repository evidence is frozen and versioned; popularity or a moving repository head is not scientific evidence.
+\end{itemize}
+\FanLanCite{\S II-A--II-E; \S VII-C; Appendix E-A; Appendix F-C}
+
+\section{Common misreadings and boundaries}
+Correct the following before the reader moves to the mechanism studies:
+\begin{enumerate}
+  \item \textbf{The ten historical architectures are a single lineage.} The catalog groups distinctive architectures; it does not claim a direct evolutionary chain among them.
+  \item \textbf{The eight runtimes are eight modern cognitive architectures.} They are general runtime families used to identify engineering boundaries; their interfaces do not automatically implement historical mechanisms.
+  \item \textbf{The forty-two mechanism-focused records are all production frameworks.} The corpus includes prototypes, conceptual design frameworks, diagnostic studies, and different kinds of implementation evidence.
+  \item \textbf{Every bridge record is a full migration.} A documented bridge establishes a specific relation, not complete transfer of all mechanisms.
+  \item \textbf{E1 is better than E4.} E-codes state the kind of evidence relation, not a quality or maturity ranking.
+  \item \textbf{D4 means the old architecture has been rebuilt.} D4 applies to one mapped mechanism's outcome-dependent adaptive control.
+  \item \textbf{A framework interface proves a control law.} A state, message, or approval API can be a substrate without controlling the historical transition being compared.
+  \item \textbf{The paper proves the residual hypotheses are useful.} It proposes falsifiable interventions and boundaries; it does not report completed comparative experiments for the residual bundles.
+\end{enumerate}
+
+\section{Chapter recap, review questions, and handoff}
+The recap should return to the chapter's main contrast: architecture names and feature labels orient the reader; mechanisms reveal what state, trigger, authority, transition, persistence, failure, learning, and resources actually do. It should restate the three corpus strata and bridge records; summarize the ten historical families and eight general runtime families; distinguish general runtimes from the specialised M-B evidence set; and explain the independent E/D axes and their validity limits.
+
+The handoff should explain that the following chapters no longer survey the whole historical/modern landscape. They examine the residual mechanism couplings individually, beginning with B1 (activation, retrieval latency, and utility), followed by B2, B3, B4, the closed B5/GraSP case, and B6. Chapter 18 will synthesize their dependencies after the focused analyses have been completed.
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item What are the three principal corpus strata in Fan and Lan's review, and what analytical role does each one play?
+  \item Name the ten historical architecture families and group them by the distinctive control problem used in this chapter.
+  \item Why are Letta, LangGraph, AutoGen, AgentScope, OpenHands, Microsoft Agent Framework, the OpenAI Agents SDK, and AIOS described as runtime families rather than automatically as cognitive architectures?
+  \item What distinguishes the forty-two mechanism-focused modern records from the eight general runtime families?
+  \item Why does AIOS appear in more than one analytical role without becoming two independent systems?
+  \item What evidence is needed for E1, and why is a bibliography mention alone insufficient?
+  \item How does E3 differ from E4? Explain without using the words better or worse.
+  \item What additional condition separates D3 from D2? What additional condition separates D4 from D3?
+  \item Can a correspondence be E1/D1 or E4/D4? Explain why the two axes are independent.
+  \item Apply the evidence packet to a message-oriented runtime and Hearsay-II: identify one preserved property and one missing invariant.
+  \item Why does a D4 result not prove that a whole historical architecture has migrated?
+  \item List three validity limits that prevent the paper's results from being interpreted as a universal benchmark or exhaustive census.
+\end{enumerate}
+\end{reviewquestions}
+
+\section{Visual and pedagogical plan}
+Use six Mermaid figures, each with a different teaching purpose. All sources will be stored under \path{Tex/diagrams/source/part2/chapter11/}, include \texttt{accTitle} and \texttt{accDescr}, and use the shared theme. CI will generate high-resolution PNGs; the chapter will place the images only through \texttt{\textbackslash BookDiagram}. No TikZ, ASCII diagrams, hand-positioned LaTeX nodes, or custom diagram libraries.
+\begin{enumerate}
+  \item \textbf{11.1 Corpus strata and bridge records:} H, M-A, M-B, and B; show cross-indexing and non-disjoint analytical roles.
+  \item \textbf{11.2 Ten historical architecture families:} group the ten profiles by their distinctive control problem, without implying equivalence or linear evolution.
+  \item \textbf{11.3 Eight general runtime families:} show the runtime boundary each exposes and annotate that an interface is not proof of a cognitive mechanism.
+  \item \textbf{11.4 Evidence relation E1--E4:} four different relation categories, not a maturity ladder.
+  \item \textbf{11.5 Migration depth D0--D4:} mechanism-specific implementation thresholds, not a whole-system ranking.
+  \item \textbf{11.6 Evidence packet and independent codes:} historical and modern source evidence, state/trigger/edge, preserved/missing invariants, then independent E and D outputs.
+\end{enumerate}
+
+Use teaching boxes selectively: a chapter thesis/takeaway; one note explaining corpus overlap; one warning separating runtime interfaces from cognitive mechanisms; one note distinguishing E from D; one validity warning; a recap and review questions. The main historical and modern profiles should be taught in connected prose and structured tables, not placed individually into coloured boxes.
+
+\section{Source and attribution plan}
+\begin{itemize}
+  \item \textbf{Primary source and corpus design:} Fan and Lan (2026), \S I and \S II-A--II-B, including the 26 July 2026 corpus freeze and the three principal analytical strata.
+  \item \textbf{Mechanism representation:} \S II-C and Chapter 10's seven-field tuple; use only as a compact common frame, not as a required software schema.
+  \item \textbf{Evidence relation and migration depth:} \S II-D--II-E and Table II; reproduce the exact E1--E4 and D0--D4 criteria and precedence rule.
+  \item \textbf{Historical architecture profiles:} \S III-A--III-D, Figures 2--4, Table III, and Appendix A.
+  \item \textbf{General runtime families:} \S IV-A, with Figure 5 and Appendix E-A for the versioned implementation boundaries.
+  \item \textbf{Mechanism-focused modern records:} \S IV-B--IV-C, Table IV, and Appendix F-B/Table XIII. Use the 42-record count and categories as the paper reports them; do not imply equal implementation maturity.
+  \item \textbf{Explicit bridges and supporting cases:} \S II-A and Appendix F-A/Table XII. Distinguish Corpus B from the three principal strata; note cross-indexing and supporting records.
+  \item \textbf{Migration landscape and breakpoint summary:} \S V, Figure 6, Table IV, and the selected mappings in \S V-A--V-D. Preview B1--B6 without teaching their internals.
+  \item \textbf{Validity limits:} \S II-E and \S VII-C; Appendix E and Appendix F where the source discloses evidence limitations and record status.
+  \item Use only the shared \texttt{\textbackslash FanLanCite} macro for theoretical citations. Other named works may appear only as cases cited or discussed by Fan and Lan; they are not additional theoretical foundations of this book.
+\end{itemize}
+
+\section{Explicit exclusions and boundaries}
+\begin{itemize}
+  \item Do not use Fan and Lan to reinterpret CoALA or claim that the historical architectures are required components of CoALA.
+  \item Do not turn the ten historical families into a chronological lineage or imply that the paper establishes direct transfer among them.
+  \item Do not present the eight general runtime families as a ranked list, a current market census, or eight complete cognitive architectures.
+  \item Do not add Magentic-One, Agent Spec, or adjacent reviews to the eight-family count; explain their supporting role only.
+  \item Do not sum H, M-A, M-B, and B as mutually exclusive populations. Explicitly note cross-indexed roles such as AIOS and hybrid BDI--LLM.
+  \item Do not analyze all forty-two M-B records individually; present the paper's categories and representative cases, leaving detailed residual mechanism analysis to Chapters 12--17.
+  \item Do not collapse E and D into a single score, maturity index, ranking, or architecture-level rating.
+  \item Do not assign E/D codes to a whole product or architecture; each code applies to a specific mapped mechanism and claim packet.
+  \item Do not treat a highest-depth record as prevalence or universal evidence; do not infer unsupported fields or missing invariants.
+  \item Do not claim exhaustive search, PRISMA completeness, independent inter-rater reliability, causal performance, or experimental validation of the residual bundles.
+  \item Do not teach B1, B2, B3, B4, B5, or B6 in detail; preserve Chapters 12--17 for focused studies and Chapter 18 for synthesis.
+\end{itemize}
+
+\section{Proposed depth and acceptance criteria}
+Estimated depth: approximately 32--42 finished pages, without a hard page limit. The chapter must be substantial enough to teach all ten historical profiles, distinguish the eight general runtime families and the specialised evidence layer, and apply E/D coding rigorously without becoming a full literature encyclopedia.
+
+The chapter is ready for author review only when it:
+\begin{itemize}
+  \item gives the exact corpus freeze date and accurately separates H, M-A, M-B, and explicit bridge roles;
+  \item profiles all ten historical architecture families through their distinctive mechanisms and control problems;
+  \item describes all eight general runtime families without equating interfaces with cognitive mechanisms;
+  \item explains the 42 mechanism-focused records by the paper's categories and preserves differences in evidentiary status;
+  \item distinguishes explicit bridges, supporting cases, and adjacent reviews;
+  \item teaches E1--E4 and D0--D4 with exact necessary conditions and the correct precedence/separation rules;
+  \item applies the evidence packet to worked comparisons, with preserved and missing invariants;
+  \item avoids architecture-wide scores, rankings, and claims of complete migration;
+  \item reports the review's validity limits and makes no unsupported performance or completeness claim;
+  \item previews later B1--B6 chapters without duplicating their mechanism studies;
+  \item uses the shared preamble, macros, semantic boxes, Mermaid-to-PNG pipeline, footnotes, glossary/index, and chapter-local repository conventions.
+\end{itemize}
+
+\begin{notebox}
+\textbf{Approval record:} The author approved Outline v1.0 on 14 November 2026. Chapter 11 prose was drafted only after that approval.
+\end{notebox}
+
+\section*{Primary reference}
+Fan, H., and Lan, Z. (2026). \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps}. arXiv:2607.23942v1, submitted 27 July 2026. This outline is grounded primarily in Sections I--V and VII, Figures 1--7, Tables I--IV, and Appendices A, E, and F. The reviewed corpus is frozen on 26 July 2026; the outline does not treat it as a live or exhaustive census.
+\FanLanCite{\S I--V; \S VII-C; Figures 1--7; Tables I--IV; Appendices A, E, and F}
+\end{document}

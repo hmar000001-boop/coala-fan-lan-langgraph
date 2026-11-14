@@ -58,7 +58,8 @@ for expected in \
   'Evaluation and Selection' \
   'Interleaving, Iteration and the Complete CoALA Decision Process' \
   'Why Feature-Level Descriptions Are Not Enough' \
-  'The Seven Fields of a Mechanism'; do
+  'The Seven Fields of a Mechanism' \
+  'From Historical Cognitive Architectures to Modern Agents'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;
