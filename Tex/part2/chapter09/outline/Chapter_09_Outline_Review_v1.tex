@@ -1,0 +1,215 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 9 Outline Review: Why Feature-Level Descriptions Are Not Enough},pdfsubject={Detailed chapter outline for author approval},pdfkeywords={Fan and Lan, mechanism-level analysis, feature labels, control semantics}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 9 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Why Feature-Level Descriptions Are Not Enough\par}
+\vspace{0.8cm}
+{\large Part II -- Fan \& Lan: From Cognitive Architectures to Mechanism-Level Understanding\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Awaiting author approval. This document is a detailed chapter plan, not chapter prose.
+
+\textbf{Primary theoretical source:} Fan and Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), especially Sections I, II-A--II-B, II-D--II-E, III, and VII, with Figure 1 and Tables I--II used where relevant.
+
+\textbf{Part boundary:} This chapter introduces Fan and Lan's problem and review lens as a separate contribution. It does not use Fan and Lan to reinterpret CoALA, and it does not begin the detailed historical catalog or the five residual-bundle studies.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\setcounter{chapter}{9}
+\section{Chapter purpose and role in the book}
+Part I has just given the reader a coherent account of CoALA: information storage, action space, and decision-making can be described as connected parts of an agent architecture. Part II changes the question. It asks whether labels such as memory, planning, reflection, and tool use tell us enough to explain how a system actually runs, and how we can compare a historical cognitive mechanism with a modern language-agent implementation without confusing resemblance with transfer.
+
+The chapter begins with a familiar problem: two systems may both claim to have memory, yet one may be a searchable store while another uses an activation-sensitive retrieval process whose latency and utility affect later control. The shared label identifies a broad purpose, but does not reveal the operative state, the authority that decides what happens, the trigger that activates an operation, or the consequences that persist. Fan and Lan therefore make the documented mechanism, rather than the feature label or architecture name, the unit of analysis.
+
+The chapter's job is to motivate that shift. It will show why mechanism-level comparison is necessary, introduce the minimum operational chain used to recognize a mechanism, and explain why evidence of historical lineage must be distinguished from the depth of a modern implementation. The full coding schemes and the ten historical architecture profiles are reserved for Chapter 11. The seven-field representation itself is taught systematically in Chapter 10.
+
+\begin{takeawaybox}[Chapter thesis]
+A feature label describes a capability at a high level; it does not explain the state, trigger, authority, transition, persistence, failure, learning, or resource rules through which the capability operates. To compare agents responsibly, we must reconstruct documented mechanisms and the control relationships that give them their behavior.
+\end{takeawaybox}
+
+\section{Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain why labels such as memory, planning, reflection, and tool use can conceal materially different operations.
+  \item Distinguish a broad feature description from a documented mechanism that consumes state, is activated by a trigger, exercises control over a transition, and may change later behavior.
+  \item Explain why control authority and transition semantics matter when two systems appear to provide the same capability.
+  \item Use the paper's searchable-store versus ACT-R declarative-memory example to show why the shared word \emph{memory} is not enough for mechanism comparison.
+  \item Distinguish documented lineage, structural migration, functional approximation, and structural convergence at a conceptual level.
+  \item Explain why evidence relation and implementation depth are different analytical questions, without yet memorizing the full E1--E4 and D0--D4 coding rules.
+  \item Describe the bounded scope of Fan and Lan's review and state what it does not claim about completeness, prevalence, or causal performance.
+  \item Explain why the next chapter needs a structured representation for comparing mechanisms consistently.
+\end{enumerate}
+
+\section*{Proposed chapter structure}
+
+\section{A familiar label can hide a different operation}
+\textbf{Opening problem:} Imagine reading two technical descriptions that both say an agent has a memory system. One description refers to a searchable store. The other describes memory whose accessibility changes with activation, whose retrieval has latency, and whose outcomes interact with utility. The shared noun makes the systems sound comparable, but it does not tell us whether they use the same mechanism.
+\begin{itemize}
+  \item Start from the reader's everyday use of capability labels: memory, planner, reflection, tools, scheduler, or agent framework.
+  \item Explain why such labels are useful for orientation but too coarse to explain execution.
+  \item Pose the chapter's recurring questions: what state is involved, what event activates the operation, who controls the transition, and what changes afterward?
+  \item Make clear that the problem is not that feature labels are false; the problem is that they omit the operational distinctions needed for explanation and comparison.
+\end{itemize}
+\textbf{Planned Mermaid figure 9.1:} \emph{One feature label, multiple possible mechanisms}. Start with a single label such as \texttt{memory}; branch into different possible state and control arrangements without implying they are equivalent. Proposed source path: \path{Tex/diagrams/source/part2/chapter09/feature-labels-to-mechanisms.mmd}.
+\FanLanCite{Abstract; \S I; \S II-A}
+
+\section{Same purpose does not establish the same mechanism}
+Use the exact contrast made by Fan and Lan: a searchable store and ACT-R declarative memory may both provide access to past information, while differing in activation, latency, decay, retrieval competition, and utility coupling.
+\begin{itemize}
+  \item Define \emph{purpose similarity}: two components may both help a system use information from the past.
+  \item Explain why purpose similarity does not show that the systems consume the same state or use the same control law.
+  \item Introduce ACT-R only as the example explicitly used by Fan and Lan; do not turn this subsection into an ACT-R tutorial.
+  \item Explain that retrieval latency and utility can affect behavior, not merely describe a storage implementation.
+  \item State that the full historical mechanism catalog, including ACT-R and Soar, belongs to Chapter 11.
+\end{itemize}
+\begin{notebox}
+Do not claim that every searchable store lacks activation, latency, decay, or utility. The point is narrower: the label \emph{searchable memory} alone does not establish whether those mechanisms are present. A comparison must inspect documented state and control behavior.
+\end{notebox}
+\FanLanCite{\S II-C, paragraph on searchable stores and ACT-R declarative memory}
+
+\section{From feature description to a documented mechanism}
+This is the chapter's central conceptual turn. Fan and Lan define the unit of analysis as a documented mechanism: an operation that consumes explicit state, is activated by an identifiable trigger, exercises control over a transition, and may change later behavior.
+\begin{itemize}
+  \item Introduce \emph{mechanism} only after the reader has felt the insufficiency of a feature label.
+  \item Explain each part of the paper's minimum definition in ordinary language: something is consumed; a trigger occurs; an operation has control over what changes; and the outcome may affect what happens later.
+  \item Introduce the compact operational chain used in the paper's historical catalog: state consumed $\rightarrow$ trigger $\rightarrow$ control action $\rightarrow$ state transition $\rightarrow$ learning consequence.
+  \item Clarify that the chain is an analytical reading aid, not a universal implementation pipeline that every system must follow in one fixed order.
+  \item Explain why a label, a diagram with similar boxes, or a matching output is insufficient without the relevant state and control relationships.
+\end{itemize}
+\textbf{Planned Mermaid figure 9.2:} \emph{The minimum operational chain of a mechanism}. Show state, trigger, control action, transition, and a possible later learning consequence. Mark that the exact mechanism may have different forms. Proposed source path: \path{Tex/diagrams/source/part2/chapter09/minimum-mechanism-chain.mmd}.
+\FanLanCite{\S II-A; \S III, opening paragraphs}
+
+\section{Why authority and transitions are decisive}
+A feature-level description often names a component but leaves out who has the authority to change the system's state and under what conditions. This section should make the omission concrete without teaching the seven fields in detail.
+\begin{itemize}
+  \item Distinguish a component that stores information from a mechanism that decides whether information changes subsequent control.
+  \item Use the paper's boundary examples as short illustrations: a checkpoint is not automatically a typed impasse; a message bus is not automatically a bounded workspace with competition and broadcast; a handoff is not automatically a persistent intention; a guardrail is not automatically meta-control.
+  \item Explain that the same surface outcome can arise from different internal organizations.
+  \item Introduce the phrase \emph{preserved invariant}: the specific control property that remains present when a mechanism is mapped to another system.
+  \item Introduce \emph{missing invariant}: the relevant part of the original mechanism that the modern correspondence does not preserve.
+  \item Do not fully analyze these boundary cases; the historical and modern comparisons are developed in Chapter 11 and the mechanism chapters that follow.
+\end{itemize}
+\begin{tipbox}
+When two systems use the same noun, ask what actually changes in the authoritative state. If the answer is unclear, the feature label has not yet become a mechanism explanation.
+\end{tipbox}
+\FanLanCite{\S II-E; \S IV-C; \S V-B}
+
+\section{Similarity, lineage, and implementation depth are different claims}
+This section introduces the distinction that will later prevent two symmetrical errors.
+\begin{itemize}
+  \item Explain that a historical-to-modern comparison may concern documented lineage, structural migration, functional approximation, or convergence.
+  \item Explain conceptually that this is one question: what is the evidential relationship between the historical and modern mechanisms?
+  \item Introduce the separate question of implementation depth: how much of the mechanism is actually represented and exercised in the modern system?
+  \item Use a simple contrast: an explicit lineage claim can still correspond to only a shallow interface, while a deeply implemented control mechanism does not by itself prove historical inheritance.
+  \item Preview the E1--E4 evidence-relation codes and D0--D4 migration-depth codes by name only. Chapter 11 will teach their precise definitions, rules, examples, and use in the historical-to-modern mapping.
+\end{itemize}
+\begin{warningbox}
+Do not combine evidence relation and migration depth into a single maturity score or ranking. They answer different questions. A high implementation-depth code does not prove lineage, and an explicit lineage claim does not prove deep implementation.
+\end{warningbox}
+\textbf{Planned Mermaid figure 9.3:} \emph{Two independent questions in a mechanism comparison}. Depict evidence relationship and implementation depth as separate axes or tracks; do not depict a single ladder or a combined score. Proposed source path: \path{Tex/diagrams/source/part2/chapter09/evidence-and-depth-are-independent.mmd}.
+\FanLanCite{\S I; \S II-D, especially Table II}
+
+\section{What a mechanism-level review can and cannot establish}
+The chapter must introduce the scope and limits of the paper's review design without turning into a methods chapter or pre-empting Chapter 11.
+\begin{itemize}
+  \item Describe the paper as a bounded mechanism-level mapping review, not a benchmark, pooled-effect meta-analysis, architecture leaderboard, or exhaustive census.
+  \item Give the corpus structure at a high level: ten historical architecture families; eight general runtime families; and forty-two mechanism-focused modern records. Note that the analytical corpus was frozen on 26 July 2026.
+  \item Explain why the paper separates general runtimes, which expose potential insertion boundaries, from specialized systems, which provide mechanism-focused implementation evidence.
+  \item Summarize the inclusion principle: the full text had to expose a state object plus a control, transition, or learning edge; broad capability claims alone were insufficient.
+  \item State the limits disclosed by the authors: no search-recall or stable hit-count claim; no PRISMA completeness claim; no pooled causal performance claim; and no claim of independent inter-rater reliability in the current manuscript.
+  \item Explain why the authors treat repository popularity as irrelevant to scientific evidence and require versioned implementation evidence when repository behavior is part of a claim.
+\end{itemize}
+\textbf{Planned Mermaid figure 9.4:} \emph{The review's evidence-admission logic}. Show candidate record, documented state, trigger/control/transition edge, preserved-invariant test, and bounded claim; include explicit exclusion paths for shared nouns or similar outputs without control correspondence. Proposed source path: \path{Tex/diagrams/source/part2/chapter09/mechanism-evidence-admission.mmd}.
+\FanLanCite{\S II-A--II-B; \S II-E; \S VII-C}
+
+\section{A worked reading: unpacking the word memory}
+\BookExampleLabel\ Use a short worked reading to show how the reader would move from a label to questions that can be investigated. The example must be explanatory, not a new claim about an unnamed product or runtime.
+\begin{enumerate}
+  \item Begin with the statement: \emph{System A has memory.}
+  \item Rewrite it as questions: what information is retained, what is queried, what triggers retrieval, what controls admission, what survives a task boundary, what happens on failure, and whether outcomes affect later memory control.
+  \item Contrast this incomplete statement with the documented ACT-R example in Fan and Lan: typed buffers and chunks, activation-sensitive retrieval, latency, production utility, and learning effects.
+  \item Show what can be responsibly concluded from the available description and what remains unknown.
+  \item Do not assign E or D codes in this worked example; the full coding procedure and its evidence requirements are introduced later.
+\end{enumerate}
+\begin{takeawaybox}[A careful comparison]
+A responsible mechanism comparison says what the sources establish, what they do not establish, and which control relationship would need further evidence. It does not fill gaps with assumptions simply because two systems share a feature name.
+\end{takeawaybox}
+
+\section{Common misreadings and the handoff to Chapter 10}
+Address the following confusions explicitly:
+\begin{itemize}
+  \item \textbf{A feature label is a mechanism.} No: it is an initial description that must be unpacked.
+  \item \textbf{The same output proves the same mechanism.} No: materially different state and control paths can produce similar outputs.
+  \item \textbf{A similarity implies historical inheritance.} No: lineage needs explicit evidence.
+  \item \textbf{A strong implementation-depth result proves complete migration.} No: depth is coded for a specific mechanism, and preserved and missing invariants still matter.
+  \item \textbf{A bounded review is a universal ranking.} No: the paper makes bounded mapping claims under a frozen corpus and discloses validity limits.
+  \item \textbf{The seven fields are a feature checklist.} Not yet: they are the next chapter's structured representation for reconstructing the operation and governance of a mechanism.
+\end{itemize}
+The closing paragraph should state the transition clearly: Chapter 9 has shown why feature names cannot carry the explanatory burden. Chapter 10 will introduce the seven-field representation that makes the hidden state, control, transition, persistence, failure, learning, and resource policy inspectable.
+
+\section{Visual and pedagogical plan}
+Use four Mermaid diagrams, all authored as \texttt{.mmd} sources and rendered to PNG by CI. The figures must clarify the argument rather than reproduce an existing graphic mechanically:
+\begin{enumerate}
+  \item Feature label to multiple possible mechanisms.
+  \item The minimum operational chain used to recognize a mechanism.
+  \item Evidence relationship and implementation depth as independent comparison questions.
+  \item The review's node--edge--invariant evidence-admission logic.
+\end{enumerate}
+All sources will live in \path{Tex/diagrams/source/part2/chapter09/}; captions, stable labels, accessibility descriptions, and nearby explanatory prose are required. Place images through the shared \texttt{\textbackslash BookDiagram} macro. No TikZ, ASCII diagram, hand-positioned LaTeX nodes, or chapter-specific diagram library is permitted.
+
+Use shared teaching environments selectively: one learning-objective box, one tip about inspecting state changes, one caution about lineage and implementation depth, one takeaway about careful claims, a chapter recap, and review questions. Leave ordinary explanatory prose outside boxes.
+
+\section{Source and attribution plan}
+\begin{itemize}
+  \item \textbf{Primary source:} Fan and Lan (2026), \S I for the motivation and bounded synthesis claim.
+  \item \textbf{Mechanism as the unit of analysis:} \S II-A.
+  \item \textbf{Seven-field motivation and the searchable-store/ACT-R contrast:} \S II-C. The full tuple is introduced in Chapter 10.
+  \item \textbf{Evidence and migration-depth distinction:} \S II-D and Table II; introduce conceptually only, with full coding rules deferred to Chapter 11.
+  \item \textbf{Node, edge, preserved-invariant, and missing-invariant test:} \S II-E and Figure 1.
+  \item \textbf{Historical mechanism chain and examples:} opening of \S III and Table III; use only the limited examples needed to explain the chapter's problem.
+  \item \textbf{Review scope and validity:} \S II-A--II-B and \S VII-C.
+  \item Every theoretical statement must use the shared \texttt{\textbackslash FanLanCite} footnote macro and be traceable to a paper section, figure, table, or appendix.
+\end{itemize}
+
+
+The primary reference is Fan, H., and Lan, Z. (2026), \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps}, arXiv:2607.23942v1 (27 July 2026). The outline is grounded in Sections I, II-A--II-E, III, and VII, together with Figure 1 and Tables I--II.\FanLanCite{\S I; \S II-A--II-E; \S III; \S VII; Fig. 1; Tables I--II}
+
+\section{Explicit exclusions and boundaries}
+\begin{itemize}
+  \item Do not re-explain CoALA's architecture or reuse it as a lens to correct or extend the original paper. Part I is complete on its own source terms.
+  \item Do not teach the seven fields in detail; that is Chapter 10.
+  \item Do not list and analyze all ten historical architectures or all modern runtime families; the structured catalog and migration analysis belong to Chapter 11.
+  \item Do not teach B1, B2, B3, B4, B5, or B6 in detail; those are Chapters 12--17.
+  \item Do not treat E1--E4 or D0--D4 as one scale, and do not assign codes without their evidence conditions.
+  \item Do not claim that the review is exhaustive, that corpus counts estimate field prevalence, or that historical mechanisms cause performance improvements.
+  \item Do not import third-party theories, frameworks, or paper mechanisms as additional theoretical foundations.
+\end{itemize}
+
+\section{Proposed depth and acceptance criteria}
+Estimated depth: approximately 20--26 finished pages, with no hard page limit. The chapter should be substantial enough to make the feature/mechanism distinction intuitive, teach the review's limits, and prepare the seven-field method without duplicating Chapter 10 or Chapter 11.
+
+The final chapter is ready for author review only when it:
+\begin{itemize}
+  \item begins with an understandable example of a feature label concealing different operations;
+  \item defines the documented mechanism using the paper's state, trigger, control, transition, and later-behavior wording;
+  \item explains the ACT-R/searchable-store example without generalizing beyond the paper;
+  \item distinguishes similarity, lineage, and implementation depth;
+  \item accurately describes the bounded corpus and disclosed validity limits;
+  \item does not front-load the detailed seven-field tuple or the full E/D code tables;
+  \item clearly hands the reader to Chapter 10 and later to Chapter 11;
+  \item uses the shared preamble, macros, semantic boxes, footnotes, Mermaid pipeline, glossary/index infrastructure, and review process.
+\end{itemize}
+
+\noindent\textbf{Approval gate:} Please approve this Chapter 9 outline or request changes. No Chapter 9 prose will be written until this outline is explicitly approved.
+
+\end{document}

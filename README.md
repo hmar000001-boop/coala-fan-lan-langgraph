@@ -12,7 +12,7 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 - **Chapter 6 — Planning: From a Problem to Candidate Actions.** Drafted from its author-approved outline; source-fidelity review completed against CoALA §4.6, Figure 4B, and the proposal discussion; author review pending.
 - **Chapter 7 — Evaluation and Selection.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,377 words). The approved outline PDF and editable source remain in `Tex/part1/chapter07/outline/`.
 - **Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,493 words). The approved outline PDF and editable source remain in `Tex/part1/chapter08/outline/`.
-- Chapters 9–30 remain structural placeholders. Each receives its own detailed outline and approval before prose is written.
+- Chapters 9–10 have detailed outline v1.0 PDFs and editable LaTeX sources stored inside their matching chapter folders; both await author approval. Their chapter files remain placeholders. Chapters 11–30 remain structural placeholders and will receive their own outline and approval before prose is written.
 - Chapters 1–8 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering.
 
 ## Author-supplied preamble
@@ -43,13 +43,13 @@ bash scripts/build-book.sh
 
 The authoritative workflow renders all 31 Mermaid sources for Chapters 1–8 to PNG before LaTeX compilation. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; this local environment could not resolve `registry.npmjs.org`.
 
-To regenerate the approved Chapter 3–8 outline PDFs from their chapter-local LaTeX sources (run from the repository root):
+To regenerate the Chapter 3–10 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
 
 ```bash
 bash scripts/build-outlines.sh
 ```
 
-The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–8 have editable LaTeX sources and review PDFs.
+The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–10 have editable LaTeX sources and review PDFs. Chapters 9–10 remain prose placeholders until approval.
 
 To build Chapters 1–8 separately:
 
@@ -78,6 +78,13 @@ The author approved both outlines on 14 November 2026. The approved outline PDFs
 The author approved both outlines on 14 November 2026 after a final review for minor issues. Chapter 7 is grounded in CoALA §4.6, especially the Evaluation and Selection sub-stages (pp. 12–13). It preserves the distinction that evaluation assigns values while selection chooses or rejects; rejection and return to proposal are placed under selection. Chapter 8 is grounded in CoALA §4.6 and Figure 4B. It explains the repeated planning/execution cycle, flexible use of reasoning and retrieval, interleaving and iteration as carefully marked teaching interpretations, internal simulation and candidate improvement, selection rejection, and execution. The paper does not define one universal planning schedule. Both approved outline sources and PDFs remain inside their corresponding chapter folders, with synchronized index copies under `review/`. Nine Mermaid sources have been added; the real rendering and print-size inspection must be confirmed by GitHub Actions because the local npm registry is currently unreachable.
 
 
+## Current batch status: Part II Batch 1 — Chapters 9–10 outline review
+
+- Chapter 9 — Why Feature-Level Descriptions Are Not Enough: outline v1.0 is prepared and awaiting author approval. Its source and review PDF are in `Tex/part2/chapter09/outline/`. It introduces the feature-versus-mechanism problem, the documented mechanism as the unit of analysis, the distinction between evidence relation and implementation depth, and the bounded review/validity scope.
+- Chapter 10 — The Seven Fields of a Mechanism: outline v1.0 is prepared and awaiting author approval. Its source and review PDF are in `Tex/part2/chapter10/outline/`. It teaches the exact tuple `K = <S,C,T,P,F,L,R>` field by field and includes a source-grounded ACT-R worked reading. The detailed E1–E4 and D0–D4 coding rules are deferred to Chapter 11.
+- Neither chapter contains prose yet. Their `chapter.tex` files remain placeholders until the author approves each outline.
+- The source and attribution review is recorded in `review/Batch_09-10_Source_Review.md`.
+
 ## Outline location convention
 
-All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and approved review PDFs in `Tex/part1/chapterNN/outline/`. The scaffold check enforces these locations for the current completed chapters.
+All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and review PDFs in `Tex/part1/chapterNN/outline/`. Chapters 9–10 use the same convention in `Tex/part2/chapterNN/outline/`. The scaffold check enforces the presence of the outline PDF/source pair and verifies that Part II prose has not started before approval.

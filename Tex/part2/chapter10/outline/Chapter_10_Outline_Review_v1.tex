@@ -1,0 +1,292 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 10 Outline Review: The Seven Fields of a Mechanism},pdfsubject={Detailed chapter outline for author approval},pdfkeywords={Fan and Lan, seven-field mechanism representation, state, control, transition}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 10 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE The Seven Fields of a Mechanism\par}
+\vspace{0.8cm}
+{\large Part II -- Fan \& Lan: From Cognitive Architectures to Mechanism-Level Understanding\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Awaiting author approval. This document is a detailed chapter plan, not chapter prose.
+
+\textbf{Primary theoretical source:} Fan and Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), Section II-C, with Section II-A, Section II-E, Sections III and V, and Appendices A--C used to explain the representation and its limits.
+
+\textbf{Chapter boundary:} This chapter teaches the seven-field mechanism representation. The E1--E4 evidence-relation and D0--D4 migration-depth codes are separate analytical axes; their detailed coding rules and historical-to-modern mapping belong to Chapter 11.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\setcounter{chapter}{10}
+\section{Chapter purpose and role in the book}
+Chapter 9 established why feature labels cannot explain how an agent operates. A label such as memory, planning, or tool use may cover systems with different state, authority, triggers, transitions, failure behavior, learning effects, and resource constraints. The next question is practical: how can a reader describe those differences consistently without writing a completely different analysis for every architecture?
+
+Fan and Lan answer with a seven-field representation. Each documented mechanism is reconstructed through its operative state substrate ($S$), control locus ($C$), transition trigger ($T$), persistence boundary ($P$), failure semantics ($F$), learning operator ($L$), and resource or governance policy ($R$). The tuple is not a score, a maturity ladder, or a requirement that every system must have seven non-empty components. It is an analytical frame that forces the reviewer to ask what is present, what is missing, and what the source actually documents.
+
+The chapter should teach each field from a concrete question, then assemble the questions into one representation. A worked reading of ACT-R's documented mechanism in Fan and Lan's Appendix A will show how the fields complement one another. The chapter will also explain how to preserve uncertainty: a reviewer must not invent a value for a field when the source does not report it. Detailed comparisons across all historical and modern systems, along with the independent evidence and depth codes, are reserved for Chapter 11.
+
+\begin{takeawaybox}[Chapter thesis]
+The seven fields turn a broad capability description into an inspectable mechanism account: what state is involved, who controls change, what triggers it, what persists, how failure is represented, how later behavior is learned, and which resources or governance rules constrain the operation.
+\end{takeawaybox}
+
+\section{Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Write and read the seven-field representation $\mathcal{K}=\langle S,C,T,P,F,L,R\rangle$.
+  \item Distinguish an operative state substrate from a broad data category or a feature name.
+  \item Identify the control locus and distinguish authority over a transition from the component that merely stores data or emits a message.
+  \item Identify a transition trigger and explain why a trigger is more precise than a vague statement that a system acts when needed.
+  \item Describe what persists across steps or cycles and what remains transient.
+  \item Describe failure semantics as the system's representation and control treatment of failure, not merely a log entry.
+  \item Identify the learning operator that can change later behavior and distinguish it from ordinary storage or logging.
+  \item Identify resource and governance policies such as capacity, timing, scheduling, and constraints on use.
+  \item Apply all seven fields to one historical example while marking any unsupported or unspecified information.
+  \item Explain why the seven-field tuple is separate from the paper's E1--E4 evidence-relation and D0--D4 migration-depth codes.
+\end{enumerate}
+
+\section*{Proposed chapter structure}
+
+\section{Why one structured representation helps}
+\textbf{Teaching entry:} Return to the two descriptions from Chapter 9. Both systems are called memory systems, but one description tells us little beyond search while the other exposes activation, latency, persistence, failure, and utility relationships. A consistent representation can make the comparison explicit.
+\begin{itemize}
+  \item Briefly recall the minimum mechanism chain from Chapter 9: state consumed, trigger, control action, state transition, possible learning consequence.
+  \item Explain why that chain motivates a fuller representation: a mechanism also has a persistence boundary, failure semantics, and resource or governance policy.
+  \item Introduce the tuple as seven questions, not as seven software components or seven required services.
+  \item Explain that a field may be explicit, implicit in the source, partially documented, absent from the described mechanism, or unknown from the available evidence. These conditions must not be collapsed into an invented answer.
+\end{itemize}
+\FanLanCite{\S II-A; \S II-C}
+
+\section{The seven-field representation at a glance}
+Introduce the exact tuple:
+\[
+  \mathcal{K}=\langle S,C,T,P,F,L,R\rangle.
+\]
+Explain that it is a structured analytical representation for a documented mechanism. The tuple is used to reconstruct historical and modern instances side by side; it does not say that two systems with the same broad purpose have the same fields or control behavior.
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.07\linewidth} p{0.25\linewidth} X}
+\toprule
+Field & Name & The question it asks \\
+\midrule
+$S$ & State substrate & What operative state does the mechanism consume or maintain? \\
+$C$ & Control locus & Which process, component, or authority governs the relevant choice or transition? \\
+$T$ & Transition trigger & What event or condition activates the control operation? \\
+$P$ & Persistence boundary & Which parts of the state survive, for how long, and across which boundaries? \\
+$F$ & Failure semantics & How is failure represented, classified, or handled by the mechanism? \\
+$L$ & Learning operator & How can experience or outcomes change later behavior or control? \\
+$R$ & Resource/governance policy & What capacities, timing constraints, budgets, priorities, or governance rules constrain operation? \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Planned Mermaid figure 10.1:} \emph{The seven-field mechanism tuple}. Use one central mechanism node with seven clearly differentiated fields surrounding it; show the fields as questions used for analysis, not as a prescribed runtime module diagram. Proposed source path: \path{Tex/diagrams/source/part2/chapter10/seven-field-mechanism-tuple.mmd}.
+\FanLanCite{\S II-C}
+
+\section{State substrate ($S$): what the mechanism operates on}
+\textbf{Entry question:} What is the actual state object involved when the mechanism runs?
+\begin{itemize}
+  \item Define the operative state substrate as the explicit state the mechanism consumes, updates, or relies on.
+  \item Distinguish state from a feature label: saying \emph{memory} is present does not identify chunks, buffers, memories, workspaces, intentions, traces, beliefs, factors, or other concrete state objects.
+  \item Explain that the source may describe more than one state object and that the reviewer should record only those connected to the mechanism being reconstructed.
+  \item Use ACT-R's typed buffers, chunks, and procedural productions as an example from Appendix A; do not infer a full runtime state model beyond what the paper records.
+  \item Clarify that a repository's internal data structures count only when linked to the claimed operation and supported by admissible evidence.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Table VII}
+
+\section{Control locus ($C$): who or what has authority}
+\textbf{Entry question:} Which part of the system actually governs the transition?
+\begin{itemize}
+  \item Define control locus as the process, authority, or mechanism that makes the relevant control decision.
+  \item Distinguish the place where state is stored from the place that decides how the state changes.
+  \item Explain that a framework may expose a callable interface or checkpoint while leaving the actual decision authority to another component.
+  \item Use ACT-R production matching and conflict resolution, or Soar's operator decision cycle, as a short source-grounded example of control locus.
+  \item Introduce the authority gap only as a descriptive issue: a field may be represented in data without a trigger having authority to enforce the corresponding transition.
+\end{itemize}
+\begin{notebox}
+A state store does not automatically own control. A message channel does not automatically select a winner. A log does not automatically change the active method. The control field asks where the consequential decision is made, not merely where information is held.
+\end{notebox}
+\FanLanCite{\S II-C; \S II-E; Appendix A, Table VII}
+
+\section{Transition trigger ($T$): what activates the operation}
+\textbf{Entry question:} What identifiable event or condition causes the mechanism to act?
+\begin{itemize}
+  \item Define a trigger as the event, state change, match, or condition that activates the control operation.
+  \item Distinguish an explicit trigger from vague descriptions such as \emph{the agent decides to}, \emph{when appropriate}, or \emph{as needed}.
+  \item Explain why the trigger matters: the same state and component can behave differently when activation conditions differ.
+  \item Use source examples from Appendix A: a buffer match or module event in ACT-R; an operator selection conflict, rejection, or no-change condition in Soar; a blackboard change enabling a knowledge source in Hearsay-II.
+  \item Avoid treating a scheduled timer, model call, message arrival, or human request as the trigger unless the source ties it to the mechanism's actual control transition.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Tables VII--VIII}
+
+\section{Persistence boundary ($P$): what survives}
+\textbf{Entry question:} Which state persists beyond the immediate operation, and where does it stop?
+\begin{itemize}
+  \item Define the persistence boundary as the lifetime and scope of state: what persists, what is transient, and which cycle, task, session, substate, or process boundary matters.
+  \item Explain why persistence is not binary. Different parts of one architecture may have different lifetimes.
+  \item Use the paper's ACT-R distinction: chunks and learned utilities persist, while buffers are transient; use LIDA's persistent memories and cycle-bounded workspace as a second brief contrast.
+  \item Show why a checkpoint or durable database row is not enough to establish what the system treats as authoritative or when the state is released.
+  \item Do not infer persistence guarantees beyond the paper's record or the implementation evidence being examined.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Table VII}
+
+\section{Failure semantics ($F$): what failure means to the mechanism}
+\textbf{Entry question:} How does the system represent a failure, and what does that representation cause it to do?
+\begin{itemize}
+  \item Define failure semantics as how the mechanism represents, classifies, or responds to failure conditions.
+  \item Distinguish an error message or log from a typed failure state that participates in control.
+  \item Explain why naming the failure condition matters: retrieval failure, unavailable buffer, no applicable production, a typed impasse, an incompatible hypothesis, or a failed subgoal can trigger different responses.
+  \item Use ACT-R and Soar as source-grounded contrasts, but leave the detailed Soar impasse/substate/compilation mechanism for Chapter 13.
+  \item Avoid implying that all systems need a universal exception taxonomy or a common failure protocol.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Table VIII; \S III-A}
+
+\section{Learning operator ($L$): changing later behavior}
+\textbf{Entry question:} Does an outcome merely get recorded, or can it change how the mechanism operates in the future?
+\begin{itemize}
+  \item Define the learning operator as the update process through which experience or outcomes change later state, selection, invocation, or control behavior.
+  \item Distinguish storing an event, adding a memory, or writing a reflection from an update that changes a future policy or control decision.
+  \item Use ACT-R activation and utility updates, Soar chunking, and LIDA broadcast-conditioned learning only as brief illustrations of different learning consequences.
+  \item Explain why learning can be absent, secondary, architecture-independent, or not described in the source; do not force every mechanism into a learning story.
+  \item Preserve the paper's distinction between learning effects and a generic record of past events.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Table VIII; \S III}
+
+\section{Resource and governance policy ($R$): what constrains operation}
+\textbf{Entry question:} What limits, priorities, schedules, or governance decisions shape the mechanism's operation?
+\begin{itemize}
+  \item Define the field as the resource or governance policy that constrains how the mechanism runs.
+  \item Explain that resource control can include capacity, timing, module bottlenecks, workspace limits, agenda priorities, or explicit budget/scheduling policies.
+  \item Distinguish resource/governance policy from generic application business rules or a security checklist; include a policy only when the source connects it to the mechanism's operation.
+  \item Use the paper's ACT-R buffer capacity and module timing, LIDA's limited workspace capacity and competition, and EPIC's timing/parallelism/bottleneck commitments as source-grounded examples.
+  \item Do not reduce the field to token budgets alone or assume that every system has one global scheduler.
+\end{itemize}
+\FanLanCite{\S II-C; Appendix A, Table VIII; \S III-D}
+
+\section{A complete worked reading: ACT-R through seven fields}
+This is the central worked example. It should be constructed strictly from Fan and Lan's ACT-R description and Appendix A; any explanatory paraphrase must remain identified as such.
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.14\linewidth} X}
+\toprule
+Field & ACT-R example recorded by Fan and Lan \\
+\midrule
+$S$ & Typed buffers, chunks, and procedural productions. \\
+$C$ & Production matching and conflict resolution. \\
+$T$ & Buffer match or module event. \\
+$P$ & Chunks and learned utilities persist; buffers are transient. \\
+$F$ & Retrieval failure, unavailable buffer, or no applicable production. \\
+$L$ & Activation and utility updates; procedural learning. \\
+$R$ & Buffer capacity, module timing, and a central production bottleneck. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+After the table, explain how the fields constrain one another: the state substrate is not independent of the trigger; the trigger activates a control locus; persistence determines what can affect a later cycle; failure semantics describe what happens when expected state or production conditions are absent; learning changes future activation or utility; and timing/capacity shape what can happen within the architecture. Do not claim that the seven fields alone explain all of ACT-R or replace the primary ACT-R sources; the example is Fan and Lan's representation of the reviewed mechanism.
+
+\textbf{Planned Mermaid figure 10.2:} \emph{Reading an ACT-R mechanism across the seven fields}. Use the ACT-R record as a single illustrative case, with nodes for state, trigger, control, transition, persistence, failure, learning, and resources. Clearly label it as the paper's summary, not an implementation diagram. Proposed source path: \path{Tex/diagrams/source/part2/chapter10/actr-seven-field-reading.mmd}.
+\FanLanCite{Appendix A, Tables VII--VIII; \S III-A}
+
+\section{The fields are analytical questions, not a mandatory component checklist}
+This section protects against over-reading the tuple.
+\begin{itemize}
+  \item A mechanism need not expose every field with equal detail; the source may be silent or the field may not apply in the same way.
+  \item A missing description is not proof that the mechanism has no such property; it means the reviewer lacks evidence for a positive claim.
+  \item A written field does not prove that it has operational authority. A stored value may be D2-like representation without a trigger that autonomously performs the control transition; detailed depth coding is deferred to Chapter 11.
+  \item The seven fields do not form a maturity score, and a complete-looking table is not proof that the mechanism is effective or production-ready.
+  \item Use explicit statuses in working notes, such as documented, partially documented, not reported, or not applicable, only as editorial bookkeeping. Do not present those labels as a new Fan and Lan coding scheme.
+\end{itemize}
+\begin{warningbox}
+Never fill an unknown field by inference from a familiar architecture name, a framework feature, or a visually similar diagram. The representation exists to make evidence gaps visible, not to hide them behind plausible guesses.
+\end{warningbox}
+\FanLanCite{\S II-C--II-E; \S VII-C}
+
+\section{How the tuple connects to the comparison method}
+Briefly show how the seven fields support the next analytical steps without teaching all of Chapter 11.
+\begin{itemize}
+  \item Explain that Fan and Lan extract fields for both historical and modern instances, then compare the state object, trigger, control/learning edge, preserved invariant, and missing invariant.
+  \item Introduce the idea of a claim packet: historical mechanism, modern implementation, matching state, trigger, control edge, preserved invariant, missing invariant, and then the separate evidence/depth codes.
+  \item Emphasize that E1--E4 describe evidence relation and D0--D4 describe implementation depth; neither is one of the seven fields.
+  \item Defer the precise code definitions, precedence rules, examples, and mapping-ledger walkthrough to Chapter 11.
+\end{itemize}
+\textbf{Planned Mermaid figure 10.3:} \emph{From seven-field extraction to a comparison claim packet}. Show the tuple as an extraction step, followed by comparison of matching/missing invariants, and then two separate evidence/depth coding axes. Proposed source path: \path{Tex/diagrams/source/part2/chapter10/fields-to-claim-packet.mmd}.
+\FanLanCite{\S II-C--II-E}
+
+\section{Common misreadings and the handoff to Chapter 11}
+Address the following:
+\begin{itemize}
+  \item \textbf{State and control are interchangeable.} No: one describes the operative state; the other describes who or what governs a transition.
+  \item \textbf{A trigger is just a timestamp.} No: it is the identifiable event or condition that activates a control operation.
+  \item \textbf{Persistence means every object is durable.} No: one mechanism can combine transient and persistent state.
+  \item \textbf{Failure means an exception was logged.} No: failure semantics matter when the condition is represented in a way that affects control.
+  \item \textbf{Learning means writing a note.} No: the question is whether later behavior or policy changes.
+  \item \textbf{Resources means token budget only.} No: the paper includes capacity, timing, bottlenecks, competition, scheduling, and governance.
+  \item \textbf{Seven fields are the same as E/D codes.} No: the tuple reconstructs a mechanism; the E/D axes classify a particular comparison.
+\end{itemize}
+The ending should tell the reader that Chapter 10 has supplied the common representation, while Chapter 11 will use it across the ten historical architectures and the modern runtime landscape, and will teach the evidence-relation and migration-depth coding rules.
+
+\section{Visual and pedagogical plan}
+Use four Mermaid diagrams, with all editable \texttt{.mmd} sources in \path{Tex/diagrams/source/part2/chapter10/}:
+\begin{enumerate}
+  \item The seven-field tuple as seven analytical questions surrounding one mechanism.
+  \item ACT-R as a source-grounded worked seven-field record.
+  \item Relationships among the fields (for example, state/trigger/control/transition and persistence/learning/resources), without implying one universal process order.
+  \item Seven-field extraction flowing into preserved/missing-invariant comparison and then to the separate E/D axes.
+\end{enumerate}
+All diagrams must use the shared Mermaid theme, \texttt{accTitle}, and \texttt{accDescr}; captions and nearby prose are required. LaTeX only places PNGs through \texttt{\textbackslash BookDiagram}. No TikZ, ASCII art, hand-positioned LaTeX nodes, or chapter-specific drawing library.
+
+Use teaching boxes selectively: one learning objective, one note distinguishing state from control, one caution about unknown fields, one takeaway after the ACT-R worked example, a chapter recap, and review questions. Do not turn each field into a coloured box.
+
+\section{Source and attribution plan}
+\begin{itemize}
+  \item \textbf{Primary representation:} Fan and Lan (2026), \S II-C, equation/tuple $\mathcal{K}=\langle S,C,T,P,F,L,R\rangle$.
+  \item \textbf{Mechanism definition and unit of analysis:} \S II-A.
+  \item \textbf{Field-by-field historical examples:} Appendix A, Tables VII--VIII.
+  \item \textbf{ACT-R operation and interpretation:} \S III-A and Appendix A.
+  \item \textbf{Soar, CLARION, LIDA, Hearsay-II, BDI, MIDCA, ICARUS, EPIC, Sigma:} only short examples when a field needs clarification; full profiles belong to Chapter 11.
+  \item \textbf{Claim packet and independent evidence/depth axes:} \S II-D--II-E; explain the separation, but defer the coding system to Chapter 11.
+  \item \textbf{Validity limits:} \S VII-C, especially the interpretive nature of mapping and the paper's disclosure about independent coding.
+  \item Use only the shared \texttt{\textbackslash FanLanCite} footnote macro for theoretical citations.
+\end{itemize}
+
+\section{Explicit exclusions and boundaries}
+\begin{itemize}
+  \item Do not reinterpret CoALA or describe the seven fields as a CoALA architecture requirement.
+  \item Do not turn the chapter into seven independent mini-essays disconnected from one mechanism representation.
+  \item Do not claim every field must be fully populated or that unknown means absent.
+  \item Do not teach all ten historical architectures or all modern runtimes in detail; that is Chapter 11.
+  \item Do not present E1--E4 and D0--D4 as a combined score or a seventh/eighth/ninth field.
+  \item Do not teach B1/B2/B3/B4/B5/B6 here; later chapters study them after the historical-to-modern map is established.
+  \item Do not claim the tuple proves causal performance, production readiness, or universal architectural completeness.
+\end{itemize}
+
+\section{Proposed depth and acceptance criteria}
+Estimated depth: approximately 22--30 finished pages, without a hard page limit. The chapter must explain each field deeply enough for a beginner to apply it, then show how the fields work together in one complete source-grounded example.
+
+The final chapter is ready for author review only when it:
+\begin{itemize}
+  \item defines the tuple exactly as the paper presents it;
+  \item explains all seven fields in accessible, operational language;
+  \item distinguishes the seven fields from each other and from evidence/depth coding;
+  \item completes the ACT-R worked reading without inventing unsupported details;
+  \item treats missing or unknown evidence honestly rather than filling fields by inference;
+  \item uses examples from the paper without turning them into additional theoretical foundations;
+  \item hands the reader to Chapter 11 for the historical catalog and the precise E/D coding rules;
+  \item uses shared preamble, macros, semantic boxes, Mermaid sources/PNG generation, footnotes, glossary/index, and repository quality gates.
+\end{itemize}
+
+\begin{warningbox}
+\textbf{Approval gate:} Please approve this Chapter 10 outline or request changes. No Chapter 10 prose will be written until this outline is explicitly approved.
+\end{warningbox}
+
+\section*{Primary reference}
+Fan, H., and Lan, Z. (2026). \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps}. arXiv:2607.23942v1, 27 July 2026. The outline is primarily grounded in Section II-C, with Section II-A, Sections II-D--II-E, Section III, Appendix A (Tables VII--VIII), Appendix B, and Section VII-C used for examples and boundaries.
+\FanLanCite{\S II-A--II-E; \S III; \S VII-C; Appendix A, Tables VII--VIII; Appendix B}
+\end{document}

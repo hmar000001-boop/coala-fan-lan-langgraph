@@ -97,7 +97,21 @@ Before delivering a chapter or batch:
 9. Report which validation ran locally and which requires a real GitHub Actions execution. Never describe a mocked or substitute-font test as a full production build.
 10. Deliver chapter PDFs individually. Include a build note for any known rendering limitation; do not claim accessibility conformance beyond the selected standard PDF target.
 
-## 9. Current project state (2026-11-14)
+
+## 9. Part II mechanism-level writing rules
+
+- Part II explains Fan and Lan's 2026 paper as a separate contribution. Do not use it to reinterpret CoALA or present its review as a correction to Part I.
+- Chapter 9 establishes why feature labels are too coarse and why the documented mechanism is the unit of analysis. It may introduce the distinction between evidence relation and implementation depth conceptually, but must defer the precise E1–E4 and D0–D4 definitions and precedence rules to Chapter 11.
+- Chapter 10 teaches the seven-field representation exactly as given in Section II-C: operative state substrate (S), control locus (C), transition trigger (T), persistence boundary (P), failure semantics (F), learning operator (L), and resource/governance policy (R). Do not rename, reorder, merge, or add fields.
+- The seven-field tuple is an analytical representation, not a required software architecture, maturity score, or claim that every field must be fully populated. Unknown or undocumented fields must remain unknown; never fill them from architecture names or plausible assumptions.
+- Evidence relation (E1–E4) and migration depth (D0–D4) are separate axes, not fields in the tuple and not one combined score. Full operational definitions, coding rules, and historical-to-modern ledger work belong to Chapter 11.
+- For every historical or modern mechanism, keep evidence claims tied to Fan and Lan's stated source record. Repository popularity is not scientific evidence; executable implementation claims require a versioned release, tag, or commit where the paper requires it.
+- Describe the paper as a bounded mechanism-level mapping review. Preserve its explicit validity boundaries: no PRISMA completeness claim, no search-recall or stable hit-count claim, no pooled/causal performance claim, and no independent inter-rater reliability claim in the submitted manuscript. Do not turn the corpus counts or highest reviewed migration depth into prevalence or universal-maximum claims.
+- Distinguish explicit paper statements, the authors' analysis or hypotheses, and book-created teaching examples. Only the two formal labels `[CoALA]` and `[Fan & Lan]` may be used.
+- Avoid premature mechanism deep-dives: Chapter 11 owns the historical catalog and migration mapping; Chapters 12–16 own B1, B2, B3, B4, and B6; Chapter 17 owns the closed B5/GraSP case; Chapter 18 owns the synthesis.
+- Every outline and chapter must use the shared preamble, macros, semantic teaching boxes, footnote citation macros, and Mermaid-to-PNG pipeline. Planned figures belong in chapter-specific `.mmd` source directories when the chapter is drafted.
+
+## 10. Current project state (2026-11-14)
 
 - Chapters 1 and 2 have been drafted and integrated. Both use the shared semantic teaching-box system and Mermaid-to-PNG figure pipeline.
 - Chapters 3 and 4 have now been drafted from their reviewed outlines. The author explicitly requested the additional review pass and drafting of this batch. The chapter drafts are ready for author review.
@@ -107,7 +121,7 @@ Before delivering a chapter or batch:
 - Chapter 6 — Planning: From a Problem to Candidate Actions: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.6, Figure 4B, and the proposal sub-stage.
 - Eight Mermaid sources were added for Chapters 5 and 6; together with earlier chapters this brought the repository to 22 diagram sources before the latest batch.
 - Chapters 1–8 each have a standalone LaTeX entry point. The PDF validation script and standalone build script now cover Chapters 1–8.
-- Chapters 9–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
+- Chapters 9–10 have outline review v1.0 files in their chapter-local `outline/` folders and remain structural placeholders while awaiting author approval. Chapters 11–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
 
 
 ### Chapter 7–8 status (14 November 2026)
@@ -119,3 +133,11 @@ Before delivering a chapter or batch:
 - The standalone build script now covers Chapters 1–8, and PDF quality checks verify the Chapter 7 and Chapter 8 headings. The scaffold check confirms that both approved chapters contain prose and retain their outline assets.
 - Source and drafting review notes are recorded in `review/Batch_07-08_Source_Review.md` and `review/Batch_07-08_Drafting_Review.md`.
 - Local npm installation of Mermaid CLI 12.2.0 was attempted again on 14 November 2026 and failed because `registry.npmjs.org` could not be resolved (`EAI_AGAIN`). Therefore real PNG rendering and printed-size visual inspection remain a GitHub Actions verification gate. Mock PNGs may be used only for a disposable LaTeX layout smoke test and must not be represented as actual Mermaid output.
+
+
+### Part II Batch 1 — Chapters 9–10 outline review (14 November 2026)
+
+- Chapter 9 — Why Feature-Level Descriptions Are Not Enough: outline v1.0 prepared from Fan & Lan §§I, II-A–II-B, II-D–II-E, III, and VII, including Figure 1 and Tables I–II. The chapter motivates the feature/mechanism distinction, introduces the documented mechanism as the unit of analysis, explains why evidence relationship and migration depth are separate questions, and preserves the paper's bounded-review validity disclosures.
+- Chapter 10 — The Seven Fields of a Mechanism: outline v1.0 prepared from Fan & Lan §II-C, §§II-A and II-D–II-E, §III, Appendix A Tables VII–VIII, Appendix B, and §VII-C. It teaches K = <S,C,T,P,F,L,R> without adding, reordering, or renaming fields; uses the paper's ACT-R ledger entry as a worked example; and keeps E/D coding as separate axes for Chapter 11.
+- Both outline PDFs and editable LaTeX sources are stored in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`. Neither chapter's prose has been started. The scaffold check enforces the outline pair and placeholder state.
+- The local outline preview uses temporary Nimbus font substitutes because TeX Gyre OpenType faces are unavailable in this runner; the repository preamble remains unchanged and the outline source loads it normally.
