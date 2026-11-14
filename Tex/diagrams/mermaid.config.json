@@ -1,0 +1,32 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "TeX Gyre Heros, Arial, sans-serif",
+    "fontSize": "18px",
+    "primaryColor": "#EAF4FB",
+    "primaryTextColor": "#1C1C1E",
+    "primaryBorderColor": "#1A4A8A",
+    "secondaryColor": "#EEF7EE",
+    "secondaryTextColor": "#1C1C1E",
+    "secondaryBorderColor": "#27AE60",
+    "tertiaryColor": "#F4F4F4",
+    "tertiaryTextColor": "#1C1C1E",
+    "tertiaryBorderColor": "#888888",
+    "lineColor": "#4A4A4A",
+    "textColor": "#1C1C1E",
+    "mainBkg": "#EAF4FB",
+    "nodeBorder": "#1A4A8A",
+    "clusterBkg": "#F4F4F4",
+    "clusterBorder": "#888888",
+    "edgeLabelBackground": "#FFFFFF",
+    "titleColor": "#1A4A8A"
+  },
+  "flowchart": {
+    "useMaxWidth": true,
+    "htmlLabels": true,
+    "curve": "linear",
+    "nodeSpacing": 44,
+    "rankSpacing": 54,
+    "padding": 20
+  }
+}

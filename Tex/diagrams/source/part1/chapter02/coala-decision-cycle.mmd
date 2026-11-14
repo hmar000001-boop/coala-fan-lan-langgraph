@@ -1,0 +1,20 @@
+flowchart TB
+  accTitle: CoALA decision cycle
+  accDescr: Perceptual input updates working memory, planning proposes evaluates and selects an action, execution occurs, and the cycle continues.
+  OBS(["Perceptual input / observation"]) --> WM["Working memory updated"]
+  subgraph PLANNING["Planning"]
+    direction TB
+    SUPPORT["Retrieval and reasoning<br/>support the planning process"]
+    PROPOSE["Proposal"] --> EVALUATE["Evaluation"] --> SELECT["Selection"]
+    SUPPORT -.-> PROPOSE
+    SUPPORT -.-> EVALUATE
+  end
+  WM --> PLANNING
+  SELECT --> EXEC["Execute the selected action"]
+  EXEC --> TYPE{"Selected action type"}
+  TYPE --> GROUND["Grounding action"]
+  TYPE --> LEARN["Learning action"]
+  GROUND --> ENV["External environment"]
+  ENV -->|"new observation"| NEXT["Continue the decision cycle"]
+  LEARN -->|"long-term memory updated"| NEXT
+  NEXT --> WM

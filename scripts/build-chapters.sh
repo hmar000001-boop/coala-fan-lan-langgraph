@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+bash scripts/render-diagrams.sh
+bash scripts/check-diagrams.sh
 mkdir -p Tex/Output
 for n in 01 02; do
   job="Chapter_${n}"

@@ -15,8 +15,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js for Mermaid CLI
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
+      - name: Install Mermaid browser fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-texgyre fontconfig
+          fc-cache --force
+          fc-match --format='%{family}\n' 'TeX Gyre Heros' | grep -F 'TeX Gyre Heros'
+
+      - name: Install pinned Mermaid CLI
+        run: npm install --prefix tools/mermaid --no-audit --no-fund --no-progress
+
+      - name: Render Mermaid sources to PNG
+        run: bash scripts/render-diagrams.sh
+
+      - name: Validate Mermaid sources and generated PNGs
+        run: bash scripts/check-diagrams.sh
+
+      - name: Check repository structure
+        run: bash scripts/check-scaffold.sh
 
       - name: Create output directory and index links
         run: |
@@ -24,11 +48,8 @@ jobs:
           ln -sfn Tex/Output/main.idx main.idx
           ln -sfn Tex/Output/main.ind main.ind
 
-      - name: Check repository structure
-        run: bash scripts/check-scaffold.sh
-
-      - name: Compile LaTeX (XeLaTeX via latexmk)
-        uses: xu-cheng/texlive-action@v2
+      - name: Compile book PDF (XeLaTeX via latexmk)
+        uses: xu-cheng/texlive-action@f886de8159e5952a131848a5fa9c3196a2132b5d # v2
         with:
           scheme: full
           run: |
@@ -67,11 +88,18 @@ jobs:
       - name: Validate generated PDF and LaTeX log
         run: bash scripts/quality-checks.sh Tex/Output/main.pdf Tex/Output/main.log
 
-      - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload validated PDF artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: compiled-pdf
           path: Tex/Output/book.pdf
+          if-no-files-found: error
+
+      - name: Upload rendered Mermaid diagrams for visual review
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rendered-mermaid-diagrams
+          path: Tex/diagrams/generated/**/*.png
           if-no-files-found: error
 
   release:
@@ -83,7 +111,7 @@ jobs:
       contents: write
     steps:
       - name: Download the validated PDF
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: compiled-pdf
           path: release-assets

@@ -31,7 +31,9 @@ Tex/Output/*
 *.vrb
 
 # Diagram build outputs
-Tex/diagrams/generated/*
+Tex/diagrams/generated/**/*.png
+!Tex/diagrams/generated/**/.gitkeep
+tools/mermaid/node_modules/
 
 # OS/editor files
 .DS_Store

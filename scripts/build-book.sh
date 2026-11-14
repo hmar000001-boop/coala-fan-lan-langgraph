@@ -4,6 +4,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 mkdir -p Tex/Output
 
+# Render and validate committed Mermaid sources before XeLaTeX.
+bash scripts/render-diagrams.sh
+bash scripts/check-diagrams.sh
+
 # imakeidx invokes MakeIndex relative to the working directory, while the
 # selected build command places all generated files in Tex/Output. These
 # temporary links keep both paths consistent without polluting the repo.

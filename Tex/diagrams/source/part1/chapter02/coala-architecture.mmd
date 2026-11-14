@@ -1,0 +1,39 @@
+flowchart TB
+  accTitle: CoALA structural architecture
+  accDescr: The architecture relates the decision procedure, agent code, language model, working memory, action procedures, long-term memory, and external environment.
+  subgraph AGENT["Cognitive language agent"]
+    direction TB
+    DECISION["Decision procedure"]
+    subgraph CORE["Core processing and active state"]
+      direction LR
+      CODE["Agent code"]
+      LLM["Language model"]
+      WM["Working memory"]
+    end
+    subgraph PROCEDURES["Action procedures"]
+      direction LR
+      RET["Retrieval"]
+      REA["Reasoning"]
+      LEA["Learning"]
+      GRO["Grounding"]
+    end
+    LTM[("Long-term memory")]
+  end
+  ENV["External environment"]
+  DECISION -->|"invokes procedures"| CODE
+  CODE <-->|"prompt / model output"| LLM
+  CODE <-->|"reads and updates"| WM
+  DECISION --> RET
+  DECISION --> REA
+  DECISION --> LEA
+  DECISION --> GRO
+  RET -->|"retrieves"| LTM
+  RET -->|"makes information active"| WM
+  WM -->|"information to process"| REA
+  REA <-->|"LLM-assisted reasoning"| LLM
+  REA -->|"updates"| WM
+  WM -->|"information to retain"| LEA
+  LEA -->|"stores"| LTM
+  GRO -->|"external action"| ENV
+  ENV -->|"observation / feedback"| GRO
+  GRO -->|"feeds back"| WM

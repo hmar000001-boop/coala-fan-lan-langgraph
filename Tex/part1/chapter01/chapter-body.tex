@@ -6,7 +6,9 @@ A language model can produce an answer. A language agent can use a language mode
 
 This chapter explains why that distinction matters, where the idea of a cognitive architecture comes from, and why the CoALA paper uses that history to organize language agents. We will work toward the framework through a concrete problem rather than beginning with a list of definitions.
 
+\begin{learningbox}
 By the end of the chapter, you should be able to explain why an LLM alone is not a complete description of an agent system, why memory and control become important as agents grow more capable, and what CoALA contributes. You will also know what this chapter deliberately leaves for the chapters that follow.
+\end{learningbox}
 
 \section{A model call is not yet the whole system}\label{a-model-call-is-not-yet-the-whole-system}
 
@@ -61,18 +63,10 @@ The CoALA paper distinguishes several ways of using large language models. The d
 
 The simplest pattern is familiar: provide text to a language model and receive text in return.
 
-\begin{lstlisting}
-       text input
-           |
-           v
-    +--------------+
-    | Language     |
-    | model        |
-    +--------------+
-           |
-           v
-       text output
-\end{lstlisting}
+\BookDiagram[0.42\textheight]
+  {Tex/diagrams/generated/part1/chapter01/model-call.png}
+  {A simple model call: supplied text is transformed into generated text. The surrounding application is not shown.}
+  {fig:chapter01-model-call}
 
 The model uses the supplied context to generate an output. The application may display the output, store it, or pass it somewhere else, but those surrounding operations are not visible in this simple picture.
 
@@ -96,28 +90,18 @@ A \textbf{language agent}, in the sense used by CoALA, is a system that uses a l
 
 The environment provides an observation. The system represents that observation in a form the model can process. The model helps determine an action. The system carries out the action, and the environment may then provide another observation.
 
-\begin{lstlisting}
-       +----------------------+
-       |      Environment     |
-       +----------------------+
-          |              ^
- observation              | action
-          v              |
-       +----------------------+
-       | Prepare input and    |
-       | interpret model      |
-       | output               |
-       +----------------------+
-                  |
-                  v
-       +----------------------+
-       |    Language model    |
-       +----------------------+
-\end{lstlisting}
+\BookDiagram[0.62\textheight]
+  {Tex/diagrams/generated/part1/chapter01/language-agent-loop.png}
+  {A language agent places model use inside an interaction loop: software prepares model input, interprets the result, executes an action through an interface, and receives a subsequent observation.}
+  {fig:chapter01-language-agent-loop}
 
 The arrows form a loop because an action can change what the system observes next. The next observation may confirm an expectation, contradict it, or reveal that another investigation is necessary. The agent is therefore not merely producing an answer to the original prompt. It is participating in an ongoing interaction.
 
 A feedback loop does not guarantee good decisions. It only describes the relationship between action and subsequent observation. The agent may still choose an unsuitable action, misinterpret evidence, or fail to account for relevant information. The architecture of the complete system matters precisely because the interaction has become more complex than one model call.
+
+\begin{tipbox}
+Keep the boundary between model output and system behavior explicit. A generated action description is still text until the surrounding agent software validates, authorizes, and executes it through an interface. The feedback loop begins with an actual interaction and the observation that follows it.
+\end{tipbox}
 
 \subsection{A cognitive language agent also manages internal information}\label{a-cognitive-language-agent-also-manages-internal-information}
 
@@ -372,6 +356,11 @@ CoALA stands for \textbf{Cognitive Architectures for Language Agents}. The origi
 
 CoALA organizes agents along three dimensions. We will introduce each one briefly here and devote later chapters to understanding it in detail.
 
+\BookDiagram[0.52\textheight]
+  {Tex/diagrams/generated/part1/chapter01/coala-three-dimensions.png}
+  {The three dimensions CoALA uses to organize a language agent. The detailed chapters will examine each dimension and the relationships among them.}
+  {fig:chapter01-coala-three-dimensions}
+
 \subsection{Information storage: what information is maintained?}\label{information-storage-what-information-is-maintained}
 
 The first dimension concerns how the agent organizes information. CoALA distinguishes \textbf{working memory} from \textbf{long-term memory} \CoALACite{§4.1}.
@@ -380,7 +369,7 @@ Working memory contains information that is active and readily available for the
 
 For this chapter, the distinction is enough: the agent may need information that is active now, information retained from earlier experiences, factual knowledge, or knowledge about how to perform tasks. These are not simply different names for a single undifferentiated conversation history.
 
-We will study the types of memory and their roles in Chapters 2 and 3. Here, remember the architectural question: \textbf{what information does the agent maintain, and how is it organized?}
+We will study the types of memory and their roles in Chapter 3. Here, remember the architectural question: \textbf{what information does the agent maintain, and how is it organized?}
 
 \subsection{Action space: what operations are available?}\label{action-space-what-operations-are-available}
 
@@ -473,8 +462,12 @@ The history of production systems showed that rules alone do not explain a compl
 
 The next chapter will turn the three dimensions into a complete architectural picture. We will examine how information storage, action space, and decision-making fit together before studying each in depth. The questions from Product X will remain with us: what information is available, what can the system do, and how does it decide what to do next?
 
+\begin{chapterrecap}
+A language model call describes text generation, not the full behavior of an interactive system. A language agent places model use in a feedback loop with an environment; a cognitive language agent also uses internal processes to manage information and behavior. CoALA draws on the history of cognitive architectures to organize language agents through information storage, action space, and decision-making procedure. Those dimensions give us a shared vocabulary without prescribing one implementation or proving that a system is production-ready.
+\end{chapterrecap}
+
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
 \section{Source and example note}\label{source-and-example-note}
 
-The theoretical account in this chapter is grounded in \textbf{{[}CoALA{]}} only. The Product X payment-incident scenario and all of its specific details are illustrative material created for this book; they are not presented as a case study from the paper. The thermostat and string-rewriting examples are used to explain the historical discussion as it is presented in \textbf{{[}CoALA{]}}. No mechanism from Fan \& Lan or from another research framework is introduced in this chapter.
+The theoretical account in this chapter is grounded in \textbf{{[}CoALA{]}} only. The Product X payment-incident scenario and all of its specific details are illustrative material created for this book; they are not presented as a case study from the paper. The thermostat and string-rewriting examples are used to explain the historical discussion as it is presented in \textbf{{[}CoALA{]}}. The three diagrams are book-authored teaching diagrams maintained as Mermaid text sources and rendered to PNG during the build; they summarize concepts rather than reproduce the paper's artwork. No mechanism from Fan \& Lan or from another research framework is introduced in this chapter.

@@ -10,7 +10,7 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 
 ## Author-supplied preamble
 
-`Tex/preamble.tex` contains the author's supplied preamble verbatim. It is loaded once by `Tex/main.tex`. It defines the `book` class, XeLaTeX/fontspec setup, 7 × 10 inch double-sided page layout, typography, colors, heading styles, headers/footers, code listings, reusable teaching boxes, source-layout tree, TikZ, and shared utility macros. Keep this file intact until the author approves a later cleanup pass.
+`Tex/preamble.tex` is based on the author's supplied preamble and is loaded once by `Tex/main.tex`. It retains the `book` class, XeLaTeX/fontspec setup, 7 × 10 inch double-sided page layout, typography, colors, heading styles, headers/footers, code listings, reusable teaching boxes, and source-layout tree. It adds a shared `\BookDiagram` figure macro and balanced figure-float settings; TikZ was removed after diagrams migrated to Mermaid-rendered PNGs. Keep this file intact until the author approves a later cleanup pass.
 
 Book-wide citation macros, glossary setup, bibliography integration, additional reusable environments, and book-level PDF metadata are layered in `Tex/shared-macros.tex`. Chapters should use these shared definitions rather than introducing chapter-local replacements.
 
@@ -20,12 +20,21 @@ The authoritative entry point is `Tex/main.tex`. The repository uses the author'
 
 The workflow compiles only the combined book PDF. Individual first-chapter review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
 
-Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs the full TeX Live scheme.
+Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, Node.js 22.13 or later, npm, Chromium/Puppeteer dependencies, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs Node 24, the TeX Gyre browser fonts, the pinned Mermaid CLI, and the full TeX Live scheme.
+
+The Mermaid CLI is pinned to version 12.2.0 in `tools/mermaid/package.json` and requires Node.js 22.13 or later. CI installs Node 24, renders all `.mmd` sources to high-resolution PNGs using the shared Mermaid theme, validates their dimensions and chapter references, and only then starts XeLaTeX. Generated PNGs are intentionally excluded from source control and are also uploaded as a separate CI artifact for visual inspection. The npm CLI package is directly version-pinned; dependency-tree lockfile generation is not yet committed.
+
+Install the Mermaid renderer once for a local build, then render and compile:
 
 ```bash
+npm install --prefix tools/mermaid --no-audit --no-fund
 bash scripts/check-scaffold.sh
+bash scripts/render-diagrams.sh
+bash scripts/check-diagrams.sh
 bash scripts/build-book.sh
 ```
+
+The authoritative workflow renders Mermaid sources to PNG before LaTeX compilation. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed.
 
 To build the first two chapters separately:
 

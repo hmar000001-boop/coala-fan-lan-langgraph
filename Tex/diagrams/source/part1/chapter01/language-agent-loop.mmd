@@ -1,0 +1,11 @@
+flowchart TB
+  accTitle: Language agent interaction loop
+  accDescr: The agent prepares model input, interprets output, executes an action through an interface, and receives a new observation.
+  OBS(["Observation from the environment"])
+  PREP["Agent software prepares model input"]
+  MODEL["Language model"]
+  INTERPRET["Agent software interprets model output"]
+  EXEC["Execute an action through an interface"]
+  ENV["External environment changes or responds"]
+  OBS --> PREP --> MODEL --> INTERPRET --> EXEC --> ENV
+  ENV -->|"next observation"| OBS

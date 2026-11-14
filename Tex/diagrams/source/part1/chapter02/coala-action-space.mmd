@@ -1,0 +1,24 @@
+flowchart TB
+  accTitle: CoALA action space
+  accDescr: Internal actions include retrieval, reasoning, and learning; external actions use grounding. Retrieval and reasoning are grouped as planning support.
+  ACTIONS["CoALA action space"]
+  ACTIONS --> INTERNAL
+  ACTIONS --> EXTERNAL
+  subgraph INTERNAL["Internal actions"]
+    direction TB
+    subgraph PLANNING["Planning support"]
+      direction LR
+      RET["Retrieval"]
+      REA["Reasoning"]
+    end
+    LEA["Learning"]
+  end
+  subgraph EXTERNAL["External actions"]
+    direction TB
+    GRO["Grounding"]
+    ENV["External environment"]
+    GRO -->|"acts on / observes"| ENV
+  end
+  RET -.->|"reads long-term memory"| LTM[("Long-term memory")]
+  REA -.->|"uses and updates"| WM["Working memory"]
+  LEA -.->|"writes to"| LTM

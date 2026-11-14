@@ -1,0 +1,12 @@
+{
+  "name": "book-mermaid-renderer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned Mermaid CLI for rendering book diagrams during CI",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "12.2.0"
+  }
+}

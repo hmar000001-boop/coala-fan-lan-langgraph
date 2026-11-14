@@ -65,47 +65,10 @@ CoALA organizes a language agent by asking what information it maintains, what i
 
 The three questions can be read as a set of responsibilities, but CoALA also shows how the elements relate. Its structural view places the LLM and agent code alongside working memory, long-term memory, the decision procedure, and interfaces to the external environment. The connections matter: the agent code constructs prompts and parses model outputs; memory supplies and receives information; the decision procedure invokes the action procedures; grounding carries actions and observations across the boundary between the agent and its environment.\CoALACite{Figure 4A and Section 4}
 
-\begin{figure}[htbp]
-\centering
-\resizebox{\textwidth}{!}{%
-\begin{tikzpicture}[
-  box/.style={draw=BookBlue, rounded corners=2pt, thick, fill=NoteBg, minimum width=2.2cm, minimum height=0.85cm, align=center, font=\sffamily\small},
-  memory/.style={draw=BookBlue, rounded corners=2pt, thick, fill=LearnBg, minimum width=2.35cm, minimum height=0.75cm, align=center, font=\sffamily\small},
-  action/.style={draw=BookMid, rounded corners=2pt, fill=TipBg, minimum width=1.8cm, minimum height=0.68cm, align=center, font=\sffamily\small},
-  flow/.style={-{Stealth[length=2.5mm]}, thick, draw=BookBlue},
-  back/.style={-{Stealth[length=2.5mm]}, thick, draw=BookMid, dashed}
-]
-\draw[rounded corners=5pt, thick, draw=BookBlue] (-0.35,-3.45) rectangle (10.65,2.5);
-\node[font=\sffamily\bfseries\color{BookBlue},anchor=west] at (-0.1,2.22) {Cognitive language agent};
-\node[box] (llm) at (1.3,1.2) {LLM};
-\node[box] (code) at (4.5,1.2) {Agent code};
-\node[memory] (wm) at (7.8,1.2) {Working memory};
-\node[box] (decision) at (1.7,-1.0) {Decision procedure};
-\node[action] (retrieval) at (4.7,-0.35) {Retrieval};
-\node[action] (reasoning) at (6.8,-0.35) {Reasoning};
-\node[action] (learning) at (8.9,-0.35) {Learning};
-\node[action] (grounding) at (9.0,-1.4) {Grounding};
-\node[memory] (ltm) at (6.8,-2.35) {Long-term memory};
-\node[box] (env) at (12.3,-2.35) {External environment};
-\draw[flow] (code.west) -- (llm.east);
-\node[font=\scriptsize,align=center] at (2.9,1.95) {prompt construction / output parsing};
-\draw[flow] (wm.west) -- (code.east);
-\node[font=\scriptsize] at (6.15,1.95) {active context};
-\draw[flow] (decision) -- (code);
-\draw[flow] (code) -- (retrieval);
-\draw[flow] (code) -- (reasoning);
-\draw[flow] (code) -- (learning);
-\draw[flow] (retrieval) -- (ltm);
-\draw[flow] (learning) -- (ltm);
-\draw[back] (ltm) -- (wm);
-\draw[flow] (code.south east) .. controls (6.0,-0.2) and (7.6,-1.4) .. (grounding.west);
-\draw[flow] (grounding.east) -- (env.north west);
-\draw[back] (env.west) .. controls (10.7,-3.05) and (9.1,-3.15) .. node[below,font=\scriptsize]{observations} (wm.south);
-\end{tikzpicture}%
-}
-\caption{An original teaching redraw of the structural relationships in CoALA's Figure 4A. The drawing is schematic: arrows identify information or control relationships, not a required software topology.}
-\label{fig:coala-structural-map}
-\end{figure}
+\BookDiagram[0.70\textheight]
+  {Tex/diagrams/generated/part1/chapter02/coala-architecture.png}
+  {A book-authored structural map of CoALA's conceptual elements and their relationships. Arrows indicate information or control relationships, not a required software topology.}
+  {fig:coala-structure}
 
 The figure is a teaching redraw, not a reproduction of the paper's artwork. Its purpose is to help us read the relationships. It does not prescribe that an implementation must use separate machines, processes, classes, or databases for every box. Nor should every arrow be mistaken for a network call. The diagram expresses roles and interactions at the conceptual level.
 
@@ -199,34 +162,10 @@ In each case, the action is more than a sentence describing an intention. It is 
 
 Figure 5 in the CoALA paper provides a compact view of these categories. Reasoning and retrieval are internal actions that support planning. Learning is also an internal action, but it is not placed within the planning bracket in the figure. Grounding is external. This is an important distinction: planning uses certain internal actions to determine which learning or grounding action to select; it is not a synonym for every action available to the agent.\CoALACite{Figure 5}
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  act/.style={draw=BookBlue, thick, fill=TipBg, minimum width=1.25cm, minimum height=0.8cm, align=center, font=\sffamily\small},
-  group/.style={draw=BookBlue, thick, rounded corners=2pt}
-]
-\node[act] (reason) at (0,0) {Reasoning};
-\node[act] (retrieval) at (1.55,0) {Retrieval};
-\node[act] (learning) at (3.1,0) {Learning};
-\node[act] (grounding) at (4.65,0) {Grounding};
-% Grouping brackets are deliberately outside the action nodes so that the
-% categories remain readable at print size.
-\draw[thick,draw=BookBlue] (-0.68,0.72) -- (3.78,0.72);
-\draw[thick,draw=BookBlue] (-0.68,0.72) -- (-0.68,0.58);
-\draw[thick,draw=BookBlue] (3.78,0.72) -- (3.78,0.58);
-\draw[thick,draw=BookBlue] (3.98,0.72) -- (5.32,0.72);
-\draw[thick,draw=BookBlue] (3.98,0.72) -- (3.98,0.58);
-\draw[thick,draw=BookBlue] (5.32,0.72) -- (5.32,0.58);
-\node[font=\sffamily\bfseries\small,BookBlue] at (1.55,1.0) {Internal};
-\node[font=\sffamily\bfseries\small,BookBlue] at (4.65,1.0) {External};
-\draw[thick,draw=BookBlue] (-0.68,-0.72) -- (2.32,-0.72);
-\draw[thick,draw=BookBlue] (-0.68,-0.72) -- (-0.68,-0.58);
-\draw[thick,draw=BookBlue] (2.32,-0.72) -- (2.32,-0.58);
-\node[font=\sffamily\small,BookBlue] at (0.82,-1.04) {Planning support};
-\end{tikzpicture}
-\caption{An original redraw of CoALA's action-space distinction. Reasoning and retrieval support planning; learning remains an internal action; grounding is external.}
-\label{fig:coala-action-space}
-\end{figure}
+\BookDiagram[0.58\textheight]
+  {Tex/diagrams/generated/part1/chapter02/coala-action-space.png}
+  {The action-space distinction in CoALA. Retrieval and reasoning support planning; learning remains an internal action outside that planning grouping; grounding is external.}
+  {fig:coala-action-space}
 
 The distinction helps avoid a common overgeneralization. An agent's external tool calls are not its whole action space, because internal memory operations also matter. Conversely, not every internal operation is itself a planning step. Chapters 4 and 5 will examine the actions in detail; Chapters 6--8 will explain how planning works with them.
 
@@ -244,30 +183,10 @@ CoALA's decision procedure plays a comparable organizing role for the agent. It 
 
 The paper's temporal view places planning before execution. During planning, retrieval and reasoning can help the agent propose and evaluate candidate learning or grounding actions. Selection chooses an action. Execution then carries out the selected action. An observation may be made, after which the decision cycle begins again.\CoALACite{Section 4.6 and Figure 4B}
 
-\begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[
-  node distance=0.55cm,
-  stage/.style={draw=BookBlue, thick, rounded corners=2pt, fill=TipBg, minimum width=2.2cm, minimum height=0.62cm, align=center, font=\sffamily\small},
-  container/.style={draw=BookBlue, thick, rounded corners=4pt, inner sep=8pt},
-  flow/.style={-{Stealth[length=2.4mm]}, thick, draw=BookBlue}
-]
-\node[stage] (obs) {Observation};
-\node[stage,below=of obs] (proposal) {Proposal};
-\node[stage,below=of proposal] (evaluation) {Evaluation};
-\node[stage,below=of evaluation] (selection) {Selection};
-\node[stage,below=0.8cm of selection] (execution) {Execution};
-\draw[container] (-1.6,-3.3) rectangle (1.6,-0.4);
-\node[font=\sffamily\bfseries\color{BookBlue}] at (0,-0.16) {Planning};
-\draw[flow] (obs) -- (proposal);
-\draw[flow] (proposal) -- (evaluation);
-\draw[flow] (evaluation) -- (selection);
-\draw[flow] (selection) -- (execution);
-\draw[flow] (execution.east) -- ++(1.0,0) |- (obs.east) node[pos=0.28,right,font=\scriptsize,align=left]{next cycle / feedback};
-\end{tikzpicture}
-\caption{An original teaching redraw of CoALA's decision-cycle view. The stages are shown in the explanatory order used by the figure; the detailed chapters will examine interleaving and iteration.}
-\label{fig:coala-decision-cycle}
-\end{figure}
+\BookDiagram[0.70\textheight]
+  {Tex/diagrams/generated/part1/chapter02/coala-decision-cycle.png}
+  {A high-level teaching view of CoALA's decision cycle. Planning and execution are separated for clarity; later chapters examine the detailed relationships and revisiting of planning stages.}
+  {fig:coala-decision-cycle}
 
 It is important not to read this high-level picture as a complete low-level algorithm. The figure helps us see the broad relation between planning and execution. It does not mean that the agent must perform one isolated reasoning call, then one isolated retrieval, then one proposal, then one evaluation, with no possibility of returning to an earlier subtask. The details of how planning's sub-stages relate, and how they may be revisited, are the subject of Chapters 6--8.
 
@@ -366,4 +285,4 @@ CoALA organizes language agents through three dimensions: information storage, a
 \end{reviewquestions}
 
 \section*{Source and example note}
-The theoretical account in this chapter is grounded in \textsc{[CoALA]} only, principally Section 4 and Figures 4--5 of Sumers et al. The diagrams are original teaching redraws of the paper's conceptual relationships. Product X and all incident-specific details are examples created for this book. This chapter does not use Fan and Lan to reinterpret CoALA and does not prescribe a software implementation.
+The theoretical account in this chapter is grounded in \textsc{[CoALA]} only, principally Section 4 and Figures 4--5 of Sumers et al. The diagrams are book-authored teaching diagrams maintained as Mermaid text sources and rendered to PNG during the build. They reorganize the paper's conceptual relationships for explanation; they do not reproduce the paper's artwork or prescribe a software topology. Product X and all incident-specific details are examples created for this book. This chapter does not use Fan and Lan to reinterpret CoALA and does not prescribe a software implementation.
