@@ -55,6 +55,15 @@ jobs:
 
             cp Tex/Output/main.pdf Tex/Output/book.pdf
 
+      - name: Install PDF validation utilities
+        run: |
+          if ! command -v pdfinfo >/dev/null 2>&1 || ! command -v pdftotext >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends poppler-utils
+          fi
+          pdfinfo -v
+          pdftotext -v
+
       - name: Validate generated PDF and LaTeX log
         run: bash scripts/quality-checks.sh Tex/Output/main.pdf Tex/Output/main.log
 

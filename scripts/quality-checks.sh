@@ -1,32 +1,78 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
+
 PDF="${1:?usage: quality-checks.sh PDF_PATH LATEX_LOG_PATH}"
 LOG="${2:?usage: quality-checks.sh PDF_PATH LATEX_LOG_PATH}"
-test -s "$PDF"
-test -s "$LOG"
-command -v pdfinfo >/dev/null
-command -v pdftotext >/dev/null
-pdfinfo "$PDF" > "${PDF%.pdf}.pdfinfo.txt"
-pdftotext -layout "$PDF" "${PDF%.pdf}.txt"
-test -s "${PDF%.pdf}.txt"
-# Validate metadata separately from extracted text because PDF line wrapping may
-# split the full title across lines. Also assert that both drafted chapters exist.
-grep -q '^Title:[[:space:]]*From Cognitive Architectures to Production Agentic Systems' "${PDF%.pdf}.pdfinfo.txt"
-grep -q 'Why Do Language Agents Need' "${PDF%.pdf}.txt"
-grep -q 'The Architecture of CoALA' "${PDF%.pdf}.txt"
-if grep -E 'LaTeX Warning: (Reference .* undefined|There were undefined references|Citation .* undefined)|Package biblatex Warning:.*undefined' "$LOG"; then
-  echo 'Undefined references or citations found.' >&2
+
+fail() {
+  printf 'PDF quality check failed: %s\n' "$*" >&2
   exit 1
+}
+
+require_file() {
+  local path="$1"
+  [[ -s "$path" ]] || fail "required file is missing or empty: $path"
+}
+
+require_command() {
+  local name="$1"
+  command -v "$name" >/dev/null 2>&1 || fail "required command not found on the runner: $name (Ubuntu package: poppler-utils)"
+}
+
+require_file "$PDF"
+require_file "$LOG"
+require_command pdfinfo
+require_command pdftotext
+require_command grep
+require_command awk
+require_command tr
+
+INFO_FILE="${PDF%.pdf}.pdfinfo.txt"
+TEXT_FILE="${PDF%.pdf}.txt"
+
+pdfinfo "$PDF" > "$INFO_FILE" || fail "pdfinfo could not read $PDF"
+pdftotext -layout "$PDF" "$TEXT_FILE" || fail "pdftotext could not extract text from $PDF"
+require_file "$INFO_FILE"
+require_file "$TEXT_FILE"
+
+TITLE_LINE="$(grep -m1 '^Title:' "$INFO_FILE" || true)"
+case "$TITLE_LINE" in
+  *"From Cognitive Architectures to Production Agentic Systems"*) ;;
+  *)
+    printf 'Observed PDF metadata:\n%s\n' "$TITLE_LINE" >&2
+    fail 'PDF title metadata is missing or does not match the book title'
+    ;;
+esac
+
+# Normalize line wrapping before checking chapter headings. Extractors may
+# place a title on adjacent lines depending on font metrics and page layout.
+NORMALIZED_TEXT="$(tr '\n\r\f' '   ' < "$TEXT_FILE" | tr -s ' ')"
+for expected in \
+  'Why Do Language Agents Need' \
+  'The Architecture of CoALA'; do
+  case "$NORMALIZED_TEXT" in
+    *"$expected"*) ;;
+    *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;
+  esac
+done
+
+UNDEFINED_PATTERN='LaTeX Warning: (Reference .* undefined|There were undefined references|Citation .* undefined)|Package biblatex Warning:.*undefined'
+if grep -nE "$UNDEFINED_PATTERN" "$LOG"; then
+  fail 'undefined LaTeX references or citations were found; inspect the log lines above'
 fi
-if grep -E 'LaTeX Error:|Emergency stop\.' "$LOG"; then
-  echo 'LaTeX errors found.' >&2
-  exit 1
+
+if grep -nE 'LaTeX Error:|Emergency stop\.' "$LOG"; then
+  fail 'LaTeX compilation errors were found; inspect the log lines above'
 fi
-# Overfull boxes are surfaced as a quality warning in the build summary; a few
-# long technical lines may remain during drafting and are not a fatal TeX error.
-if grep -E 'Overfull \\hbox|Overfull \\vbox' "$LOG"; then
-  echo 'Review the overfull boxes above before a print-ready release.'
+
+# Overfull boxes remain visible as a review warning, but are not fatal during
+# drafting. The final print-readiness review will address them separately.
+if grep -nE 'Overfull \\hbox|Overfull \\vbox' "$LOG"; then
+  printf '%s\n' 'Review the overfull boxes above before a print-ready release.' >&2
 fi
-pages=$(pdfinfo "$PDF" | awk '/^Pages:/ {print $2}')
-[[ -n "$pages" && "$pages" -gt 1 ]]
-echo "PDF validation passed: $pages pages; text extraction and metadata available."
+
+PAGES="$(pdfinfo "$PDF" | awk '/^Pages:/ {print $2}')"
+[[ "$PAGES" =~ ^[0-9]+$ ]] || fail 'could not determine the PDF page count'
+(( PAGES > 1 )) || fail "PDF has only $PAGES page; expected a compiled book"
+
+printf 'PDF validation passed: %s pages; book metadata, chapter headings, and text extraction verified.\n' "$PAGES"
