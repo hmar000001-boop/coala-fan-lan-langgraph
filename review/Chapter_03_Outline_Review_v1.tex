@@ -1,0 +1,194 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 3 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Understanding Memory\par}
+\vspace{0.8cm}
+{\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Awaiting author approval. This is a detailed chapter plan, not chapter prose.
+
+\textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, especially Section 4.1. The chapter's purpose is to explain CoALA's memory model faithfully and prepare for the next chapter on internal actions.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+\section*{1. Chapter purpose and role in the book}
+Chapter 1 established why a common architecture vocabulary is needed. Chapter 2 presented the CoALA architecture as a connected whole. Chapter 3 now isolates the information-storage dimension and explains what CoALA means by memory.
+
+The central teaching problem is familiar: an agent works through several steps, receives new observations, uses information from earlier work, and may need to retain something for a later task. A single prompt or model context does not explain all of that. The chapter uses this problem to introduce the distinction between active working information and the different kinds of long-term memory.
+
+The chapter must not become a survey of vector databases, retrieval-augmented generation products, memory frameworks, or production storage technologies. It explains the conceptual categories in CoALA. Implementation choices belong to Part III and must be labelled as engineering decisions.
+
+\begin{takeawaybox}[Chapter thesis]
+CoALA does not treat memory as one undifferentiated store. It distinguishes active information for the current decision cycle from long-term memories that preserve different kinds of information and play different roles in the agent's behavior.
+\end{takeawaybox}
+
+\section*{2. Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain why the model's immediate context is not the same thing as the agent's complete memory architecture.
+  \item Describe working memory as an active data structure for the current decision cycle, including its relationship to LLM calls.
+  \item Distinguish episodic, semantic, and procedural long-term memory by the kind of information each preserves.
+  \item Explain how working memory connects to long-term memories and grounding interfaces.
+  \item Recognize why procedural memory includes both implicit knowledge in model weights and explicit knowledge in agent code.
+  \item Classify simple Product X information examples by memory role without confusing a conceptual category with a physical storage technology.
+  \item State what CoALA's memory taxonomy does and does not prescribe.
+\end{enumerate}
+
+\section*{3. Proposed chapter structure}
+\setcounter{chapter}{3}
+\section{Why one context window is not the whole memory story}
+\textbf{Teaching entry:} Return to Product X. The payment-service agent receives an initial incident report, inspects a deployment event, retrieves information, and carries a goal through multiple calls. Ask what must remain available between one model call and the next.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item CoALA begins from the observation that language models are stateless across calls, while language agents may maintain information internally across multi-step interaction.
+  \item A context supplied to one LLM call is not the whole memory architecture.
+  \item Introduce memory as the agent's organized information, mainly textual in CoALA but not restricted to text.
+  \item Establish the two broad levels: short-term working memory and long-term memory.
+\end{itemize}
+
+\textbf{Concept boundary:} Do not reduce working memory to a prompt string or token window. The paper describes a data structure that persists across LLM calls; a prompt is synthesized from a subset of that structure. \CoALACite{\S 4.1, ``Memory''}
+
+\section{The memory map: one working memory and three long-term types}
+Introduce the taxonomy only after the reader sees the problem that motivates it.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Working memory: short-term, active information for the current decision cycle.
+  \item Long-term memory: episodic, semantic, and procedural memory.
+  \item The distinction is about the kind of information and its role, not necessarily about four separate physical databases.
+  \item Different agents may instantiate the categories differently; the conceptual framework should not be mistaken for one mandatory storage schema.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 3.1:} \emph{CoALA's memory landscape}. A compact diagram with working memory separated from the three long-term memory categories. It should communicate the taxonomy without prematurely drawing the retrieval/learning action flow in detail (reserved for Chapter 4).
+
+\section{Working memory: what is active now?}
+\textbf{Core question:} What information must be readily available while the agent is working through its current decision cycle?
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Working memory maintains active, readily available information as symbolic variables for the current decision cycle.
+  \item Its contents can include perceptual inputs, active goals, knowledge produced by reasoning, knowledge retrieved from long-term memory, and relevant information carried over from an earlier cycle.
+  \item It persists across LLM calls; the LLM input is constructed from a subset of working-memory contents.
+  \item LLM output can be parsed into variables such as an action name and arguments and placed back into working memory.
+  \item Working memory acts as a central hub connected with long-term memories and grounding interfaces.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 3.2:} \emph{From working memory to an LLM call and back}. Show selection of relevant variables into a prompt, an LLM response, parsing, and the resulting update to working memory. Do not depict the model context as the working-memory store itself.
+
+\begin{notebox}
+The figure is a teaching redraw based on the described relationship in CoALA. It must not imply that CoALA mandates a particular prompt serializer, object schema, or programming interface.
+\end{notebox}
+
+\section{Episodic memory: preserving experience}
+\textbf{Entry intuition:} A prior incident is not merely a fact about the system; it is an experience with events and outcomes that may be useful later.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Episodic memory stores experience from earlier decision cycles.
+  \item Illustrations identified in CoALA include training input-output pairs, event histories, and trajectories from earlier episodes.
+  \item During planning, relevant episodes may be retrieved into working memory to support reasoning.
+  \item New experience can be written from working memory to episodic memory as learning.
+\end{itemize}
+
+\textbf{Product X example:} A previous payment incident's sequence of observations and actions is represented as an episode. The present agent may retrieve that experience, but the prior episode does not automatically prove that today's incident has the same cause.
+
+\textbf{Boundary:} Do not equate episodic memory with a chat transcript alone, and do not prescribe a particular event-log schema.
+
+\section{Semantic memory: preserving knowledge}
+\textbf{Entry intuition:} The agent may need stable knowledge about its world and itself, not just a record of what happened on one occasion.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Semantic memory stores the agent's knowledge about the world and itself.
+  \item CoALA describes examples that begin with external databases, including unstructured text, and knowledge resources used by language or reinforcement-learning agents.
+  \item Some examples use fixed, read-only semantic memory; language agents may also write new knowledge inferred through reasoning into semantic memory.
+  \item Incremental accumulation of world knowledge is a possible role for learning actions.
+\end{itemize}
+
+\textbf{Product X example:} A known dependency relationship or an established service fact belongs conceptually to semantic memory; it is different from the event sequence of an earlier outage.
+
+\textbf{Boundary:} Do not imply that semantic memory must be a knowledge graph, relational database, vector index, or a curated enterprise catalogue.
+
+\section{Procedural memory: preserving how the agent operates}
+This section needs careful explanation because the term is easy to misread.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item CoALA describes two forms of procedural memory: implicit knowledge in LLM weights and explicit knowledge written in agent code.
+  \item Agent code includes procedures implementing actions (reasoning, retrieval, grounding, and learning) and procedures implementing the decision-making process.
+  \item The designer must initialize procedural memory with sufficient code to bootstrap the agent; unlike episodic or semantic memory, it cannot simply be absent at initialization in the same way.
+  \item CoALA allows the possibility of learning new actions by writing to procedural memory, but emphasizes that this is riskier because it can introduce bugs or allow the agent to subvert designer intentions.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 3.3:} \emph{Two forms of procedural memory}. Separate implicit model-weight knowledge from explicit agent-code procedures, then show the code-level distinction between action procedures and decision-making procedures.
+
+\begin{warningbox}
+Do not describe the entire LLM as an ordinary database of explicit procedures. CoALA distinguishes implicit knowledge in weights from explicit procedures in agent code. Do not imply that autonomous code modification is routine, safe, or required.
+\end{warningbox}
+
+\section{How the memory types cooperate}
+Move from taxonomy to relationships.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Working memory carries current inputs, goals, and active results.
+  \item Long-term memories preserve different kinds of information that may be brought into working memory when useful.
+  \item Reasoning may create new information in working memory; learning can write selected information into long-term memory.
+  \item Procedural memory supplies the procedures through which the agent performs retrieval, reasoning, learning, grounding, and decision-making.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 3.4:} \emph{Memory relationships around working memory}. Show high-level information movement without teaching the full retrieval/reasoning/learning action semantics, which belong to Chapter 4.
+
+\textbf{Worked example:} Classify five Product X items: the active incident goal, an earlier outage trajectory, a service dependency fact, a reusable diagnostic procedure, and an inferred hypothesis for the current incident. Ask what each represents and why its memory role differs.
+
+\section{What the memory taxonomy does not decide}
+\begin{itemize}
+  \item It does not prescribe specific database engines, vector stores, object models, retention policies, schemas, embedding models, or serialization formats.
+  \item It does not make the prompt string identical to working memory.
+  \item It does not require all categories to be separate physical systems.
+  \item It does not imply that every agent has the same amount or implementation of each category.
+  \item It does not by itself specify all policies for storing, updating, deleting, or governing information.
+\end{itemize}
+
+Clearly label any further production guidance as a book explanation or later engineering decision, not a CoALA requirement.
+
+\section{Chapter recap and review}
+Summarize the four long-term/short-term categories and the working-memory hub in a compact comparison. Include review questions that test classification and distinctions rather than memorization alone. Include one short exercise in which the reader classifies new information from a later Product X incident.
+
+\section*{Source and example note}
+The theoretical account is grounded in CoALA Section 4.1 and the relevant explanation in Figure 4A. Product X remains a book-created running example. No claim should be attributed to Fan \& Lan in this chapter. \CoALACite{\S 4.1 and Figure 4A}
+
+\section*{4. Visual and pedagogical plan}
+The chapter is expected to use three or four Mermaid figures, depending on whether the memory interaction map can remain readable without duplicating Figure 3.1. All diagrams must be authored as `.mmd` source, rendered by the pinned Mermaid CLI to high-resolution PNG in CI, and included through the shared \verb|\BookDiagram| macro. No TikZ, ASCII art, or hand-positioned LaTeX diagram code.
+
+Use the shared boxes selectively: one learning objective box near the start; at most one or two tip/note boxes where a distinction needs emphasis; one warning box for procedural-memory risks; a takeaway at the end of the architecture explanation; then the shared recap and review-question environments. Do not put every memory category into a box.
+
+\section*{5. Source and attribution plan}
+\begin{itemize}
+  \item Primary source: Sumers et al., CoALA (TMLR 2024), Section 4.1, especially the definitions and roles of working, episodic, semantic, and procedural memory.
+  \item Supporting source location: CoALA Figure 4A for relationships among the architecture's modules; use the figure as a source guide, not as a diagram to copy.
+  \item Secondary cited examples: only examples already discussed in the CoALA paper (e.g. episodic trajectories, semantic knowledge, and procedural knowledge). Explain them only to the degree needed to teach CoALA's taxonomy.
+  \item All book-created examples and engineering interpretations must be identified as such.
+\end{itemize}
+
+\section*{6. Explicit exclusions}
+Do not cover retrieval ranking algorithms in depth; Chapter 4 will explain retrieval actions. Do not cover Java data models, graph state, vector database configuration, persistence frameworks, or storage deployment; these belong to Part III. Do not merge memory with the Fan \& Lan mechanism taxonomy. Do not make claims about memory deletion, privacy, security or long-term retention beyond what the source supports; frame additional guidance as engineering questions for later parts.
+
+\section*{7. Proposed length and review gate}
+Estimated depth: approximately 20--28 finished pages, with no hard page cap. The final length is controlled by explanatory completeness, the diagrams, and worked examples.
+
+\begin{takeawaybox}[Approval requested]
+Please review the scope, section sequence, planned diagrams, boundaries, and examples. Chapter 3 prose will not be written until this outline is explicitly approved.
+\end{takeawaybox}
+\end{document}

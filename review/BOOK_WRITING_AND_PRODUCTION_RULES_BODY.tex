@@ -1,0 +1,335 @@
+\textbf{Project:} \emph{From Cognitive Architectures to Production
+Agentic Systems: Understanding CoALA, Fan \& Lan, and Engineering
+Complex Agents with Java}\\
+\textbf{Status:} Authoritative working specification. Read this file
+before outlining, drafting, revising, or packaging any chapter.
+
+\subsection{1. Approval and delivery
+workflow}\label{1-approval-and-delivery-workflow}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Every chapter receives its own detailed outline and its own approval
+  before chapter prose is written.
+\item
+  Work in batches of two chapters for drafting efficiency, but retain
+  chapter-by-chapter outline approval. One chapter\textquotesingle s
+  approval does not approve the next chapter\textquotesingle s outline.
+\item
+  For each batch: prepare the two outlines as individual review PDFs;
+  wait for approval of each; draft only the approved chapters; perform a
+  source-fidelity and cross-chapter consistency review; build and
+  visually inspect individual chapter PDFs and the combined book PDF.
+\item
+  Do not silently treat a proposed outline, a prior
+  chapter\textquotesingle s approval, or a request to continue as
+  approval of an unapproved outline.
+\item
+  Deliver chapter content as individual PDFs. Do not deliver Markdown
+  chapters, ZIP archives, or combined PDFs unless the author explicitly
+  requests those formats. Repository source files remain in the project
+  repository.
+\item
+  Keep a durable status entry in \texttt{README.md} and preserve
+  approved outlines, rule versions, and delivery checkpoints in
+  \texttt{review/}.
+\end{enumerate}
+
+\subsection{2. Source discipline and theoretical
+scope}\label{2-source-discipline-and-theoretical-scope}
+
+The book has two formal theoretical foundations only:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{{[}CoALA{]}} Sumers, Yao, Narasimhan, and Griffiths,
+  \emph{Cognitive Architectures for Language Agents}, Transactions on
+  Machine Learning Research (2024), with the original arXiv manuscript
+  as the earlier version.
+\item
+  \textbf{{[}Fan \& Lan{]}} Fan and Lan, \emph{From Cognitive
+  Architectures to Language Agents: A Mechanism-Level Review of Lineage,
+  Convergence, and Migration Gaps} (2026).
+\end{itemize}
+
+Use only the two formal source labels \texttt{{[}CoALA{]}} and
+\texttt{{[}Fan\ \&\ Lan{]}}. Use the shared
+\texttt{\textbackslash{}CoALACite\{...\}} and
+\texttt{\textbackslash{}FanLanCite\{...\}} footnote macros. Do not
+invent additional formal theory labels.
+
+Part I explains CoALA on its own terms. Never use Fan \& Lan to
+reinterpret, extend, or retroactively change what CoALA says. Part II
+treats Fan \& Lan as a separate paper and distinguishes its explicit
+claims, hypotheses, analysis, and boundaries. Part III\textquotesingle s
+Java systems are engineering applications, not claims that either paper
+prescribes those implementations.
+
+Do not introduce Tree of Thoughts, RAP, or any other research framework
+as an additional theoretical foundation. Other works may be named only
+when they are examples explicitly discussed or cited within the primary
+paper being explained; do not turn those works into parallel theory
+chapters or claim their mechanisms as CoALA/Fan \& Lan mechanisms.
+
+For every substantive theoretical claim, identify the exact supporting
+paper section, figure, table, or appendix during research and preserve
+that trace in the prose and footnotes. If a claim is an explanation,
+interpretation, illustrative analogy, or engineering recommendation
+rather than an explicit paper statement, mark and phrase it accordingly.
+Do not make unsupported claims sound like quotations or direct paper
+statements.
+
+\subsection{3. Teaching style and chapter
+construction}\label{3-teaching-style-and-chapter-construction}
+
+\begin{itemize}
+\tightlist
+\item
+  Write for a technically curious beginner with basic programming
+  knowledge; do not assume prior knowledge of cognitive architectures or
+  agent research.
+\item
+  Use the sequence \textbf{problem first → concrete intuition → term →
+  precise mechanism → example → boundary}. Do not dump a glossary of
+  definitions before the reader needs the terms.
+\item
+  Explain every new term at first meaningful use. Distinguish nearby
+  concepts explicitly.
+\item
+  Use complete, connected explanations, not compressed notes or lists of
+  unexplained labels. Tables and bullets support explanations; they do
+  not replace them.
+\item
+  Develop concepts progressively. Reuse the Product X payment-service
+  incident as the book-created running example where useful, but
+  identify it as a \textbf{{[}Book example{]}} and never imply it comes
+  from either paper.
+\item
+  Make examples technically plausible and internally consistent. Do not
+  add invented product details and then use them as factual evidence.
+\item
+  Each chapter should have a clear chapter-at-a-glance orientation,
+  learning outcomes, a logical section progression, selective worked
+  examples, source/boundary notes, a recap, and review questions or
+  exercises when pedagogically useful.
+\item
+  Avoid repeating material already taught. Preview later concepts
+  briefly and point to their chapter; do not teach later chapters
+  prematurely.
+\item
+  Keep chapters substantial enough to explain the subject properly.
+  There is no fixed page-count ceiling; completeness, clarity, accuracy,
+  and teaching value govern length.
+\end{itemize}
+
+\subsection{4. Part I scope boundaries}\label{4-part-i-scope-boundaries}
+
+\begin{itemize}
+\tightlist
+\item
+  Chapter 1 motivates why a cognitive architecture is useful and
+  introduces the CoALA map at a high level.
+\item
+  Chapter 2 explains the architecture as a whole and the relationships
+  among memory, action space, and the decision procedure.
+\item
+  Chapter 3 explains the memory model in depth: working memory and
+  long-term episodic, semantic, and procedural memory.
+\item
+  Chapter 4 explains internal actions: retrieval, reasoning, and
+  learning. Keep external grounding as a boundary and defer its full
+  explanation to Chapter 5.
+\item
+  Chapter 5 explains external actions and grounding.
+\item
+  Chapters 6--8 develop planning, proposal/evaluation/selection, and
+  interleaving/iteration. Do not duplicate the full decision procedure
+  in Chapters 3 or 4.
+\end{itemize}
+
+\subsection{5. Shared LaTeX system and
+preamble}\label{5-shared-latex-system-and-preamble}
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{Tex/preamble.tex} is the one shared authorial preamble. It is
+  loaded once by \texttt{Tex/main.tex}; chapter fragments must never
+  load it.
+\item
+  The latest author-supplied preamble supersedes earlier preferences for
+  trim size and fonts: its current specification is a 7 × 10 inch,
+  two-sided, open-right book using TeX Gyre Termes, TeX Gyre Heros, and
+  TeX Gyre Cursor. The author-supplied preamble is the design baseline.
+  It may be changed only when a demonstrable improvement is needed for
+  consistent typography, accessibility, rendering, pagination, or figure
+  placement. Preserve existing design intent and explain nontrivial
+  changes in the review notes.
+\item
+  Use the \texttt{book} class, XeLaTeX, \texttt{fontspec}, the
+  author\textquotesingle s selected fonts and page layout, shared
+  colors, heading styles, headers/footers, \texttt{listings},
+  \texttt{graphicx}, captions, and reusable teaching environments from
+  the preamble.
+\item
+  Use \texttt{Tex/shared-macros.tex} for book-wide commands, citations,
+  glossary, index, and reusable macros/environments. Do not create
+  chapter-local versions of shared commands or boxes.
+\item
+  Shared environments include \texttt{learningbox}, \texttt{tipbox},
+  \texttt{warningbox}, \texttt{notebox}, \texttt{takeawaybox},
+  \texttt{chapterrecap}, and \texttt{reviewquestions}. Use them
+  consistently and selectively. Chapter 1 and Chapter 2 must follow the
+  same semantic box policy. Boxes are for learning objectives, genuinely
+  useful tips, important cautions, clarifications, takeaways, recaps,
+  and questions---not decoration or wrapping ordinary paragraphs.
+\item
+  Keep code examples in \texttt{listings}; use the shared language
+  definitions and formatting. Avoid raw code screenshots.
+\item
+  Use semantic macros and labels consistently. Every figure has a
+  caption and stable label; every cross-reference resolves.
+\end{itemize}
+
+\subsection{6. Diagrams and figures: Mermaid is
+authoritative}\label{6-diagrams-and-figures-mermaid-is-authoritative}
+
+All conceptual diagrams are authored as Mermaid text and rendered to PNG
+by CI before LaTeX compilation.
+
+\begin{itemize}
+\tightlist
+\item
+  Store editable \texttt{.mmd} sources under
+  \texttt{Tex/diagrams/source/partN/chapterNN/}.
+\item
+  Store shared Mermaid theme and configuration in
+  \texttt{Tex/diagrams/mermaid.config.json} (and related shared renderer
+  configuration only when needed).
+\item
+  Pin Mermaid CLI in \texttt{tools/mermaid/package.json} and its
+  lockfile. Never use an unpinned
+  \texttt{npx\ @mermaid-js/mermaid-cli@latest} in CI.
+\item
+  CI uses Node.js 22.13+ (the repository currently configures Node 24),
+  runs \texttt{npm\ ci}, and renders every \texttt{.mmd} source into a
+  high-resolution PNG under the matching path in
+  \texttt{Tex/diagrams/generated/} before XeLaTeX starts.
+\item
+  The shared render script must be deterministic and recursive, handle
+  spaces safely, fail on invalid Mermaid syntax, and generate a PNG for
+  every source. CI validates PNG integrity, dimensions/resolution,
+  matching LaTeX references, and missing/orphan generated files.
+\item
+  Use one shared Mermaid visual theme derived from the book colors and
+  typography. Use \texttt{accTitle} and \texttt{accDescr} in each
+  diagram source; also provide meaningful captions and nearby
+  explanatory prose because the book embeds PNGs.
+\item
+  Use Mermaid for flowcharts, architecture maps, decision cycles,
+  timelines, state diagrams, and other conceptual illustrations. Do not
+  use TikZ, hand-positioned LaTeX nodes, ASCII-art diagrams, or custom
+  LaTeX diagram libraries for book diagrams.
+\item
+  LaTeX only places the generated image with \texttt{graphicx} through
+  the shared \texttt{\textbackslash{}BookDiagram} macro. The macro owns
+  consistent width/height constraints, caption and label placement;
+  Mermaid owns node arrangement, routing, spacing, and diagram layout.
+\item
+  Keep diagram labels concise. If a diagram becomes too dense, split it
+  into multiple focused diagrams rather than shrinking text until it is
+  unreadable.
+\item
+  Verify the actual CI-generated PNGs and final PDF at printed size. A
+  mocked renderer or placeholder PNG can test the LaTeX integration
+  layer only; it must never be reported as proof that real Mermaid
+  output rendered correctly.
+\item
+  Generated PNGs are build artifacts (not source of truth). CI uploads
+  the generated PNG directory as a separate review artifact.
+\end{itemize}
+
+\subsection{7. References, glossary, index, and
+terminology}\label{7-references-glossary-index-and-terminology}
+
+\begin{itemize}
+\tightlist
+\item
+  Bibliography is managed by \texttt{biblatex} and Biber, with
+  footnote-style citations as selected by the author.
+\item
+  Use \texttt{\textbackslash{}CoALACite\{...\}} and
+  \texttt{\textbackslash{}FanLanCite\{...\}} for paper citations; do not
+  hard-code one-off citation formats in chapter files.
+\item
+  Add glossary entries to \texttt{Tex/glossary/terms.tex} and index
+  entries consistently. Avoid duplicating terms or changing a
+  term\textquotesingle s meaning between chapters.
+\item
+  Keep terminology stable across chapters. When a concept is revisited,
+  deepen it rather than redefining it differently.
+\end{itemize}
+
+\subsection{8. Quality assurance and release
+gates}\label{8-quality-assurance-and-release-gates}
+
+Before delivering a chapter or batch:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Check all claims against the relevant primary-paper sections and
+  figures.
+\item
+  Check no claims from one paper are attributed to the other.
+\item
+  Check the outline was explicitly approved.
+\item
+  Check chapter scope and avoid duplication with preceding/following
+  chapters.
+\item
+  Compile with XeLaTeX through \texttt{latexmk}, using the
+  repository\textquotesingle s GitHub Actions TeX Live workflow.
+\item
+  Run the repository\textquotesingle s scaffold, Mermaid, and PDF
+  quality checks.
+\item
+  Inspect the PDF visually after rendering pages to images. Check
+  diagrams at their printed size, box consistency, page breaks, headers,
+  captions, references, footnotes, and overfull boxes.
+\item
+  Extract PDF text and verify chapter titles, headings, labels,
+  metadata, and searchability.
+\item
+  Report which validation ran locally and which requires a real GitHub
+  Actions execution. Never describe a mocked or substitute-font test as
+  a full production build.
+\item
+  Deliver chapter PDFs individually. Include a build note for any known
+  rendering limitation; do not claim accessibility conformance beyond
+  the selected standard PDF target.
+\end{enumerate}
+
+\subsection{9. Current project state
+(2026-11-14)}\label{9-current-project-state-2026-11-14}
+
+\begin{itemize}
+\tightlist
+\item
+  Chapters 1 and 2 have been drafted and integrated.
+\item
+  Mermaid-based diagram generation was introduced for Chapters 1 and 2;
+  the GitHub Actions run is the authoritative real-render verification
+  point.
+\item
+  The next outline batch is Chapters 3 and 4. Both outlines must be
+  reviewed and approved before either chapter\textquotesingle s prose is
+  written.
+\item
+  Chapters 5--30 remain placeholders until their own outlines are
+  approved.
+\end{itemize}
