@@ -13,8 +13,8 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 - **Chapter 7 — Evaluation and Selection.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,377 words). The approved outline PDF and editable source remain in `Tex/part1/chapter07/outline/`.
 - **Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,493 words). The approved outline PDF and editable source remain in `Tex/part1/chapter08/outline/`.
 - Chapters 9–10 have approved outline v1.0 PDFs and editable LaTeX sources stored inside their matching chapter folders. Both chapters are drafted and integrated (approximately 4,259 and 3,921 words). Their source and drafting reviews are recorded under `review/`.
-- **Chapter 11 — From Historical Cognitive Architectures to Modern Agents.** Outline v1.0 was approved on 14 November 2026; the chapter is drafted and integrated. Its six Mermaid sources and source/drafting reviews are stored in the matching chapter folder and `review/`. Chapters 12–30 remain structural placeholders and will receive their own outline and approval before prose is written.
-- Chapters 1–11 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering.
+- **Chapter 12 — Understanding Activation, Retrieval Latency, and Utility: B1.** The outline was revised in Markdown and the full chapter draft was written on 14 November 2026 from the author-provided review report and a source audit. Its standalone XeLaTeX build entry, source review, and bibliography updates are integrated. The outline is intentionally Markdown-only; no outline PDF or LaTeX is required.
+- Chapters 1–12 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapter 12 has no new diagrams and its standalone build can be compiled directly.
 
 ## Author-supplied preamble
 
@@ -26,7 +26,7 @@ Book-wide citation macros, glossary setup, bibliography integration, additional 
 
 The authoritative entry point is `Tex/main.tex`. The repository uses the author's known-working GitHub Actions route: `xu-cheng/texlive-action@v2`, `scheme: full`, XeLaTeX through `latexmk`, and a PDF artifact. Pushes and pull requests build the full book; pushes of `v*` tags also publish the compiled PDF to GitHub Releases.
 
-The workflow compiles the combined book PDF. Individual Chapter 1–11 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
+The workflow compiles the combined book PDF. Individual Chapter 1–12 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
 
 Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, Node.js 22.13 or later, npm, Chromium/Puppeteer dependencies, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs Node 24, the TeX Gyre browser fonts, the pinned Mermaid CLI, and the full TeX Live scheme.
 
@@ -52,7 +52,7 @@ bash scripts/build-outlines.sh
 
 The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–11 have editable LaTeX outline sources and review PDFs. Chapters 9–11 have approved outlines and completed source drafts.
 
-To build Chapters 1–11 separately:
+To build Chapters 1–12 separately:
 
 ```bash
 bash scripts/build-chapters.sh
@@ -99,14 +99,14 @@ All outline artifacts are stored within their matching chapter directory. Chapte
 Both chapters were drafted after individual outline approval and received a final source-fidelity review. Their standalone layout tests passed (22 pages for Chapter 9 and 20 pages for Chapter 10) using temporary PNG placeholders and temporary local font substitutions only. Those outputs are not final illustrated chapter PDFs. The original author-supplied preamble was restored and its SHA-256 verified against the base repository. The actual Mermaid CLI installation failed locally because `registry.npmjs.org` could not be resolved (`EAI_AGAIN`); real PNG generation and printed-size figure inspection remain mandatory in GitHub Actions.
 
 
-## Current batch status: Chapter 11 drafted
+## Current batch status: Chapter 12 drafted
 
-- Chapter 11 — *From Historical Cognitive Architectures to Modern Agents* was approved and drafted on 14 November 2026. The approved outline PDF and editable LaTeX source remain in `Tex/part2/chapter11/outline/`.
-- The chapter follows Fan & Lan's frozen corpus (26 July 2026): ten historical architecture families, eight general runtime families, and forty-two mechanism-focused modern records, with explicit bridge cases recorded separately. It preserves cross-indexing (including AIOS and the hybrid BDI–LLM case) rather than treating analytical roles as disjoint populations.
-- It explains the ten historical families, eight runtime families, specialized M-B categories, four explicit bridges, and the independent E1–E4 evidence-relation and D0–D4 migration-depth axes. Worked comparisons cover Hearsay-II/message runtimes, hybrid BDI–LLM, and SCALAR. Detailed B1–B6 studies remain reserved for Chapters 12–17.
-- Six chapter-specific Mermaid `.mmd` sources are stored in `Tex/diagrams/source/part2/chapter11/`; the chapter uses the shared `\BookDiagram` macro. The renderer and validator now cover Chapters 1–11.
-- `review/Chapter_11_Source_Review.md` records the primary-source section map and accuracy boundaries. `review/Batch_11_Drafting_Review.md` records the final outline pass, source-fidelity checks, layout tests, and outstanding render gate.
-- The local npm registry remains unavailable, so this environment could not execute the real Mermaid CLI. Temporary placeholder PNGs were used only in disposable LaTeX layout tests and are excluded from the repository. The original preamble is restored unchanged. Real PNG generation and visual figure inspection remain a required GitHub Actions gate.
+- Chapter 12 — *Understanding Activation, Retrieval Latency, and Utility: B1* was revised and drafted on 14 November 2026. Its revised supporting outline is `Tex/part2/chapter12/outline/Chapter_12_Outline_v2.md`. Per the author’s instruction, the outline is Markdown-only; there is no outline PDF or LaTeX source.
+- The theoretical anchor is Fan & Lan's B1 mechanism gap; ACT-R 7.30+ is used as the cognitive activation foundation. Other papers and product documentation are comparative prior art, not additional formal foundations. The text labels original mechanisms, comparative claims, and book-level engineering synthesis separately.
+- It explains ACT-R activation and retrieval latency, production utility versus memory value, modern memory admission/retention/retrieval mechanisms, a bounded B1 integration, production event schemas, and evaluation. The draft separates source equations from book-level design synthesis and distinguishes cognitive retrieval latency from infrastructure latency.
+- Chapter 12 introduces no Mermaid figures; its visual structure is carried by equations, compact comparison tables, teaching boxes, and the production event-schema table. The established Mermaid renderer and validator remain scoped to Chapters 1–11.
+- `review/Chapter_12_Source_Review.md` records the primary-source map, metadata corrections, and evidence boundaries. The standalone entry point is `Tex/standalone/chapter12.tex`; the bibliography was updated with the comparative sources cited in the chapter.
+- The standalone Chapter 12 PDF was compiled locally and its text and rendered pages were inspected. This container did not have the TeX Gyre OpenType font package installed, so a temporary local font substitute was used for the compile; the shared `Tex/preamble.tex` was restored unchanged. The repository CI workflow installs the intended TeX Gyre fonts, so its final typography remains the authoritative build.
 
 
 ### Chapter 11 standalone layout validation

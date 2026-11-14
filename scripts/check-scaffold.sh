@@ -8,8 +8,8 @@ for required in \
   Tex/part1/chapter03/chapter.tex Tex/part1/chapter04/chapter.tex \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
-  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex \
+  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -59,5 +59,8 @@ test -s "$outline.pdf" || { echo "Missing Chapter 11 outline PDF: $outline.pdf" 
   echo "Chapter 11 has an approved outline but still contains a prose placeholder." >&2; exit 1;
 }
 # Every authored chapter in Part II has a standalone build entry.
-for n in 09 10 11; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-11 contain prose; outline artifacts remain in their chapter-local folders."
+for n in 09 10 11 12; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
+# Chapter 12 uses a revised Markdown outline; no outline PDF or TeX is required.
+test -s "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_v2.md" || { echo "Missing Chapter 12 Markdown outline." >&2; exit 1; }
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter12/chapter.tex" || { echo "Chapter 12 still contains a prose placeholder." >&2; exit 1; }
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-12 contain prose; Chapter 12 uses its revised Markdown outline."

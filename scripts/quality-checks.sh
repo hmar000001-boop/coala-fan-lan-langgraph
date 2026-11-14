@@ -59,7 +59,7 @@ for expected in \
   'Interleaving, Iteration and the Complete CoALA Decision Process' \
   'Why Feature-Level Descriptions Are Not Enough' \
   'The Seven Fields of a Mechanism' \
-  'From Historical Cognitive Architectures to Modern Agents'; do
+  'Understanding Activation, Retrieval Latency, and Utility: B1'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;

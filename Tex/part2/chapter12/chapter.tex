@@ -1,4 +1,603 @@
-\chapter{Understanding Activation, Retrieval Latency and Utility: B1}
+\chapter{Understanding Activation, Retrieval Latency, and Utility: B1}
+\label{ch:activation-latency-utility}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+An agent can remember far more than it can place in one prompt, and it can retrieve far more than it can safely rely on. A useful memory subsystem must therefore answer several different questions. Should a new observation be stored? Should an existing memory be revised, retained, or forgotten? Which valid memories should be fetched for this task? Which of those candidates deserve scarce context space, and in what order should they appear? Finally, did the selected information actually help the agent act well?
+
+These questions are related, but they are not one decision. This chapter begins with the cognitive account of activation in ACT-R, then compares modern systems according to the lifecycle decision they implement. It uses that distinction to explain B1 in Fan and Lan's review: a proposed coupling of memory accessibility, predicted retrieval latency, downstream value, and maintenance cost at context assembly. B1 is a residual mechanism hypothesis, not a completed universal scoring algorithm. The chapter then turns the hypothesis into an auditable production design, using a running Product X support-agent example.
+
+Each mechanism is treated through five questions: what the original source says; what its variables and assumptions mean; how related systems implement comparable ideas; how a production agent could represent and operate it; and what evidence would demonstrate that it works. This avoids presenting formulas without enough explanation to assess or implement them.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain ACT-R activation and retrieval time; distinguish production utility from memory value; classify memory admission, retention, and retrieval mechanisms; compare selected modern systems without conflating their purposes; derive a bounded B1-oriented context selector; design event records that distinguish retrieval from actual use; and evaluate the resulting policy under quality, latency, cost, and reliability constraints.
+\end{learningbox}
+
+\begin{takeawaybox}[The chapter's organizing distinction]
+A memory system makes at least three different lifecycle decisions: whether a memory enters persistent storage, whether it remains there or changes, and whether it is retrieved and inserted into a particular working context. B1 is primarily about the third decision and its feedback into future accessibility and utility. It should not be collapsed into a generic memory-admission or forgetting score.
+\end{takeawaybox}
+
+\section{What B1 claims—and what it leaves open}
+\label{sec:ch12-b1}
+
+Fan and Lan identify B1 as an activation--latency--utility coupling gap. Their proposed runtime view asks a memory item to carry four relevant quantities: its activation, its predicted retrieval latency, its downstream value, and its maintenance cost. At context assembly, candidate items compete under a fixed resource budget. Selected items enter the working context; subsequent observations of use and outcome should update the accessibility and utility estimates used by later decisions. The review locates plausible implementation surfaces in adaptive memory systems and agent runtimes, but it does not present a single validated control law that solves the whole problem.\FanLanCite{\S VI-C, B1; Table V; Appendix C-A, R1; Appendix B}
+
+That distinction matters. ACT-R already provides a model of declarative-memory activation and retrieval latency. Modern agent systems already implement different combinations of memory extraction, scoring, retention, retrieval, and context construction. The remaining question is how these signals should be coupled in a real agent: when one signal should dominate another, which costs belong to the current decision, how the selected set should be valued, and how observed downstream outcomes should change future estimates.
+
+B1 also has a boundary with B3. B1 concerns the accessibility and selection of memory items for a task. B3 concerns competition and capacity in a shared workspace. A memory selector may decide which candidate facts enter a context, while a workspace controller may decide which partial result, subtask, or representation receives scarce shared capacity. Both involve competition, but their objects and triggers differ. Treating them as one problem would obscure the mechanism each chapter is meant to explain.\FanLanCite{Table V; \S VI-C, B1 and B3}
+
+\subsection{Three lifecycle decisions}
+\label{subsec:ch12-three-decisions}
+
+The first task is to identify which decision a mechanism actually controls.
+
+\begin{description}
+  \item[Admission or encoding.] Should a newly observed candidate become persistent memory? The decision can include whether to store it as a new record, merge it with an existing record, reject it as unsupported, or encode it at a particular depth.
+  \item[Retention, update, or forgetting.] What should happen to a memory already in storage? It may be strengthened, corrected, superseded, invalidated, consolidated, promoted to a durable tier, archived, or evicted.
+  \item[Retrieval and context assembly.] Given a query, task, or possible action, which currently valid memories should be fetched, selected, ordered, and inserted into the next working context?
+\end{description}
+
+A single architecture can implement all three. The classification is about the operation, not the product name. An admission threshold answers whether a new record should persist. It does not automatically rank existing records for a particular question. An eviction policy chooses what loses storage priority. It does not necessarily identify the evidence needed for the next decision. A query-time ranker chooses candidates for a prompt, but it does not necessarily make a durable memory-admission decision.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Three distinct memory-lifecycle decisions and their triggers.}
+\label{tab:ch12-lifecycle-decisions}
+\begin{tabularx}{\linewidth}{@{}p{0.18\linewidth}p{0.29\linewidth}X@{}}
+\toprule
+\textbf{Decision} & \textbf{Typical trigger} & \textbf{Question being answered} \\
+\midrule
+Admission / encoding & A new observation or candidate memory is extracted & Is this information reliable, novel, durable, and useful enough to store? \\
+Retention / update / forgetting & A stored memory is revisited, contradicted, aged, or competes for storage & Should this record be updated, kept, moved, invalidated, or removed? \\
+Retrieval / context assembly & A task, query, or candidate action requires context & Which currently valid records will make this decision better, given context and latency limits? \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{A running example: Product X}
+\label{subsec:ch12-productx}
+
+\BookExampleLabel{} Imagine a support agent for Product X. A customer reports that a payment retry failed. The agent may have access to several records: an error log from the current incident, an old note that a particular payment provider was disabled temporarily, a prior troubleshooting sequence, a database dependency map, and an outdated description of the retry policy.
+
+The admission question is whether the newly observed incident facts are sufficiently supported and useful to preserve. The retention question is whether the old provider note remains valid, whether the policy record has been superseded, and whether a resolved incident should be summarized or archived. The retrieval question is which records should be placed into the context for the current diagnosis. A low-frequency fact about a recent configuration change may be more useful than a highly visited but generic troubleshooting note. Two individually weak records—a failed retry and a dependency relationship—may jointly identify the likely fault.
+
+This example will recur throughout the chapter. It illustrates why memory age, frequency, semantic similarity, confidence, action value, and resource cost are separate signals rather than synonyms for one another.
+
+\section{ACT-R: from declarative chunks to predicted retrieval}
+\label{sec:ch12-actr}
+
+ACT-R provides a foundational account of declarative memory. Information is represented as chunks with typed slots. The current cognitive state and task provide retrieval cues; a retrieval request attempts to find a chunk matching those cues. The model assigns activation to candidate chunks. A sufficiently activated candidate can be retrieved, and activation is related to the predicted time required for retrieval. This is more specific than saying that an agent searches a vector database: the account defines a cognitive quantity and a relationship between that quantity and retrieval behavior \parencite{anderson2007actr,actr7manual}.
+
+\subsection{Activation has several components}
+\label{subsec:ch12-activation-components}
+
+A useful decomposition is
+\begin{equation}
+  A_i = B_i + S_i + P_i + \epsilon_i,
+  \label{eq:ch12-activation}
+\end{equation}
+where \(A_i\) is the activation of candidate chunk \(i\), \(B_i\) is its base-level activation, \(S_i\) is activation spreading from the current context, \(P_i\) is the partial-matching contribution, and \(\epsilon_i\) represents activation noise. The terms explain different reasons that a chunk may become accessible:
+
+\begin{itemize}
+  \item \textbf{Base level} captures the contribution of the chunk's presentation history. Repeatedly encountered information tends to have greater activation; older presentations contribute less as they recede in time.
+  \item \textbf{Spreading activation} captures the influence of related information currently present in the model's context. A cue can increase the activation of associated chunks.
+  \item \textbf{Partial matching} allows imperfectly matching chunks to compete. Similarity can help, while mismatching slot values can impose a penalty.
+  \item \textbf{Noise} captures stochastic variation rather than a deterministic rank that always returns the same winner.
+\end{itemize}
+
+These components should not be collapsed into a single embedding-similarity score. Cosine similarity can be one retrieval feature in an agent system, but it is not automatically ACT-R base-level activation, spreading activation, partial matching, or total activation. The ACT-R decomposition is a model of accessibility with defined sources of contribution, not a new name for every modern relevance score \parencite{actr7manual}.
+
+\subsection{Base-level activation: frequency and recency}
+\label{subsec:ch12-base-level}
+
+The base-level equation accumulates the influence of the chunk's presentation events:
+\begin{equation}
+  B_i = \ln\left(\sum_{j=1}^{n} t_j^{-d}\right)+\beta_i.
+  \label{eq:ch12-base-level}
+\end{equation}
+Here, \(n\) is the number of relevant presentations, \(t_j\) is the elapsed time since presentation \(j\), \(d\) is the decay parameter, and \(\beta_i\) is a chunk-specific or model-specified base-level contribution. The logarithm compresses the sum. Each presentation adds a time-decayed contribution: many presentations can raise activation, while the influence of any one presentation declines as its elapsed time grows \parencite{actr7manual}.
+
+The event semantics are important. In the ACT-R 7 reference manual consulted for this chapter, a presentation is associated with a chunk entering declarative memory or with a chunk being merged with an already existing declarative-memory chunk. It is therefore incorrect to state as a universal ACT-R rule that every database-style read or every unsuccessful retrieval attempt increments the presentation history. A model may define additional rehearsal or re-presentation behavior, but an implementation must state exactly which event changes the history \parencite{actr7manual}.
+
+For an agent, at least six events should be distinguished: a memory is created or stored; retrieval is requested; retrieval succeeds; the memory is included in the prompt; the model actually uses it; and an outcome is observed. These events may happen close together, but they are not interchangeable. Refreshing recency on every read can create a positive feedback loop: once a memory is retrieved, it becomes more recent, which makes it more likely to be retrieved again even if it did not help.
+
+ACT-R also describes an optimized approximation when the full presentation history is not retained:
+\begin{equation}
+  B_i \approx \ln\left(\frac{n}{1-d}\right)-d\ln(L)+\beta_i,
+  \label{eq:ch12-base-level-approx}
+\end{equation}
+where \(L\) is the chunk's lifetime since creation. The approximation replaces the full sum over event timestamps with a compact expression based on presentation count and lifetime. It can reduce bookkeeping, but it loses information about the exact spacing of individual presentations. If an agent needs reproducible, event-level analysis, retaining timestamps is more informative than storing only a precomputed activation number. If memory volume makes that too expensive, the approximation should be recorded as the selected model rather than mistaken for the full-history calculation \parencite{actr7manual}.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+The base-level equation is a cognitive activation mechanism, not a universal retention rule. An agent may separately decide that a record must be deleted for privacy, invalidated because its facts changed, or retained because it is legally or operationally required. Those decisions are not resolved by substituting a different decay parameter into Equation~\ref{eq:ch12-base-level}.
 \end{notebox}
+
+\subsection{Spreading activation and association fan}
+\label{subsec:ch12-spreading}
+
+A current context can activate a chunk through associations. In the ACT-R account, the total spreading contribution can be written in the form
+\begin{equation}
+  S_i = \sum_k \sum_j W_{kj}S_{ji},
+  \label{eq:ch12-spreading-total}
+\end{equation}
+where \(k\) indexes source buffers, \(j\) indexes source chunks in a buffer, \(W_{kj}\) is the amount of source activation allocated to a source chunk, and \(S_{ji}\) is the strength of association from source chunk \(j\) to candidate chunk \(i\). The default allocation distributes a buffer's source activation across its source chunks. When the source and candidate are associated, a fan-sensitive form is
+\begin{equation}
+  S_{ji}=S-\ln(\operatorname{fan}_{j}),
+  \label{eq:ch12-spreading-fan}
+\end{equation}
+where \(S\) is an association-strength parameter and \(\operatorname{fan}_{j}\) counts the chunks associated with source chunk \(j\). A cue connected to many chunks distributes its influence more broadly; a more selective association can provide stronger support to a particular candidate. The exact treatment of unrelated chunks and fan is defined by the ACT-R model and its parameters \parencite{actr7manual}.
+
+This mechanism offers a useful comparison with graph-based retrieval. A query may activate entities or nodes, and relevance may propagate through known relationships. That is conceptually related to contextual activation, but a graph algorithm such as Personalized PageRank is not ACT-R spreading activation. They have different mathematical update rules and should be compared as alternative mechanisms, not treated as equivalent implementations.
+
+\subsection{Partial matching, noise, and retrieval threshold}
+\label{subsec:ch12-partial-threshold}
+
+Exact matching can be too brittle when a task cue differs slightly from how information was originally encoded. Partial matching allows a candidate to receive a graded contribution based on its slot similarities and mismatches. A chunk with a similar but not identical slot value may remain a candidate, while an important mismatch can reduce its activation. The similarity function and mismatch penalties are model parameters; the chapter does not assign a universal numeric penalty because the value depends on the model's slot semantics and task.
+
+Noise means that retrieval is not necessarily a deterministic \texttt{top-1} operation. Repeated retrievals under nominally similar conditions may differ. A retrieval threshold \(\tau\) also matters: a candidate whose activation does not reach the threshold is not retrieved. The architecture can therefore fail to retrieve a chunk even when a close candidate exists. This is a useful reminder for production agents: retrieval should support an explicit no-result or abstention state rather than forcing the highest-ranked candidate into the prompt.
+
+\subsection{Activation predicts cognitive retrieval time}
+\label{subsec:ch12-retrieval-latency}
+
+ACT-R relates a chunk's activation to retrieval latency:
+\begin{equation}
+  RT_i = F e^{-fA_i},
+  \label{eq:ch12-actr-latency}
+\end{equation}
+where \(RT_i\) is predicted retrieval time, \(F\) is a latency scaling factor, and \(f\) controls the effect of activation. Higher activation predicts shorter retrieval time under the model's parameters. A failed retrieval has a corresponding latency determined by the threshold rather than by the activation of a successfully retrieved chunk \parencite{actr7manual}.
+
+A production agent must distinguish this \emph{cognitive prediction} from \emph{infrastructure latency}. The latter is the wall-clock time consumed by embedding lookup, database access, graph traversal, network I/O, reranking, serialization, or prompt construction. One is predicted from a cognitive model; the other is measured from software execution. They can both matter, but neither should be silently substituted for the other.
+
+There is also a double-counting trap. If a selector rewards high ACT-R activation and separately rewards low \(RT_i\) from Equation~\ref{eq:ch12-actr-latency}, it may reward the same activation advantage twice. One defensible design uses activation as the cognitive accessibility signal and treats ACT-R latency as a derived prediction. Another uses activation together with independently measured infrastructure latency. An evaluation can compare these choices through ablation; a selector should not include both as independent bonuses without explaining the intended interpretation.
+
+\begin{takeawaybox}[What ACT-R contributes to B1]
+ACT-R supplies a principled account of why a memory becomes accessible and how activation relates to retrieval time. It does not, by itself, tell an agent how valuable that memory will be for a particular downstream action, how much infrastructure cost its retrieval will incur, or whether it deserves space in the next prompt.
+\end{takeawaybox}
+
+\subsection{Sidebar: Rational Analysis and future demand}
+\label{subsec:ch12-rational-analysis}
+
+Rational Analysis offers a useful interpretation of memory accessibility. A memory that has occurred often, or has occurred recently, may be more likely to be needed again given the statistics of the environment. From this perspective, an activation signal can approximate the likelihood that information will be relevant to future processing. The environmental basis of memory provides a broader account of why frequency, repetition, and spacing matter for what remains accessible \parencite{anderson2022environmental}.
+
+But future demand is not downstream action value. A frequently retrieved generic troubleshooting note may have a high probability of being requested again while contributing little to the current incident. A rarely accessed configuration change may be decisive for one particular diagnosis. Rational Analysis helps explain why accessibility is useful; B1 asks how accessibility should interact with task-specific value, latency, and cost.
+
+\section{Production utility is not memory value}
+\label{sec:ch12-production-utility}
+
+ACT-R also associates utility with productions, which are action or control rules. A familiar expected-value expression is
+\begin{equation}
+  U_i = P_iG-C_i,
+  \label{eq:ch12-production-expected-utility}
+\end{equation}
+where \(P_i\) is the estimated probability that production \(i\) will achieve its intended result, \(G\) is the value of that result, and \(C_i\) is the expected cost of carrying out the production. This expression is useful as an expected-value intuition: an action can be attractive because it is likely to succeed and valuable if successful, but unattractive when its execution cost is high.
+
+The ACT-R utility-learning update is a separate statement:
+\begin{equation}
+  U_i(n)=U_i(n-1)+\alpha\left[R_i(n)-U_i(n-1)\right],
+  \label{eq:ch12-production-learning}
+\end{equation}
+where \(\alpha\) is a learning rate and \(R_i(n)\) is the reward associated with the production's \(n\)-th use, with time-related cost accounted for in the reward definition. The update moves the previous utility estimate toward the newly observed reward. It is a learning rule for a production, not a formula for the value of a declarative-memory chunk \parencite{anderson2007actr,actr7manual}.
+
+The distinction should be reflected in the data model. A production has an identity, an applicability condition, and an action outcome. A memory has content, provenance, a temporal validity interval, and a context-dependent contribution to some task or action. A field named simply \texttt{utility} is ambiguous unless its owner and update process are explicit.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Production utility and memory value describe different objects.}
+\label{tab:ch12-production-vs-memory}
+\begin{tabularx}{\linewidth}{@{}p{0.22\linewidth}XX@{}}
+\toprule
+ & \textbf{Production / action utility} & \textbf{Memory value} \\
+\midrule
+Object & An action or production rule & A memory item or selected memory set \\
+Question & Is this action worth executing? & Will this information improve this task or action? \\
+Conditioning & Goal, expected success, execution cost & Query, task, candidate action, other selected memories \\
+Feedback & Reward or outcome of action execution & Observed use, task outcome, attribution uncertainty \\
+Lifecycle & Learned policy state for a production & Context-dependent estimate plus memory lifecycle metadata \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Modern memory systems: compare the decision they actually make}
+\label{sec:ch12-modern-systems}
+
+Modern agent memory research contains many useful formulas, but not every formula answers the same question. The following systems are best understood by locating their primary operation in the memory lifecycle.
+
+\subsection{Generative Agents: a query-time relevance score}
+\label{subsec:ch12-generative-agents}
+
+Generative Agents rank candidate memories using recency, importance, and relevance. Recency decays exponentially according to the elapsed simulated game time since a memory was last retrieved. Importance is assigned by an LLM when the memory is created, and relevance is based on the semantic similarity between the memory and the current query. The three signals are normalized and combined:
+\begin{equation}
+  \operatorname{Score}_i = \alpha_r R_i + \alpha_I I_i + \alpha_s S_i,
+  \label{eq:ch12-generative-score}
+\end{equation}
+where \(R_i\), \(I_i\), and \(S_i\) denote recency, importance, and semantic relevance. In the paper's reported configuration, the three weights are equal and the highest-scoring memories that fit the context budget are selected. The recency decay factor is 0.995 per simulated game hour; under that per-hour interpretation, the half-life is approximately 138 hours. This is a simulation-time parameter, not a claim about 138 hours of real-world time \parencite{park2023generative}.
+
+The design is attractive because the signals are understandable. It also illustrates a feedback risk: retrieval updates the memory's recency, and recency influences the next score. A memory that is retrieved frequently can remain prominent even when no outcome evidence shows that it was useful. A production implementation should therefore record retrieval, prompt inclusion, actual use, and task outcome separately. One possible policy is to refresh an accessibility history on a well-defined rehearsal/use event rather than on every mechanical read.
+
+\subsection{MemoryBank: a simplified retention curve}
+\label{subsec:ch12-memorybank}
+
+MemoryBank models retention with an exponential strength-and-time function:
+\begin{equation}
+  R=e^{-t/S},
+  \label{eq:ch12-memorybank}
+\end{equation}
+where \(t\) is elapsed time and \(S\) is memory strength. In the reported simplified mechanism, a new memory starts with an initial strength, recall increases that strength, and the elapsed time is reset. The authors present the model as a simplification \parencite{zhong2024memorybank}.
+
+The equation and ACT-R base-level activation both involve time and repeated exposure, but they are not the same model. ACT-R accumulates contributions from multiple presentation events using a power-law decay. MemoryBank uses a strength/time retention representation and a recall-driven strengthening rule. It is therefore most useful here as a retention comparison, not as a replacement for ACT-R activation or a general context-selection law.
+
+\subsection{MemoryOS: tiered lifecycle management}
+\label{subsec:ch12-memoryos}
+
+MemoryOS explicitly organizes conversational memory into short-term, mid-term, and long-term personal stores. Short-term dialogue pages move into mid-term storage through a dialogue-chain FIFO process. Mid-term storage groups pages into topic segments, and its update mechanism uses a heat score to govern deletion and promotion. Retrieval first identifies relevant segments and then retrieves pages within those segments; the retrieved material is combined with short-term context and long-term persona information \parencite{kang2025memoryos}.
+
+The segment heat function is
+\begin{equation}
+  H = \alpha N_{\text{visit}} + \beta L_{\text{interaction}} + \gamma R_{\text{recency}},
+  \label{eq:ch12-memoryos-heat}
+\end{equation}
+with
+\begin{equation}
+  R_{\text{recency}}=\exp\left(-\frac{\Delta t}{\mu}\right),
+  \label{eq:ch12-memoryos-recency}
+\end{equation}
+where \(N_{\text{visit}}\) is the number of segment retrievals, \(L_{\text{interaction}}\) is the total number of dialogue pages in the segment, and \(\Delta t\) is elapsed time since the last retrieval, measured in seconds. The paper gives a configurable time constant \(\mu\), with \(10^7\) seconds as its example. When segment length exceeds capacity, the lowest-heat segments are evicted; segments above a threshold can be transferred to long-term personal memory \parencite{kang2025memoryos}.
+
+This is a lifecycle mechanism. It captures visit frequency, interaction volume, and recency to manage storage tiers. The heat score should not be relabeled as downstream task value: a large, frequently accessed segment may be expensive or redundant for the next prompt, and it may still contain outdated information. MemoryOS is useful as a concrete example of promotion and eviction, while B1 focuses on context-time competition and feedback.
+
+\subsection{A-MAC: explicit memory admission}
+\label{subsec:ch12-amac}
+
+Adaptive Memory Admission Control (A-MAC) treats entry into long-term memory as a structured decision. It evaluates five factors: future utility, factual confidence, semantic novelty, temporal recency, and a content-type prior. Its score is
+\begin{equation}
+  \mathcal{S}(m)=w_1\mathcal{U}(m)+w_2\mathcal{C}(m)+w_3\mathcal{N}(m)
+   +w_4\mathcal{R}(m)+w_5\mathcal{T}(m),
+  \label{eq:ch12-amac}
+\end{equation}
+where the feature functions map a candidate to \([0,1]\), weights are non-negative and sum to one, and a candidate is admitted when \(\mathcal{S}(m)\geq\theta\). The authors combine rule-based feature computation with one LLM-assisted utility assessment and fit weights and threshold through cross-validation. Their reported evaluation is on LoCoMo; the result is a research-paper claim under that experimental setup, not an independently established production guarantee \parencite{zhang2026amac}.
+
+The five features have distinct roles. Utility estimates potential usefulness in future interactions. Confidence asks whether the candidate is supported by evidence. Novelty discourages redundant records. Recency represents temporal decay. Type prior gives stable categories—such as durable preferences—a different prior from transient states. The separation is valuable because a fact can be useful but unsupported, novel but short-lived, or reliable but redundant.
+
+A-MAC primarily decides whether a candidate should be admitted, updated, or rejected as persistent memory. That decision can reduce later memory bloat and hallucination propagation, but it does not answer which of the already-admitted records should enter a particular prompt. Its score is an important baseline for the admission layer, not a universal B1 context selector.
+
+\subsection{Chen and Cheng: a multi-factor memory-value model}
+\label{subsec:ch12-chen-cheng}
+
+Chen and Cheng's 2026 preprint proposes a multi-factor estimate of memory value:
+\begin{equation}
+  V(m)=\sum_i w_i f_i(m).
+  \label{eq:ch12-chen-cheng}
+\end{equation}
+Its factors cover emotional intensity, goal relevance, value alignment, self/user relevance, task utility, reliability, and usage history. The authors describe learning factor weights against a downstream objective and using the resulting value estimate to inform encoding depth, forgetting risk, and retrieval ranking \parencite{chencheng2026remember}.
+
+This is close to B1 in its attention to interpretable memory value, but the comparison must remain precise. A learned multi-factor value estimate does not by itself supply ACT-R activation, the activation-derived latency relationship, independent retrieval infrastructure latency, set-dependent downstream contribution, and all resource-maintenance costs in one validated runtime selector. The source is an arXiv preprint, not a peer-reviewed production standard. It is appropriate to treat it as relevant, recent prior art whose claims require the normal scrutiny of a preprint and whose exact operating assumptions must be preserved.
+
+\subsection{Zep and Graphiti: temporal facts and hybrid retrieval}
+\label{subsec:ch12-zep-graphiti}
+
+A memory can be well retrieved and still be wrong for the current time. Temporal knowledge systems therefore need to distinguish when the system learned a fact from when that fact was true in the world. Graphiti's temporal model distinguishes fields such as \texttt{created\_at} (when the system learned the fact), \texttt{valid\_at} (when the fact became true), \texttt{invalid\_at} (when it ceased to be true), and \texttt{expired\_at} (when the system learned that it had expired). The exact fields depend on the version and integration, but the conceptual distinction is essential: system knowledge time and world-validity time are not the same \parencite{zepgraphitidocs}.
+
+Graphiti also supports hybrid retrieval, combining semantic/vector search with lexical retrieval such as BM25 and graph-linked search. A common way to combine ranked candidate lists is Reciprocal Rank Fusion:
+\begin{equation}
+  \operatorname{RRF}(d)=\sum_{r\in\mathcal{R}}\frac{1}{k+\operatorname{rank}_r(d)},
+  \label{eq:ch12-rrf}
+\end{equation}
+where \(d\) is a candidate document, \(\mathcal{R}\) is the set of ranked result lists, \(\operatorname{rank}_r(d)\) is the rank assigned by list \(r\), and \(k\) is a smoothing constant. RRF combines ranks rather than assuming that scores from different retrieval systems share the same scale. The chapter does not attribute a particular value of \(k\) to a vendor implementation unless that value is verified for the version in use \parencite{cormack2009rrf,zepgraphitidocs}.
+
+Temporal validity and hybrid candidate generation belong before final context assembly. A stale fact should not become eligible merely because its embedding is similar to the query. A robust selector first applies provenance, validity, privacy, and conflict checks, then scores or optimizes the remaining candidates. Retrieval quality begins with constructing a defensible candidate set.
+
+\subsection{HippoRAG: graph propagation from query entities}
+\label{subsec:ch12-hipporag}
+
+HippoRAG combines language-model extraction with a knowledge graph and query-seeded Personalized PageRank to support multi-hop retrieval. A query is connected to entities; relevance then propagates through the graph so that related facts can be surfaced even when they are not direct lexical matches. This is useful when a diagnosis or question depends on a chain of relationships rather than a single nearest-neighbour match \parencite{gutierrez2024hipporag}.
+
+The analogy to ACT-R spreading activation is conceptual: both allow contextual cues to influence associated information. The algorithms are not the same. ACT-R's spreading activation uses its buffer-source and association-strength formulation. HippoRAG uses graph structure and a PageRank-style propagation process. A system designer should choose between them based on the retrieval problem and the required evidence, not call one a direct implementation of the other.
+
+\subsection{MMR: relevance with redundancy control}
+\label{subsec:ch12-mmr}
+
+Selecting the top \(k\) individually relevant memories can fill a prompt with near-duplicates. Maximal Marginal Relevance (MMR) selects a candidate by balancing its relevance to the query against its similarity to items already selected:
+\begin{equation}
+  m^* = \arg\max_{m\notin S}
+  \left[\lambda\,\operatorname{Sim}(m,q)
+  -(1-\lambda)\max_{s\in S}\operatorname{Sim}(m,s)\right],
+  \label{eq:ch12-mmr}
+\end{equation}
+where \(S\) is the selected set, \(q\) is the query, and \(\lambda\in[0,1]\) controls the relevance--diversity trade-off. MMR is a practical diversity heuristic. It is not a direct estimate of downstream action value \parencite{carbonell1998mmr}.
+
+The distinction becomes clear if we define the value of a selected set as
+\begin{equation}
+  V(S\mid q,a),
+  \label{eq:ch12-set-value}
+\end{equation}
+where \(q\) is the query and \(a\) is a possible action or decision. The marginal contribution of a candidate memory is
+\begin{equation}
+  \Delta V(m\mid S,q,a)=V(S\cup\{m\}\mid q,a)-V(S\mid q,a).
+  \label{eq:ch12-marginal-value}
+\end{equation}
+This formulation captures two interactions. Redundancy occurs when the new memory adds little because the selected set already contains equivalent evidence. Complementarity occurs when two memories together have more value than either one alone. For Product X, an incident log and a dependency relation may jointly isolate a fault even if neither is decisive by itself.
+
+A true estimate of \(V(S\mid q,a)\) requires downstream evidence or a defensible model. MMR can approximate one part of the problem by reducing semantic redundancy, but it cannot discover every complementarity relation or prove that a diversified set improves task success. The implementation should distinguish the heuristic it uses from the outcome it hopes to improve.
+
+\section{Constructing the B1 integration}
+\label{sec:ch12-b1-integration}
+
+The mechanisms above provide useful pieces: ACT-R contributes accessibility and predicted cognitive latency; Generative Agents combine understandable query-time signals; MemoryBank and MemoryOS show retention and tier management; A-MAC provides an admission baseline; Chen and Cheng offer a value model; graph retrieval and MMR help construct a candidate set. B1 asks how the relevant dimensions should interact at the moment of context assembly and how outcomes should update the policy. This section provides an engineering formulation to make that question testable. It is a book-level synthesis, not an equation published by Fan and Lan or by ACT-R.
+
+\subsection{Four signals and five cost categories}
+\label{subsec:ch12-four-signals-costs}
+
+A B1-oriented selector should preserve the distinction among four kinds of information:
+\begin{enumerate}
+  \item \textbf{Activation/accessibility:} how accessible is the memory under the current task context?
+  \item \textbf{Predicted retrieval latency:} how long does the selected retrieval model predict that retrieval will take?
+  \item \textbf{Downstream value:} how much is this memory expected to contribute to the current task or candidate action, considering what is already selected?
+  \item \textbf{Cost:} what incremental resources are consumed by storing, retrieving, including, validating, refreshing, or maintaining it?
+\end{enumerate}
+
+The fourth item is not a single timeless cost. At least five categories should be recorded:
+
+\begin{description}
+  \item[Persistent storage and indexing.] Space, embedding creation, index insertion, replication, and any background consolidation.
+  \item[Retrieval and reranking.] Query execution, vector search, BM25, graph expansion, filtering, and reranker computation.
+  \item[Context cost.] Tokens consumed by the memory and the associated inference/input-token cost or lost opportunity to include other context.
+  \item[Latency cost.] Wall-clock time, including serial dependencies, queueing, and tail latency.
+  \item[Maintenance cost.] Validation, temporal refresh, deduplication, source re-checking, deletion, and privacy-compliance work.
+\end{description}
+
+A persistent storage cost is usually incurred when the memory is admitted or maintained. It is not automatically a fresh marginal cost every time the memory is considered for a prompt. Subtracting the full historical embedding or storage cost from every prompt would repeatedly charge a sunk cost. It can enter a prompt-time objective if the system explicitly amortizes it over expected uses, assigns a marginal refresh cost, or converts limited storage into a shadow price. The accounting rule must be stated.
+
+\subsection{Latency depends on execution structure}
+\label{subsec:ch12-latency-structure}
+
+Candidate retrievals may run serially, in parallel, or with partial dependencies. If retrievals are genuinely serial, their elapsed retrieval time is approximately
+\begin{equation}
+  T_{\mathrm{serial}}(S)=\sum_{i\in S}T_i.
+\end{equation}
+If they are independent and fully parallel, the elapsed time is approximately
+\begin{equation}
+  T_{\mathrm{parallel}}(S)=\max_{i\in S}T_i.
+\end{equation}
+Real systems often sit between these extremes. A graph expansion may depend on a first-stage entity retrieval; a reranker may wait until vector and lexical results are ready; a concurrency limit may force some tasks to queue. The general solution is to measure end-to-end wall-clock latency or model the critical path of the actual dependency graph. Do not sum every per-item latency when the implementation overlaps work, and do not assume maximum latency when dependencies are serial.
+
+A practical selector can impose a deadline or latency budget:
+\begin{equation}
+  T_{\mathrm{observed}}(S)\leq D,
+  \label{eq:ch12-latency-budget}
+\end{equation}
+where \(D\) is a task-specific deadline. The predicted cognitive latency from ACT-R may inform accessibility, but infrastructure latency should be measured separately and should include relevant tail behavior such as p95, not only average time.
+
+\subsection{A set-aware, budget-constrained context objective}
+\label{subsec:ch12-context-objective}
+
+For a query \(q\), candidate action \(a\), and selected memory set \(S\), an illustrative objective is
+\begin{equation}
+  \max_{S\subseteq\mathcal{M}_{q}}
+  \quad \widehat{V}(S\mid q,a)
+  -\lambda_r C_{\mathrm{retrieval}}(S)
+  -\lambda_c C_{\mathrm{context}}(S)
+  -\lambda_l C_{\mathrm{latency}}(S),
+  \label{eq:ch12-b1-objective}
+\end{equation}
+subject to
+\begin{align}
+  \operatorname{Tokens}(S)&\leq B,\\
+  T_{\mathrm{observed}}(S)&\leq D,\\
+  m\in S&\Rightarrow \operatorname{Valid}(m)\land\operatorname{Allowed}(m),
+  \label{eq:ch12-b1-constraints}
+\end{align}
+where \(\mathcal{M}_q\) is the candidate set after query-time retrieval and hard filtering, \(\widehat{V}\) estimates set-level downstream value, \(B\) is the context-token budget, and \(D\) is the latency deadline. The \(\lambda\) terms convert the relevant resource costs into comparable units or shadow prices. Their values must be calibrated to the deployment objective, not chosen as universal constants.
+
+The objective intentionally does not subtract total historical storage cost by default. Persistent costs belong in the admission and maintenance budgets unless the design assigns them an explicit amortized marginal cost. If an application has a strict memory-store capacity, storage can be managed by a separate lifecycle policy or represented as a long-horizon constraint rather than repeatedly charged as a per-prompt penalty.
+
+A selector may use activation to estimate accessibility, with ACT-R's latency model as a derived prediction. Or it may combine activation with separately measured infrastructure latency. In either case, the accounting should avoid counting the same activation signal twice. The formulation also values the selected set, not just a sum of independent item values. A simple implementation can approximate set value using MMR or another redundancy penalty; a stronger implementation can estimate marginal outcome contribution from controlled experiments.
+
+\subsection{A bounded selection procedure}
+\label{subsec:ch12-selection-procedure}
+
+\EngineeringLabel{} The following procedure is a practical baseline for Product X. It does not claim to solve the research problem. It makes assumptions visible and produces an auditable trace:
+
+\begin{enumerate}
+  \item \textbf{Build candidates.} Run the appropriate semantic, lexical, and graph retrieval paths. Preserve candidate provenance and the retrieval method that produced each candidate.
+  \item \textbf{Apply hard gates.} Reject or quarantine records outside the authorized privacy scope, records with invalid temporal status, and unsupported or superseded records that cannot be reconciled. Hard policy constraints should not be traded away for a high relevance score.
+  \item \textbf{Compute query-time features.} Estimate activation components, relevance, confidence, expected downstream contribution, token size, and infrastructure cost. Record the model and parameter versions.
+  \item \textbf{Select a feasible set.} Add candidates according to estimated marginal value per resource, subject to token and critical-path latency budgets. Use a redundancy heuristic where direct set-value estimates are unavailable.
+  \item \textbf{Order and serialize.} Order records according to the prompt template and evidence requirements. Keep source identifiers and temporal qualifiers with the content so the agent can distinguish facts from hypotheses.
+  \item \textbf{Observe outcomes.} Log retrieval, inclusion, use evidence, and task outcome as separate events. Update only those estimates justified by the observed evidence.
+  \item \textbf{Degrade safely.} When evidence is weak, contradictory, too expensive, or unavailable before the deadline, retrieve fewer items, ask a targeted clarification, use a safe fallback, or abstain.
+\end{enumerate}
+
+The policy should preserve a no-result state. A system that always inserts the highest-scoring record will eventually insert a misleading one when every candidate is stale, unsupported, or irrelevant. Selective retrieval includes the ability to say that no candidate passes the required threshold.
+
+\section{Product X production design: state, events, and contracts}
+\label{sec:ch12-production-design}
+
+A production system must be able to reconstruct why a memory was retrieved and why it entered a prompt. A single mutable row with \texttt{last\_accessed\_at}, \texttt{activation}, and \texttt{utility} is insufficient. Activation depends on the current query, context cues, model parameters, and access history. Value depends on the task and candidate action. Prompt position varies from one prompt to the next. Costs depend on the actual path taken. These are event or estimate properties, not immutable characteristics of the memory record.
+
+\subsection{Stable memory record}
+\label{subsec:ch12-memory-record}
+
+A \texttt{MemoryRecord} stores the stable identity and content metadata:
+
+\begin{itemize}
+  \item \texttt{memory\_id}, \texttt{memory\_type}, \texttt{content\_ref}, and \texttt{version};
+  \item \texttt{source\_id}, \texttt{source\_type}, and provenance or supporting evidence references;
+  \item \texttt{stored\_at} and \texttt{source\_observed\_at};
+  \item \texttt{valid\_from}, \texttt{valid\_to}, \texttt{invalidated\_at}, and \texttt{superseded\_by};
+  \item confidence, reliability, sensitivity, and privacy scope; and
+  \item estimated token size and physical storage size.
+\end{itemize}
+
+The record should not contain one supposedly universal activation value. A stored baseline may be useful for diagnostics, but the active score must be recomputed for the current query or recorded as a query-time snapshot. Temporal fields must allow the agent to distinguish the time a statement was recorded from the period during which it was true.
+
+\subsection{Access and prompt-inclusion events}
+\label{subsec:ch12-access-inclusion}
+
+A \texttt{MemoryAccessEvent} records an attempted retrieval or access operation. It should include the query/task/action context identifier, timestamp, retrieval operation and index version, candidate identifiers and match results, activation-component snapshot, activation algorithm and parameter version, predicted retrieval latency, observed infrastructure latency, and whether retrieval succeeded, missed, or failed a threshold.
+
+A \texttt{PromptInclusionEvent} records what happened during one context assembly. It should include the prompt identifier, memory identifier and version, prompt template and model version, included/rejected status and reason, order index, token start/end, token count, and context-position zone. Position belongs to this event because the same memory can appear near the beginning of one prompt and in the middle of another. Research on long-context behavior shows that model use of relevant information can depend on its position in the input; the pattern is an empirical effect to test for each model and task, not a universal law \parencite{liu2024lostmiddle}.
+
+\subsection{Outcome, attribution, and cost events}
+\label{subsec:ch12-outcome-events}
+
+A \texttt{MemoryOutcomeEvent} records the result of the task or action: success, failure, correction, escalation, user confirmation, or another domain-specific outcome. An \texttt{OutcomeMemoryAttribution} links an outcome to zero or more memory identifiers and records the asserted contribution direction, confidence, attribution method, and whether actual model use was observable. One outcome can depend on several memories; one memory can contribute to many outcomes. Attribution should not be treated as ground truth simply because the memory was present in the prompt.
+
+A \texttt{MemoryCostSnapshot} records the cost components relevant to a decision: storage and indexing, embedding or refresh, retrieval and reranking, token/context consumption, measured retrieval and end-to-end latency, and maintenance or privacy cleanup. A \texttt{MemoryValueEstimate} records a query/task/action-conditioned estimate of downstream contribution, uncertainty, estimator version, and calibration state. A \texttt{ProductionUtilityState} stores learned utility for an action or production separately from memory-value estimates. A \texttt{PolicySnapshot} stores the activation and selection algorithm versions, parameters, weights, thresholds, token and latency budgets, concurrency assumptions, policy result, and decision trace.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Minimum auditable records for a B1-oriented memory subsystem.}
+\label{tab:ch12-production-schema}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.29\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Record} & \textbf{Purpose and essential fields} \\
+\midrule
+\texttt{Memory\allowbreak Record} & Stable identity, type, content reference, version, source/provenance, stored/observed times, temporal validity, confidence, privacy, token and storage size. \\
+\texttt{Memory\allowbreak Access\allowbreak Event} & Query/task context, retrieval operation, candidates, activation components and version, predicted cognitive latency, observed infrastructure latency, success/miss. \\
+\texttt{Prompt\allowbreak Inclusion\allowbreak Event} & Prompt/model/template, memory version, inclusion decision/reason, order, token offsets/count, context position. \\
+\texttt{Memory\allowbreak Outcome\allowbreak Event} & Task/action result, evaluation status, observed result, timestamp. \\
+\texttt{Outcome\allowbreak Memory\allowbreak Attribution} & Many-to-many links between outcomes and memory records, contribution direction, confidence, attribution method. \\
+\texttt{Memory\allowbreak Cost\allowbreak Snapshot} & Storage, indexing, embedding, refresh, retrieval, reranking, token, latency, maintenance, and deletion costs. \\
+\texttt{Memory\allowbreak Value\allowbreak Estimate} & Query/task/action-conditioned value, uncertainty, estimator version, calibration state. \\
+\texttt{Production\allowbreak Utility\allowbreak State} & Production/action identity, learned utility, reward history, update rate, algorithm version. \\
+\texttt{Policy\allowbreak Snapshot} & Selector/activation versions, parameters, thresholds, budgets, concurrency assumptions, selected set, rejection reasons, and trace. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The event design supports four statements that must not be conflated:
+\begin{enumerate}
+  \item The system \emph{retrieved} the memory.
+  \item The system \emph{included} the memory in a particular prompt.
+  \item The model \emph{used} the memory in its reasoning or answer; this may require evidence such as a citation, trace, or controlled intervention.
+  \item The memory \emph{improved the outcome}; this is a causal or counterfactual claim that requires stronger evaluation than co-occurrence.
+\end{enumerate}
+
+\subsection{Lifecycle contract and operational safeguards}
+\label{subsec:ch12-lifecycle-contract}
+
+A clear subsystem contract can be expressed as a sequence of operations:
+
+\begin{enumerate}
+  \item \texttt{extractCandidates(observation)} returns atomic candidate records with source spans and confidence evidence.
+  \item \texttt{admitOrUpdate(candidate, store)} applies the admission policy and records whether the candidate was inserted, merged, rejected, or sent for review.
+  \item \texttt{maintain(store, now)} checks temporal validity, contradictions, source freshness, privacy scope, and storage policy; it records invalidation, supersession, consolidation, promotion, or eviction.
+  \item \texttt{retrieve(query, task)} generates candidates through the configured retrieval paths and records an access event.
+  \item \texttt{assembleContext(candidates, budgets)} applies hard gates and set selection, then records an inclusion event for every considered memory.
+  \item \texttt{observeOutcome(task, result)} records the outcome and any supported memory-attribution evidence.
+  \item \texttt{updateEstimates(events)} updates the appropriate accessibility, value, or production-utility state without conflating their owners or learning signals.
+\end{enumerate}
+
+\EngineeringLabel{} Operational safeguards should include idempotent event identifiers, immutable or append-only audit history, versioned policy parameters, bounded retries, deterministic replay of selection where possible, secure deletion for privacy-sensitive content, and a tested path for temporal corrections. A correction should supersede or invalidate an earlier fact rather than merely add a contradictory sentence that future retrieval may select at random. The subsystem must also respect deletion obligations across content, embeddings, graph edges, caches, derived summaries, and backups according to the application's retention policy.
+
+\section{Failure modes and evaluation}
+\label{sec:ch12-evaluation}
+
+Memory quality cannot be evaluated by retrieval frequency alone. A memory can be retrieved often because a feedback loop makes it prominent. It can be included in a prompt but ignored by the model. It can be used and still be wrong. It can improve one answer while causing a future failure through stale or misaligned replay. Evaluation must therefore separate the stages and measure downstream task performance.
+
+\subsection{Failure modes to test}
+\label{subsec:ch12-failure-modes}
+
+\begin{description}
+  \item[Retrieval feedback loops.] Retrieval refreshes recency or heat, which makes the same memory more likely to be retrieved again. Frequency can become self-reinforcing without verified usefulness.
+  \item[Error propagation.] An unsupported or mistaken memory is replayed as prior experience and influences later tasks. Xiong et al. study how memory-management choices affect experience-following behavior and identify error propagation and misaligned experience replay as consequential risks \parencite{xiong2026memorymanagement}.
+  \item[Temporal invalidity.] A once-correct fact remains semantically similar to the query but no longer describes the world. Validity-time filtering must precede ranking.
+  \item[Conflicting or superseded records.] Two versions disagree; without provenance, versioning, and explicit supersession, the selector may include both or choose the older one.
+  \item[Low-frequency decisive evidence.] A memory with few visits may be essential for a rare but high-impact task. A policy based only on frequency, heat, or recency can forget it.
+  \item[Overconfidence and unsupported content.] A high LLM-assigned importance score cannot replace evidence confidence and provenance.
+  \item[Context-position effects.] A relevant memory may be less effectively used at some prompt positions. The Lost in the Middle study demonstrates position sensitivity in its tested long-context tasks and models; a production agent should measure the effect for its own model, template, and task \parencite{liu2024lostmiddle}.
+  \item[Attribution error.] Presence is mistaken for use, and use is mistaken for causal benefit. Outcome attribution should carry confidence and method metadata.
+  \item[Privacy and lifecycle leakage.] Deleted or restricted content remains in embeddings, summaries, caches, or a derived knowledge graph unless lifecycle controls cover all copies.
+\end{description}
+
+\subsection{Benchmarks and what they measure}
+\label{subsec:ch12-benchmarks}
+
+LoCoMo evaluates very long-term conversational memory, including multi-session questions and event understanding across extended conversations. It is useful for testing whether an agent preserves and retrieves information over time, but a benchmark score alone does not prove that a selector has reliable causal memory attribution or production resource behavior \parencite{maharana2024locomo}.
+
+LongMemEval evaluates several long-term memory abilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention. Its explicit attention to updates and abstention is especially relevant to a subsystem that must refuse stale or insufficient evidence rather than always return a candidate \parencite{wu2025longmemeval}.
+
+\subsection{Metrics beyond answer quality}
+\label{subsec:ch12-metrics}
+
+A useful evaluation dashboard should include:
+
+\begin{itemize}
+  \item retrieval precision and recall, measured against evidence labels;
+  \item correct abstention and false-abstention rates;
+  \item downstream task success, error rate, escalation rate, and recovery quality;
+  \item stale-memory, contradiction, and unsupported-memory rates;
+  \item error propagation and misaligned replay rates across later tasks;
+  \item admission and retention quality, including redundant storage and loss of decisive memories;
+  \item prompt tokens, retrieval time, end-to-end latency p50 and p95, and cost per completed task; and
+  \item robustness when facts change, source quality varies, candidate volume increases, or the context budget tightens.
+\end{itemize}
+
+Metrics should be reported for the full system and for each stage. For example, high retrieval recall can coexist with low prompt-inclusion recall if the selector is too aggressive, and high inclusion can coexist with low downstream use. Without stage-specific denominators, the system may appear to improve while the actual failure simply moves from retrieval to selection or from selection to generation.
+
+\subsection{Ablations and counterfactual tests}
+\label{subsec:ch12-ablations}
+
+A B1 evaluation should test the contribution of each mechanism rather than comparing only one final score. A reasonable sequence of ablations is:
+
+\begin{enumerate}
+  \item activation-only selection;
+  \item task-value-only selection;
+  \item activation plus task value;
+  \item add measured infrastructure latency;
+  \item add explicit retrieval and context costs;
+  \item add set-aware redundancy/complementarity handling;
+  \item add position-aware ordering; and
+  \item compare alternative feedback rules for retrieval, prompt inclusion, and verified use.
+\end{enumerate}
+
+The tests should include single-memory and pairwise cases. In a single-memory test, remove one candidate and measure whether the answer or action changes. In a pairwise test, compare two individually weak memories that may be complementary against two redundant memories. Include wrong-memory contamination tests, temporal-update tests, deletion tests, and missing-evidence cases that should trigger abstention. Vary candidate count, token budgets, concurrency, and deadlines so that the selector is not evaluated only under a convenient small-context condition.
+
+\begin{warningbox}
+A memory appearing in a successful prompt does not prove that it caused success. Causal claims require controlled interventions or counterfactual comparisons, and any attribution model should disclose its uncertainty. Outcome feedback that treats every included memory as helpful can reinforce irrelevant or incorrect content.
+\end{warningbox}
+
+\section{Boundaries, advanced comparisons, and handoff}
+\label{sec:ch12-boundaries}
+
+Several adjacent ideas are useful but should not take over the main argument. Classic cache policies such as Belady's optimal replacement and GreedyDual-Size can clarify resource-aware eviction, but they are cache-management analogies rather than cognitive activation theories. Inverse propensity scoring and doubly robust estimators may help evaluate policies from logged decisions, but they require careful treatment of action propensities, support, and confounding; they belong in an advanced evaluation treatment. FSRS-style scheduling and MaRS-style forgetting taxonomies can inform retention policy, but neither should be presented as a general answer to query-time B1 context assembly.
+
+Neural parametric memory is another boundary. A system such as Titans updates a learned neural memory module rather than selecting only explicit declarative records for a prompt. That is an important memory architecture, but it changes the model's parameterized state and requires a different mechanism analysis. This chapter therefore distinguishes parametric learning from explicit memory-item activation and does not import neural-memory update equations into the B1 main argument \parencite{behrouz2025titans}.
+
+Honda and colleagues' ACT-R-inspired agent-memory work is relevant as an implementation bridge between cognitive activation ideas and LLM agents. The accessible abstract describes a vector-based activation mechanism incorporating temporal decay, semantic similarity, usage frequency, and probabilistic noise. Detailed claims about its exact timestamp semantics or complete equations should be made only against the full paper text \parencite{honda2026actragentmemory}.
+
+\begin{chapterrecap}
+\begin{enumerate}
+  \item ACT-R separates base-level history, contextual spreading activation, partial matching, and noise. Activation predicts retrieval time, but does not itself provide downstream action value.
+  \item Production utility belongs to actions or productions. Memory value belongs to an item or a set of items under a query and possible action.
+  \item Admission, retention/forgetting, and query-time context assembly are separate lifecycle decisions. A-MAC, MemoryBank, MemoryOS, Generative Agents, and modern graph retrieval should be classified at the level of the operation they implement.
+  \item B1 asks how activation/accessibility, predicted retrieval latency, downstream value, and costs should interact when a constrained context is assembled—and how outcomes should update future estimates.
+  \item A credible implementation separates cognitive predictions from infrastructure measurements, sunk costs from marginal costs, individual values from set values, and retrieval from inclusion, use, and causal benefit.
+  \item Evaluation must include downstream outcomes, abstention, stale-memory and error-propagation rates, prompt position, token use, latency, and resource cost—not retrieval frequency alone.
+\end{enumerate}
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review and design questions}
+\begin{enumerate}
+  \item Why is an admission score not a substitute for query-time context selection? Give an example where the two decisions would choose differently.
+  \item What are the four components in the ACT-R activation decomposition, and what does each contribute?
+  \item Why is it incorrect to assume that every database read should increment ACT-R base-level presentation history?
+  \item Explain the difference between the ACT-R retrieval-latency prediction and infrastructure wall-clock latency.
+  \item Why can a selector double-count activation if it rewards both activation and the latency derived from activation?
+  \item How does production utility differ from memory value? Which event updates each estimate?
+  \item What is the role of the A-MAC threshold, and why is it not a prompt-time relevance threshold?
+  \item When would MMR improve a context, and what kind of memory complementarity can it fail to detect?
+  \item Which cost categories should be charged at admission, maintenance, retrieval, or prompt assembly?
+  \item Design one experiment that distinguishes retrieval, prompt inclusion, actual use, and causal contribution.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+B1 is concerned with which explicit memories become accessible and enter a particular context, and how their estimated value and cost should shape that competition. The next mechanism problem is different: it concerns how an agent coordinates multiple candidate contents or partial results for scarce shared workspace capacity. The distinction between memory-item selection and workspace competition will remain important as the book moves to B2.
