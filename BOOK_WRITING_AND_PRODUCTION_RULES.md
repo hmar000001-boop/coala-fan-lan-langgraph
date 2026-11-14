@@ -6,6 +6,7 @@
 ## 1. Approval and delivery workflow
 
 1. Every chapter receives its own detailed outline and its own approval before chapter prose is written.
+1a. Store each outline's editable LaTeX source and review PDF inside that chapter's own folder (for example, `Tex/part1/chapter07/outline/`). A copy may also be indexed in `review/`, but the chapter folder is the authoritative location and the next repository ZIP must include it.
 2. Work in batches of two chapters for drafting efficiency, but retain chapter-by-chapter outline approval. One chapter's approval does not approve the next chapter's outline.
 3. For each batch: prepare the two outlines as individual review PDFs; wait for approval of each; draft only the approved chapters; perform a source-fidelity and cross-chapter consistency review; build and visually inspect individual chapter PDFs and the combined book PDF.
 4. Do not silently treat a proposed outline, a prior chapter's approval, or a request to continue as approval of an unapproved outline.
@@ -107,3 +108,11 @@ Before delivering a chapter or batch:
 - Eight Mermaid sources have been added for Chapters 5 and 6. The diagram validator and standalone build script now cover Chapters 1–6 (22 Mermaid sources). The real Mermaid CLI render and final print-size visual verification still require a successful GitHub Actions run because the local npm registry is unreachable.
 - Chapters 1–6 each have a standalone LaTeX entry point. The PDF validation script now checks Chapters 1–6.
 - Chapters 7–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
+
+
+### Chapter 7–8 status (14 November 2026)
+
+- Chapter 7 — Evaluation and Selection: detailed outline v1.0 prepared; awaiting explicit author approval. Editable source and review PDF are stored in `Tex/part1/chapter07/outline/`.
+- Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process: detailed outline v1.0 prepared; awaiting explicit author approval. Editable source and review PDF are stored in `Tex/part1/chapter08/outline/`.
+- The two outline PDFs are 11 pages (Chapter 7) and 12 pages (Chapter 8), in the 7 × 10 inch layout. Local preview PDFs use Liberation font substitutes because the preview runner does not have the author's TeX Gyre OpenType faces; the outline `.tex` sources load the production preamble unchanged.
+- Source review is recorded in `review/Batch_07-08_Source_Review.md`. No prose has been written for Chapters 7 or 8; their `chapter.tex` files remain placeholders until the respective outlines are approved.

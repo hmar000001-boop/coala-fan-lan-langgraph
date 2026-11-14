@@ -1,0 +1,190 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 7 Outline Review: Evaluation and Selection},pdfsubject={Detailed outline awaiting author approval},pdfkeywords={CoALA, evaluation, action values, selection, decision making}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 7 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Evaluation and Selection\par}
+\vspace{0.8cm}
+{\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Awaiting author approval. This document is a detailed chapter plan, not chapter prose.
+
+\textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, Section 4.6, especially the Evaluation and Selection sub-stages (pp. 12--13). Section 5 and Table 2 may be consulted only for brief examples that the paper itself uses to illustrate evaluation or selection. Section 4.6 is not to be expanded into the full iterative process; that belongs to Chapter 8.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\setcounter{chapter}{7}
+\section{Chapter purpose and role in the book}
+Chapter 6 ends when the proposal sub-stage has generated one or more candidate actions. A candidate is only a possibility. It has not yet been judged, preferred, authorized, or carried out. The next question is therefore not how to create possibilities, but how a language agent can assess them and decide what to do with the resulting candidate set.
+
+This chapter explains two distinct jobs within CoALA's planning stage. \emph{Evaluation} assigns a value to each proposed action when multiple actions are available. \emph{Selection} uses the candidate actions and their values to decide what happens next: it may select an action for execution, or reject the proposed set and return to proposal. These jobs are related, but they are not interchangeable. Evaluation produces values; selection makes the control decision.
+
+The chapter should begin with a simple Product X situation. The proposal stage has produced several possible investigations, such as inspecting deployment metadata, checking database connectivity, or asking an on-call engineer for clarification. The reader should see why generating these possibilities is different from assigning them values and different again from choosing what happens next.
+
+\begin{takeawaybox}[Chapter thesis]
+CoALA separates evaluation from selection. Evaluation assigns values to proposed actions when multiple actions are considered; selection uses the actions and their values to choose an action or reject the candidate set and return to proposal. A value is an input to a decision, not the decision itself.
+\end{takeawaybox}
+
+\section{Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain why generating candidate actions does not decide which action should be carried out.
+  \item Define evaluation as assigning a value to each proposed action when multiple actions are proposed.
+  \item Identify the value sources named by CoALA: heuristic rules, LLM/perplexity values, learned values, LLM reasoning, and combinations of these.
+  \item Explain how LLM reasoning may evaluate an action by internally simulating possible grounding feedback, without confusing simulation with a real environmental observation.
+  \item Define selection as the procedure that uses the candidate set and its values to decide what happens next.
+  \item Describe the selection methods named in the paper: argmax, softmax, majority vote, or another method suited to the form of the values.
+  \item Distinguish evaluation from selection, proposal, execution, and external authorization.
+  \item Explain the limited role of rejection in this chapter and recognize that Chapter 8 will examine how planning sub-stages can be revisited and interleaved.
+\end{enumerate}
+
+\section*{Proposed chapter structure}
+
+\section{From candidate actions to a decision}
+\textbf{Teaching entry:} Return to Product X. The proposal stage has generated several possible next actions, but the agent has not yet established which possibility should be carried forward.
+\begin{itemize}
+  \item Briefly recall Chapter 6: proposal creates one or more action candidates. Do not repeat the candidate-generation methods.
+  \item Ask the reader to imagine that three candidates exist, each addressing a different uncertainty in the incident.
+  \item Show why a list of candidates is not yet a decision. A procedure needs some way to assess the candidates and a way to determine what happens next.
+  \item Introduce the two names in their correct order of conceptual responsibility: evaluation assigns values; selection acts on the proposed actions and values.
+\end{itemize}
+\textbf{Boundary:} Do not describe the complete decision cycle or the flexible revisiting of these stages. Chapter 8 owns that explanation. \CoALACite{\S 4.6, pp. 12--13}
+
+\section{Evaluation: assigning values to proposed actions}
+\textbf{Core question:} If an agent has more than one candidate action, how can it represent how each candidate fares under some evaluation procedure?
+\begin{itemize}
+  \item Explain the paper's conditional phrasing: if multiple actions are proposed, the evaluation sub-stage assigns a scalar value to each.
+  \item Explain a scalar value intuitively as a numerical representation used by the procedure to compare or otherwise reason about candidate actions. Do not imply that the number is necessarily a probability, a calibrated confidence, or a universal measure of quality.
+  \item Keep the evaluated object clear: the value belongs to a proposed action or candidate, not to the entire agent or to the incident in the abstract.
+  \item Explain that CoALA describes several possible sources for values. It does not require every agent to use every source or combine them in one fixed formula.
+  \item Distinguish an evaluation result from an execution result. Evaluation happens within planning; execution applies the selected action later.
+\end{itemize}
+\begin{notebox}
+Do not turn the scalar-value description into an invented scoring standard. CoALA lists alternative sources and combinations; it does not prescribe one universal scale, normalization method, calibration guarantee, or domain-independent scoring formula.
+\end{notebox}
+\CoALACite{\S 4.6, ``Evaluation,'' p. 12}
+
+\section{Where evaluation values can come from}
+This section introduces the alternatives named in CoALA. Each should be explained with a short intuition, then related to the same Product X candidates without asserting that a particular method is required.
+\subsection{Heuristic rules}
+Explain a heuristic as a hand-specified rule or estimate used to assign a value. Use a limited illustration, such as a pre-established rule that values an inspection action because it can clarify a recently changed subsystem. State explicitly that this is a book-created illustration, not a rule given by CoALA.
+\subsection{LLM or perplexity values}
+Explain that the paper names LLM/perplexity values as one possible value source and cites prior work. Keep the discussion at the level needed to understand the category. Do not imply that perplexity directly measures safety, truth, or real-world utility.
+\subsection{Learned values}
+Explain that a value may come from a learned value function or other learned estimate. The outline should not turn this into a reinforcement-learning tutorial; define only enough for the reader to understand that the evaluation source can itself be learned.
+\subsection{LLM reasoning}
+Explain the paper's example in which reasoning may assess a candidate by internally simulating its possible grounding feedback. Distinguish a predicted or imagined consequence from feedback actually received after an external action.
+\subsection{Combinations of value sources}
+Explain that an evaluation may combine sources. Do not invent a fixed weighting or aggregation formula. A Product X illustration may mention that an evaluation procedure could consider more than one kind of evidence, but must label any such combination as a book-created example.
+
+\textbf{Planned Mermaid figure 7.1:} \emph{Possible sources of evaluation values}. Show candidate actions entering an evaluation role, with alternative value sources branching into a scalar value attached to each candidate. The figure must communicate alternatives, not imply that all sources are mandatory or that they share one scale. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/evaluation-value-sources.mmd}.
+\CoALACite{\S 4.6, ``Evaluation,'' p. 12}
+
+\section{Evaluation is not selection}
+This is the chapter's most important conceptual distinction and should receive explicit teaching time.
+\begin{itemize}
+  \item Evaluation answers: what value does the procedure assign to each proposed action?
+  \item Selection answers: given the proposed actions and their values, what should happen next?
+  \item Explain why a value does not choose itself. A procedure still needs a selection rule or decision method.
+  \item Explain that two selection procedures could behave differently even when they receive the same candidate set and values.
+  \item Do not describe the evaluation stage as rejecting candidates. The explicit reject-and-return option is described under selection in the paper.
+\end{itemize}
+\textbf{Planned Mermaid figure 7.2:} \emph{The boundary between evaluation and selection}. Show candidate set → evaluation → candidate/value pairs → selection, with the evaluation output separated visually from the control decision. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/evaluation-versus-selection.mmd}.
+
+\section{Selection: deciding what happens to the candidate set}
+\textbf{Core question:} Once actions and their values are available, how does the procedure determine what happens next?
+\begin{itemize}
+  \item Define selection as the step that uses the candidate actions and their assigned values to choose an action or reject the proposed actions and return to proposal.
+  \item Explain that selection is a control decision: it identifies the action to be carried forward for execution, or it asks the planning process to generate another set of candidates.
+  \item Emphasize that selection does not itself execute the action. Execution applies the selected action by invoking the relevant procedure from the agent's source code; that stage is introduced here only as the next boundary and is treated in Chapter 8.
+  \item Avoid conflating selection with human authorization, policy approval, or an operational safety gate. Those may be engineering requirements in a particular system, but the CoALA selection description is a conceptual decision-making role.
+\end{itemize}
+\CoALACite{\S 4.6, ``Selection,'' p. 13}
+
+\section{Selection methods named by CoALA}
+Introduce each method at an intuitive level and avoid extending the chapter into a mathematical survey.
+\begin{itemize}
+  \item \textbf{Argmax:} choose the action with the largest represented value when the values are comparable.
+  \item \textbf{Softmax:} use a value-sensitive distribution rather than always treating the largest value as an absolute deterministic choice. Keep this explanation concise and avoid implying that CoALA mandates a specific temperature or calibration.
+  \item \textbf{Majority vote:} use a voting-style selection method when the representations or procedure support it. Do not invent a detailed ensemble protocol.
+  \item \textbf{Other alternatives:} the paper allows an alternative suited to the form of action values. The chapter should preserve this flexibility rather than present the named methods as an exhaustive list.
+\end{itemize}
+\textbf{Planned Mermaid figure 7.3:} \emph{Selection methods depend on how values are represented}. Show the same evaluated candidate set feeding into alternative selection approaches; do not force a single method for all agents. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/selection-methods.mmd}.
+\CoALACite{\S 4.6, ``Selection,'' p. 13}
+
+\section{A Product X example: from values to a selection decision}
+\BookExampleLabel\ The proposal stage has produced three candidates: inspect deployment metadata, query database connectivity, and ask the on-call engineer whether a relevant configuration change occurred. Use this set to teach the roles without inventing incident facts.
+\begin{enumerate}
+  \item Restate that the three items are candidates, not findings.
+  \item Explain how an illustrative evaluation procedure could assign a value to each candidate based on an expressly stated criterion.
+  \item Show how a selection procedure could use the resulting values to choose one candidate for execution.
+  \item Note that another selection procedure, or another set of values, could lead to a different choice.
+  \item Include the possibility that selection rejects the current set and sends the process back to proposal, without expanding the full revisiting behavior reserved for Chapter 8.
+\end{enumerate}
+\begin{warningbox}
+Any numeric scores, criteria, or chosen Product X action in this walkthrough are invented solely to teach the distinction. They are not scores, results, or operational recommendations from CoALA. Do not imply that a higher abstract value guarantees correctness, safety, or incident resolution.
+\end{warningbox}
+\textbf{Planned Mermaid figure 7.4:} \emph{Product X: candidate values and a selection point}. Use clearly marked illustrative values or value labels and show that selection follows evaluation. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/productx-evaluation-selection.mmd}.
+
+\section{Common confusions and chapter boundaries}
+Address each of the following explicitly:
+\begin{itemize}
+  \item \textbf{Proposal is not evaluation.} Proposal generates candidate actions; evaluation assigns values to proposed candidates.
+  \item \textbf{Evaluation is not selection.} Evaluation produces values; selection decides what happens next.
+  \item \textbf{Selection is not execution.} Selection chooses or rejects; execution applies the selected action.
+  \item \textbf{A scalar value is not automatically a probability.} The paper does not define one universal interpretation or calibration standard.
+  \item \textbf{An internally simulated consequence is not an observation.} Actual environmental feedback follows an executed grounding action and is handled through grounding.
+  \item \textbf{Selection is not a complete safety or authorization architecture.} Do not attribute human approval, access control, or production safeguards to the CoALA selection description.
+  \item \textbf{Rejection does not complete the story.} Selection can return to proposal; Chapter 8 will explain how planning stages can be revisited, interleaved, and iterated.
+\end{itemize}
+
+\section{Chapter recap, review questions, and handoff}
+\begin{chapterrecap}
+Evaluation and selection are separate roles within CoALA's planning stage. Evaluation assigns a value to each proposed action when multiple actions are considered. CoALA names heuristic rules, LLM/perplexity values, learned values, LLM reasoning, and combinations as possible value sources. Selection uses the candidate set and its values to choose an action or reject the proposed set and return to proposal. The named selection methods include argmax, softmax, majority vote, and other alternatives suited to the values. Selection is not execution, and an evaluation value is not a guarantee of correctness or safety. Chapter 8 will put proposal, evaluation, selection, and execution into the complete flexible decision process.
+\end{chapterrecap}
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item What is the difference between a candidate action and an evaluated candidate action?
+  \item When does CoALA describe the evaluation sub-stage as assigning values to proposed actions?
+  \item Name the possible value sources listed in Section 4.6 and explain one in your own words.
+  \item Why should an internally simulated consequence not be described as an observation from the environment?
+  \item Explain the difference between evaluation and selection without using the words ``score'' or ``choose.''
+  \item What is argmax, and what does its use assume about the represented values?
+  \item How does softmax differ in spirit from always choosing the largest value? Do not assume a particular calibration guarantee.
+  \item What does it mean for selection to reject a proposed set and return to proposal?
+  \item Classify four events: generating a database check, assigning values to candidates, choosing one candidate, and invoking its grounding procedure.
+  \item Why is CoALA selection not the same thing as production authorization or human approval?
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account is grounded primarily in \textsc{[CoALA]}, Section 4.6, particularly the Evaluation and Selection sub-stages, pp. 12--13. The paper's case-study table and Section 5 may be used only as brief contextual examples and not as independent theoretical foundations. Product X is a book-created teaching example. Numeric values, criteria, and candidate outcomes introduced in that example must be explicitly identified as illustrative. No Fan \& Lan mechanisms are used to interpret CoALA.
+
+\section*{Acceptance criteria for the eventual chapter}
+The eventual chapter is ready for author review only when it:
+\begin{itemize}
+  \item explains the distinction between evaluation and selection accurately and repeatedly enough that the reader cannot confuse their responsibilities;
+  \item covers all value sources named by CoALA without inventing a universal scoring model;
+  \item covers the selection methods named by CoALA without implying they are mandatory or exhaustive;
+  \item locates rejection and return-to-proposal under selection, not evaluation;
+  \item keeps simulated feedback distinct from actual observations and selected actions distinct from executed actions;
+  \item uses Product X as an explicitly book-created example and does not present invented scores as paper results;
+  \item uses the shared preamble, semantic boxes, footnote macros, glossary/index infrastructure, and Mermaid-to-PNG pipeline;
+  \item avoids prematurely teaching the complete interleaving and iteration mechanism reserved for Chapter 8;
+  \item includes four focused Mermaid diagrams, captions, stable labels, explanatory text, recap, and review questions;
+  \item preserves the source boundary: CoALA only, with no Fan \& Lan reinterpretation or additional theoretical foundation.
+\end{itemize}
+\begin{takeawaybox}[Approval gate]
+Please approve this Chapter 7 outline or request changes. No Chapter 7 prose will be written until the outline is explicitly approved.
+\end{takeawaybox}
+\end{document}
