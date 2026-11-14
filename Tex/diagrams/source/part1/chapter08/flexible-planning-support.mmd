@@ -1,0 +1,26 @@
+flowchart TB
+    accTitle: Reasoning and retrieval flexibly support planning
+    accDescr: Reasoning and retrieval are internal actions that can support proposal, evaluation, and selection. The figure shows multiple possible relationships and deliberately does not prescribe a single order among the planning sub-stages.
+
+    REASON[Reasoning<br/>process working information]
+    RETRIEVE[Retrieval<br/>read from long-term memory]
+    subgraph PLANNING[Planning responsibilities]
+      direction LR
+      PROP[Proposal]
+      EVAL[Evaluation]
+      SELECT[Selection]
+    end
+    FLEX[Flexible support<br/>not a fixed schedule]
+    REASON --> PROP
+    REASON --> EVAL
+    REASON --> SELECT
+    RETRIEVE --> PROP
+    RETRIEVE --> EVAL
+    RETRIEVE --> SELECT
+    PLANNING -.-> FLEX
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef action fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef note fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.3px;
+    class REASON,RETRIEVE,PROP,EVAL,SELECT process;
+    class FLEX note;

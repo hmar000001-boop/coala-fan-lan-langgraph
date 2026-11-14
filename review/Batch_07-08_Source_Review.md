@@ -14,13 +14,13 @@ Source URL: https://openreview.net/forum?id=1i6ZCyf1QJ
 
 ## Chapter 7 claim map
 
-- **Evaluation role:** If multiple actions are proposed, the evaluation sub-stage assigns a scalar value to each. Source: §4.6, evaluation paragraph, pp. 12–13.
+- **Evaluation role:** If multiple actions are proposed, the evaluation sub-stage assigns a value to each. Source: §4.6, evaluation paragraph, pp. 12–13.
 - **Value sources:** The paper names heuristic rules, LLM/perplexity values, learned values, LLM reasoning, and combinations. Source: §4.6, evaluation paragraph, p. 13.
 - **Simulation during evaluation:** LLM reasoning may internally simulate possible grounding feedback. The outline distinguishes this from an actual observation received after execution. Source: §4.6, p. 13.
 - **Selection role:** Given actions and their values, selection either selects one to execute or rejects the proposals and loops to proposal. Source: §4.6, selection paragraph, p. 13.
 - **Selection methods:** argmax, softmax, majority vote, or another alternative depending on the form of action values. Source: §4.6, p. 13.
 
-**Explicit teaching boundaries:** A scalar value is not presented as a universal probability, calibrated confidence, truth value, or safety guarantee. Product X scores and criteria, if used in the eventual chapter, must be labelled as book-created illustrations. Selection is not execution, human authorization, or a complete production safety policy. Chapter 8 owns the full rejection/interleaving/iteration process.
+**Explicit teaching boundaries:** A value is not presented as a universal probability, calibrated confidence, truth value, or safety guarantee. Product X scores and criteria, if used in the eventual chapter, must be labelled as book-created illustrations. Selection is not execution, human authorization, or a complete production safety policy. Chapter 8 owns the full rejection/interleaving/iteration process.
 
 ## Chapter 8 claim map
 
@@ -52,3 +52,16 @@ Both outline versions are v1.0 and await explicit author approval. The editable 
 - `Tex/part1/chapter08/outline/Chapter_08_Outline_Review_v1.pdf`
 
 The chapter prose files remain placeholders. No Chapter 7 or Chapter 8 prose is authorized until each outline is approved.
+
+
+## Final outline review and approval (14 November 2026)
+
+The author approved both outline v1.0 documents after one final minor-issue review. The review reconfirmed:
+
+- Chapter 7's distinction between evaluation and selection, and the placement of rejection/return-to-proposal under selection.
+- Chapter 8's use of interleaving and iteration as careful teaching interpretations, not formal operators or a prescribed scheduling algorithm.
+- The separation between simulation and actual environmental observation.
+- The planning/execution distinction and the possibility that execution applies either a grounding action or a learning action.
+- The use of Product X strictly as a book-created example.
+
+The approved outlines were updated to record their approval and retained inside their corresponding chapter folders. Drafting proceeded only after the author's explicit approval.

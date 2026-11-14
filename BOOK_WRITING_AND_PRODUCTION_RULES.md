@@ -6,7 +6,7 @@
 ## 1. Approval and delivery workflow
 
 1. Every chapter receives its own detailed outline and its own approval before chapter prose is written.
-1a. Store each outline's editable LaTeX source and review PDF inside that chapter's own folder (for example, `Tex/part1/chapter07/outline/`). A copy may also be indexed in `review/`, but the chapter folder is the authoritative location and the next repository ZIP must include it.
+1a. Store each outline's editable LaTeX source and review PDF inside that chapter's own folder (for example, `Tex/part1/chapter07/outline/`). A copy may also be indexed in `review/`, but the chapter folder is the authoritative location and the next repository ZIP must include it. Legacy Chapters 1–2 retain their original approved outline formats; from Chapter 3 onward, every outline has both an editable `.tex` source and review `.pdf` in the chapter-local folder.
 2. Work in batches of two chapters for drafting efficiency, but retain chapter-by-chapter outline approval. One chapter's approval does not approve the next chapter's outline.
 3. For each batch: prepare the two outlines as individual review PDFs; wait for approval of each; draft only the approved chapters; perform a source-fidelity and cross-chapter consistency review; build and visually inspect individual chapter PDFs and the combined book PDF.
 4. Do not silently treat a proposed outline, a prior chapter's approval, or a request to continue as approval of an unapproved outline.
@@ -101,18 +101,21 @@ Before delivering a chapter or batch:
 
 - Chapters 1 and 2 have been drafted and integrated. Both use the shared semantic teaching-box system and Mermaid-to-PNG figure pipeline.
 - Chapters 3 and 4 have now been drafted from their reviewed outlines. The author explicitly requested the additional review pass and drafting of this batch. The chapter drafts are ready for author review.
-- Eight Mermaid sources have been added for Chapters 3 and 4. The validator now covers all figures referenced by Chapters 1–4. The CI workflow is the authoritative real-render verification point because the local environment could not resolve the npm registry.
+- Eight Mermaid sources were added for Chapters 3 and 4; the validator was then expanded as later chapter batches were integrated.
 - The latest author-supplied preamble remains the shared design baseline. It has a reusable `\BookDiagram` macro; no chapter-specific drawing package is allowed.
 - Chapter 5 — External Actions and Grounding: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.2, Figure 5, and the action-space safety discussion in §6.
 - Chapter 6 — Planning: From a Problem to Candidate Actions: outline v1.0 explicitly approved on 14 November 2026; chapter drafted and integrated. Source-fidelity review covers CoALA §4.6, Figure 4B, and the proposal sub-stage.
-- Eight Mermaid sources have been added for Chapters 5 and 6. The diagram validator and standalone build script now cover Chapters 1–6 (22 Mermaid sources). The real Mermaid CLI render and final print-size visual verification still require a successful GitHub Actions run because the local npm registry is unreachable.
-- Chapters 1–6 each have a standalone LaTeX entry point. The PDF validation script now checks Chapters 1–6.
-- Chapters 7–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
+- Eight Mermaid sources were added for Chapters 5 and 6; together with earlier chapters this brought the repository to 22 diagram sources before the latest batch.
+- Chapters 1–8 each have a standalone LaTeX entry point. The PDF validation script and standalone build script now cover Chapters 1–8.
+- Chapters 9–30 remain structural placeholders until their own outlines are reviewed and the author authorizes their prose.
 
 
 ### Chapter 7–8 status (14 November 2026)
 
-- Chapter 7 — Evaluation and Selection: detailed outline v1.0 prepared; awaiting explicit author approval. Editable source and review PDF are stored in `Tex/part1/chapter07/outline/`.
-- Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process: detailed outline v1.0 prepared; awaiting explicit author approval. Editable source and review PDF are stored in `Tex/part1/chapter08/outline/`.
-- The two outline PDFs are 11 pages (Chapter 7) and 12 pages (Chapter 8), in the 7 × 10 inch layout. Local preview PDFs use Liberation font substitutes because the preview runner does not have the author's TeX Gyre OpenType faces; the outline `.tex` sources load the production preamble unchanged.
-- Source review is recorded in `review/Batch_07-08_Source_Review.md`. No prose has been written for Chapters 7 or 8; their `chapter.tex` files remain placeholders until the respective outlines are approved.
+- Chapter 7 — Evaluation and Selection: outline v1.0 was explicitly approved by the author on 14 November 2026 after a final review for minor issues. The chapter has now been drafted and integrated in `Tex/part1/chapter07/chapter.tex` (approximately 3,377 words).
+- Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process: outline v1.0 was explicitly approved by the author on 14 November 2026 after a final review for minor issues. The chapter has now been drafted and integrated in `Tex/part1/chapter08/chapter.tex` (approximately 3,493 words).
+- Approved outline PDFs and editable `.tex` sources remain stored inside each corresponding chapter's `outline/` folder. Their cover pages and approval notes now record that approval was granted.
+- Nine new Mermaid source files were added for Chapters 7–8 (four for Chapter 7 and five for Chapter 8). The shared renderer and validator cover all 31 Mermaid source files across Chapters 1–8. Generated PNGs remain CI build outputs and are not committed.
+- The standalone build script now covers Chapters 1–8, and PDF quality checks verify the Chapter 7 and Chapter 8 headings. The scaffold check confirms that both approved chapters contain prose and retain their outline assets.
+- Source and drafting review notes are recorded in `review/Batch_07-08_Source_Review.md` and `review/Batch_07-08_Drafting_Review.md`.
+- Local npm installation of Mermaid CLI 12.2.0 was attempted again on 14 November 2026 and failed because `registry.npmjs.org` could not be resolved (`EAI_AGAIN`). Therefore real PNG rendering and printed-size visual inspection remain a GitHub Actions verification gate. Mock PNGs may be used only for a disposable LaTeX layout smoke test and must not be represented as actual Mermaid output.

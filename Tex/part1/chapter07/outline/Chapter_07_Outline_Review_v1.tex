@@ -1,6 +1,6 @@
 \input{Tex/preamble.tex}
 \input{Tex/shared-macros.tex}
-\hypersetup{pdftitle={Chapter 7 Outline Review: Evaluation and Selection},pdfsubject={Detailed outline awaiting author approval},pdfkeywords={CoALA, evaluation, action values, selection, decision making}}
+\hypersetup{pdftitle={Chapter 7 Outline Review: Evaluation and Selection},pdfsubject={Approved detailed chapter outline},pdfkeywords={CoALA, evaluation, action values, selection, decision making}}
 \begin{document}
 \thispagestyle{empty}
 \begin{center}
@@ -13,7 +13,7 @@
 {\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
 \vfill
 \begin{learningbox}
-\textbf{Review status:} Awaiting author approval. This document is a detailed chapter plan, not chapter prose.
+\textbf{Review status:} Approved by the author on 14 November 2026 after a final review of minor issues. This is the approved chapter plan.
 
 \textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, Section 4.6, especially the Evaluation and Selection sub-stages (pp. 12--13). Section 5 and Table 2 may be consulted only for brief examples that the paper itself uses to illustrate evaluation or selection. Section 4.6 is not to be expanded into the full iterative process; that belongs to Chapter 8.
 \end{learningbox}
@@ -63,8 +63,8 @@ By the end of the chapter, a beginner should be able to:
 \section{Evaluation: assigning values to proposed actions}
 \textbf{Core question:} If an agent has more than one candidate action, how can it represent how each candidate fares under some evaluation procedure?
 \begin{itemize}
-  \item Explain the paper's conditional phrasing: if multiple actions are proposed, the evaluation sub-stage assigns a scalar value to each.
-  \item Explain a scalar value intuitively as a numerical representation used by the procedure to compare or otherwise reason about candidate actions. Do not imply that the number is necessarily a probability, a calibrated confidence, or a universal measure of quality.
+  \item Explain the paper's conditional phrasing: if multiple actions are proposed, the evaluation sub-stage assigns a value to each.
+  \item Explain an evaluation value intuitively as information assigned by the procedure to each candidate action. Do not imply that it is necessarily a probability, a calibrated confidence, or a universal measure of quality; the paper does not prescribe a universal numeric scale.
   \item Keep the evaluated object clear: the value belongs to a proposed action or candidate, not to the entire agent or to the incident in the abstract.
   \item Explain that CoALA describes several possible sources for values. It does not require every agent to use every source or combine them in one fixed formula.
   \item Distinguish an evaluation result from an execution result. Evaluation happens within planning; execution applies the selected action later.
@@ -87,7 +87,7 @@ Explain the paper's example in which reasoning may assess a candidate by interna
 \subsection{Combinations of value sources}
 Explain that an evaluation may combine sources. Do not invent a fixed weighting or aggregation formula. A Product X illustration may mention that an evaluation procedure could consider more than one kind of evidence, but must label any such combination as a book-created example.
 
-\textbf{Planned Mermaid figure 7.1:} \emph{Possible sources of evaluation values}. Show candidate actions entering an evaluation role, with alternative value sources branching into a scalar value attached to each candidate. The figure must communicate alternatives, not imply that all sources are mandatory or that they share one scale. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/evaluation-value-sources.mmd}.
+\textbf{Planned Mermaid figure 7.1:} \emph{Possible sources of evaluation values}. Show candidate actions entering an evaluation role, with alternative value sources branching into a value attached to each candidate. The figure must communicate alternatives, not imply that all sources are mandatory or that they share one scale. Proposed source path: \path{Tex/diagrams/source/part1/chapter07/evaluation-value-sources.mmd}.
 \CoALACite{\S 4.6, ``Evaluation,'' p. 12}
 
 \section{Evaluation is not selection}
@@ -142,7 +142,7 @@ Address each of the following explicitly:
   \item \textbf{Proposal is not evaluation.} Proposal generates candidate actions; evaluation assigns values to proposed candidates.
   \item \textbf{Evaluation is not selection.} Evaluation produces values; selection decides what happens next.
   \item \textbf{Selection is not execution.} Selection chooses or rejects; execution applies the selected action.
-  \item \textbf{A scalar value is not automatically a probability.} The paper does not define one universal interpretation or calibration standard.
+  \item \textbf{An evaluation value is not automatically a probability.} The paper does not define one universal interpretation or calibration standard.
   \item \textbf{An internally simulated consequence is not an observation.} Actual environmental feedback follows an executed grounding action and is handled through grounding.
   \item \textbf{Selection is not a complete safety or authorization architecture.} Do not attribute human approval, access control, or production safeguards to the CoALA selection description.
   \item \textbf{Rejection does not complete the story.} Selection can return to proposal; Chapter 8 will explain how planning stages can be revisited, interleaved, and iterated.
@@ -184,7 +184,7 @@ The eventual chapter is ready for author review only when it:
   \item includes four focused Mermaid diagrams, captions, stable labels, explanatory text, recap, and review questions;
   \item preserves the source boundary: CoALA only, with no Fan \& Lan reinterpretation or additional theoretical foundation.
 \end{itemize}
-\begin{takeawaybox}[Approval gate]
-Please approve this Chapter 7 outline or request changes. No Chapter 7 prose will be written until the outline is explicitly approved.
+\begin{takeawaybox}[Approval recorded]
+The author approved Outline v1.0 on 14 November 2026. This document remains the approved scope reference for Chapter 7; any material scope change will be submitted for author review.
 \end{takeawaybox}
 \end{document}

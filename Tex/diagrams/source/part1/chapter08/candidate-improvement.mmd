@@ -1,0 +1,18 @@
+flowchart LR
+    accTitle: Internal simulation and candidate improvement
+    accDescr: An initial candidate is considered through internal simulation. A possible defect is identified and a modified candidate is proposed back into planning. The entire pattern remains internal; no external action or environmental observation occurs in this diagram.
+
+    CAND[Initial candidate]
+    SIM[Internal reasoning<br/>simulate possible consequences]
+    DEFECT[Possible defect identified]
+    MODIFY[Propose a modification]
+    REVISED[Revised candidate]
+    RETURN[Return to planning<br/>for further consideration]
+    CAND --> SIM --> DEFECT --> MODIFY --> REVISED --> RETURN
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef candidate fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class SIM,MODIFY process;
+    class CAND,DEFECT candidate;
+    class REVISED,RETURN result;

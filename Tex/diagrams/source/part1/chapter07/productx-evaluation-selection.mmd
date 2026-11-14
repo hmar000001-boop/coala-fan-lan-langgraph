@@ -1,0 +1,26 @@
+flowchart TB
+    accTitle: Product X example of candidate values and selection
+    accDescr: Three book-created Product X candidates receive illustrative values under an invented uncertainty-reduction criterion. Argmax carries the candidate with the greatest displayed value forward. The values are not probabilities, paper results, or evidence about the incident.
+
+    subgraph CAND[Book-created candidate set]
+      direction TB
+      A[Inspect deployment metadata<br/>illustrative value: 0.80]
+      B[Query database connectivity<br/>illustrative value: 0.60]
+      C[Ask on-call engineer<br/>illustrative value: 0.45]
+    end
+    EVAL[Evaluation under an invented<br/>uncertainty-reduction criterion]
+    MAX[Argmax selection]
+    OUT[Carry forward: inspect deployment metadata]
+    NOTE[Illustrative values only<br/>not probabilities or incident findings]
+    A --> EVAL
+    B --> EVAL
+    C --> EVAL
+    EVAL --> MAX --> OUT
+    OUT -.-> NOTE
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef candidate fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class A,B,C,NOTE candidate;
+    class EVAL,MAX process;
+    class OUT result;

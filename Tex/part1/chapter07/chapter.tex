@@ -1,4 +1,233 @@
 \chapter{Evaluation and Selection}
+\label{ch:evaluation-selection}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Chapter 6 ended with a set of possible actions. The agent had not yet decided which possibility should be carried forward. A candidate is only a possibility: it is not a finding about the world, a preferred action, or an action that has already been carried out. CoALA separates two further responsibilities. {\gls{evaluation}} assigns a value to proposed actions when there is more than one candidate. {\gls{selection}} uses the candidates and their values to decide what happens next. It may choose an action for execution, or reject the proposed set and return to proposal. These responsibilities are closely related, but they are not the same operation.
+
+This chapter follows the distinction through a small Product X example. The examples of candidates, criteria, and numerical values are created for teaching; they are not incident findings or prescribed scoring rules from the paper.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain why a candidate set is not yet a decision; describe evaluation as assigning values to proposed actions when multiple actions are considered; identify the value sources named by CoALA; distinguish evaluation from selection; explain the selection methods named in the paper; and locate rejection and return-to-proposal at the selection sub-stage.
+\end{learningbox}
+
+\section{From candidate actions to a decision}
+\label{sec:evaluation-from-candidates}
+
+Return to the Product X payment-service incident. The service is returning HTTP 500 errors. The proposal stage has produced three possible next actions:
+
+\begin{enumerate}
+  \item inspect the deployment metadata;
+  \item query the database connectivity status;
+  \item ask the on-call engineer whether a relevant configuration change occurred.
+\end{enumerate}
+
+At this point, the agent has a candidate set. The three candidates describe possible interactions with the environment. They do not establish that the deployment caused the errors, that the database is involved, or that a configuration change took place. Nor does their order mean that the first candidate is preferred. Proposal has generated possibilities; it has not yet assigned values or made a selection.
+
+A reader might ask why the agent cannot simply take the first item. It could, if its decision procedure were designed to use a fixed ordering. But that would be one possible selection rule, not an evaluation of the alternatives. CoALA gives names to two different jobs that may be involved when several candidates are available. The first job assigns values. The second job uses the candidate set and those values to decide what happens next.
+
+The distinction matters because a system can evaluate candidates and still need a separate method to decide what to do with the results. A value does not select itself. Equally, a selection method cannot compare values that have not been made available to it, unless the procedure uses some other basis for selection. CoALA's vocabulary helps us describe those responsibilities without treating them as one vague act of ``choosing.''
+
+\begin{takeawaybox}[Two different questions]
+Evaluation asks what value the procedure assigns to each proposed action. Selection asks what the procedure does with the proposed actions and their values. Evaluation produces information for a decision; selection makes the control decision.
+\end{takeawaybox}
+
+\CoALACite{\S 4.6, ``Evaluation'' and ``Selection,'' pp. 12--13}
+
+\section{Evaluation: assigning values to proposed actions}\index{evaluation}
+\label{sec:evaluation-values}
+
+CoALA describes an evaluation sub-stage that assigns a value to each proposed action when multiple actions are proposed. The wording is conditional: evaluation is described for the case in which the proposal stage has produced more than one action. The paper does not require every agent to use this sub-stage in the same way, nor does it prescribe one universal evaluation formula.\CoALACite{\S 4.6, ``Evaluation,'' p. 12}
+
+The word \emph{value} can sound abstract. In this chapter, an \gls{evaluationvalue} is the output assigned to a proposed action by an evaluation procedure. For now, think of it as information produced by an evaluation procedure to represent how a candidate fares under that procedure. A value may be numerical, but its meaning depends on how the particular agent defines and uses it. A value is not automatically a probability, a calibrated measure of confidence, a safety guarantee, or a prediction that the action will succeed.
+
+Notice what is being evaluated. The object is a proposed action. If the agent is considering an inspection request, a database query, and a question to a human operator, the evaluation procedure may assign a value to each of those candidates. It is not assigning a universal quality score to the agent, and it is not declaring the current incident solved or understood.
+
+Evaluation also differs from execution. Assigning a value to a proposed action does not perform that action. If a procedure estimates that inspecting deployment metadata is useful, the metadata has not thereby been inspected. The action remains a candidate until the selection and execution responsibilities are addressed.
+
 \begin{notebox}
-Chapter placeholder. The detailed outline must be reviewed and approved before this chapter is written.
+CoALA names the role of evaluation and gives examples of possible value sources. It does not define a universal unit, range, normalization method, calibration guarantee, or domain-independent formula for the values. Do not infer those properties simply because an example uses numbers.
 \end{notebox}
+
+\section{Where evaluation values can come from}\index{evaluation value}\index{heuristic rules}\index{learned values}
+\label{sec:evaluation-value-sources}
+
+The CoALA paper names several possible sources for values: heuristic rules, LLM or perplexity values, learned values, LLM reasoning, and combinations of these. They are alternatives that illustrate the range of possible evaluation procedures. The paper does not require every agent to use all of them, and it does not specify a single weighting scheme that combines them.\CoALACite{\S 4.6, ``Evaluation,'' p. 12}
+
+\subsection{Heuristic rules}
+
+A heuristic is a rule or estimate that an agent designer specifies to help assess a candidate. It may encode a simple preference or a domain-informed judgment. For example, a book-created Product X procedure might assign a higher illustrative value to an inspection that is expected to clarify a recently changed subsystem than to an action that provides little information about the current question. The example explains what a heuristic could do; it is not a rule supplied by CoALA, and it does not establish that any subsystem actually changed.
+
+A heuristic can be inexpensive and easy to understand. Its limitation is equally important: the rule reflects what its designer anticipated. A rule that is useful in one situation may be a poor guide in another. The CoALA paper names heuristic rules as a possible value source; it does not claim that heuristics are always reliable or that one particular heuristic should be used.
+
+\subsection{LLM or perplexity values}
+
+The paper also names LLM or perplexity values. The key idea is that a language-model-related measure can contribute to the value assigned to a candidate. This category should be kept narrow. Perplexity is a measure associated with how a language model assigns likelihood to text; it is not, by itself, a direct measurement of whether an external action is true, safe, useful, authorized, or likely to resolve a real-world incident.
+
+For example, a model-derived value could help an evaluation procedure compare candidate descriptions under a particular representation. That does not mean the model has observed the outside environment or verified the consequences of the action. The value remains an output of an evaluation method, not environmental feedback.
+
+\subsection{Learned values}
+
+A value may also come from a learned estimator or value function. In this case, the procedure's ability to assign values is itself shaped by learning from data or experience. The important point for this chapter is not how to train such a function. It is that the evaluation source need not be a hand-written rule or a direct reasoning response from the LLM; it may be learned.
+
+The phrase \emph{learned value} should not be read as a guarantee that the estimate is correct. A learned estimator can reflect the data and objective used to train it, and it may be uncertain when it encounters situations unlike those it has seen. CoALA lists learned values as one possible source without prescribing a training procedure or an evaluation guarantee.
+
+\subsection{LLM reasoning}
+
+The paper identifies LLM reasoning as another possible source. Here, the model can reason about a candidate and its possible consequences. CoALA gives the example of internally simulating possible grounding feedback as part of evaluating actions. This gives the agent a way to consider what might happen before it performs an external interaction.\CoALACite{\S 4.6, ``Evaluation,'' p. 12}
+
+The word \emph{internally} is essential. A simulated consequence is generated as part of the agent's planning activity. It is not an observation returned by a website, API, person, robot sensor, or other environment. The agent may imagine that a query will reveal a connection error, but that imagined result does not establish that a connection error exists. Actual environmental feedback belongs to grounding after an external action is executed.
+
+\begin{warningbox}
+Do not turn a simulated outcome into a reported observation. A model can reason about what might happen if an action were carried out. Only an interaction with the relevant environment can provide feedback from that environment. These are different sources of information.
+\end{warningbox}
+
+\subsection{Combinations of value sources}
+
+CoALA allows evaluation to use some combination of the sources it names. A procedure could, for example, use a hand-specified rule together with a learned estimate or LLM reasoning. The paper leaves room for different designs rather than prescribing one fixed combination.
+
+A combination does not automatically make an evaluation better. Its behavior depends on what each source represents and how the procedure brings the results together. A chapter example may illustrate a combined procedure, but unless the combination is explicitly specified, it should not invent weights, thresholds, or a formula and then attribute that mechanism to CoALA.
+
+\BookDiagram[0.58\textheight]
+  {Tex/diagrams/generated/part1/chapter07/evaluation-value-sources.png}
+  {Possible sources of values for proposed actions in CoALA. The branches are alternatives that an evaluation procedure may use; the figure does not imply that every source is mandatory or that all sources share one scale.}
+  {fig:evaluation-value-sources}
+
+The figure summarizes categories, not a required implementation. A particular agent might use one source, several sources, or a different value-estimation procedure. The common role is that the procedure assigns values to proposed actions when multiple candidates are being considered.
+
+\section{Evaluation is not selection}
+\label{sec:evaluation-not-selection}
+
+This is the most important distinction in the chapter. Evaluation and selection are adjacent responsibilities, but one cannot be substituted for the other.
+
+Evaluation produces values for candidate actions. Selection uses the actions and their values to decide what happens next. Suppose an evaluation procedure assigns values to three Product X candidates. Those values tell the decision procedure something about how the candidates fare under the chosen evaluation method. They do not, by themselves, tell us whether the procedure will choose the largest value, sample from a distribution, use a vote, or reject the proposed set.
+
+This distinction becomes clearer if we hold the candidate set and its values constant. Imagine that two selection procedures receive exactly the same three candidate/value pairs. One may choose the candidate with the largest value. Another may use a value-sensitive distribution. A third may use a voting method. The selection outcomes need not be identical. The evaluation results are the same; the rule that acts on them differs.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part1/chapter07/evaluation-versus-selection.png}
+  {Evaluation produces candidate/value pairs; selection uses the candidates and values to decide what happens next. The boundary between the two roles is conceptual, not a requirement for separate software services.}
+  {fig:evaluation-versus-selection}
+
+The diagram also helps prevent a second confusion. Evaluation does not reject candidates in the CoALA description. The paper places the explicit option to reject the proposed actions and return to proposal under selection. Evaluation supplies values; selection makes the control decision.\CoALACite{\S 4.6, pp. 12--13}
+
+\section{Selection: deciding what happens to the candidate set}\index{selection}
+\label{sec:selection}
+
+Given a set of proposed actions and their values, CoALA describes selection as the step that either selects one action to execute or rejects the proposed actions and loops back to proposal. Selection is therefore a control responsibility. It determines whether a candidate is carried forward to execution or whether the current set should not be used and the proposal sub-stage should be revisited.\CoALACite{\S 4.6, ``Selection,'' p. 13}
+
+Selection is not execution. Selecting an action means that the decision procedure has identified which action is to be carried forward. Execution applies the action by invoking the relevant procedure from the agent's source code. If the selected action is an API call, the selection step does not itself send the request. If the selected action is a learning action, selection does not itself write the information to long-term memory. Those applications belong to the execution stage, which Chapter 8 examines as part of the complete decision process.
+
+Selection is also not the same as human authorization, access control, or a production safety gate. A particular application may require human approval before a high-impact action is executed. That can be an important engineering requirement, but it is not what the CoALA passage means by the selection sub-stage. In this chapter, selection names the procedure's decision over the proposed candidate set and its values. It should not be used as a substitute for every other form of permission or oversight.
+
+\begin{notebox}
+A selection outcome has two broad possibilities in the paper: carry one action forward for execution, or reject the proposed set and return to proposal. The paper does not prescribe a universal rejection threshold, maximum retry count, timeout, or reason code.
+\end{notebox}
+
+\section{Selection methods named by CoALA}\index{argmax}\index{softmax}\index{majority vote}
+\label{sec:selection-methods}
+
+The paper names argmax, softmax, majority vote, and other alternatives as possible selection methods, depending on the form of the action values. These examples show that selection is not tied to one universal rule. They should not be presented as mandatory stages that every agent must run.\CoALACite{\S 4.6, ``Selection,'' p. 13}
+
+\subsection{Argmax}
+
+\gls{argmax} selects the candidate associated with the largest represented value. If the values are comparable under the procedure's intended interpretation, the rule returns a candidate whose value is maximal among the alternatives. This is easy to explain because it makes the relationship between evaluation and selection visible: evaluation supplies the values; argmax uses them to identify a maximum.
+
+The qualification about comparability matters. If two values are produced on incompatible scales, simply comparing their numerical sizes may not be meaningful. CoALA names argmax as an option; it does not claim that every evaluation method produces comparable values or that argmax is appropriate for every action space.
+
+\subsection{Softmax}
+
+\gls{softmax} is another value-dependent selection method named in the paper. At an intuitive level, instead of always treating the largest value as the only possible outcome, a softmax-based rule can use the values to determine a distribution over candidates. A higher value can receive greater selection weight, while other candidates may remain possible.
+
+The CoALA discussion does not prescribe a particular temperature, calibration method, or probability interpretation for every use of softmax. The chapter therefore uses the term to identify a family of value-sensitive selection behavior, not to promise that the resulting probabilities are calibrated estimates of real-world success.
+
+\subsection{Majority vote}
+
+The paper also names \gls{majorityvote} as an alternative. A voting procedure can determine a selection by aggregating votes over the candidate options. The outline of the method is enough for this chapter: selection can rely on a vote-based rule rather than only on a single maximum value.
+
+CoALA does not specify a universal voting protocol in this passage. It does not say who or what must cast the votes, how many voters are required, how ties must be resolved, or what quorum should be used. Those details would belong to a particular implementation or a separate account of a voting method, not to the conceptual point being made here.
+
+\subsection{Other alternatives}
+
+The paper leaves room for another method suited to the form of the values. This flexibility is important. The named methods are examples, not a closed list of all possible selection procedures. The essential distinction remains the same: selection uses the proposed actions and their values to determine what happens next.
+
+\BookDiagram[0.52\textheight]
+  {Tex/diagrams/generated/part1/chapter07/selection-methods.png}
+  {Different selection methods can operate on a proposed set and its values. The branches are alternatives, not successive steps in one required procedure.}
+  {fig:selection-methods}
+
+\section{A Product X example: from values to a selection decision}\index{Product X!evaluation and selection}
+\label{sec:productx-evaluation-selection}
+
+\BookExampleLabel\ The proposal stage has generated three candidates: inspect deployment metadata, query database connectivity, and ask the on-call engineer whether a relevant configuration change occurred. No candidate has been executed, and none of the candidates proves anything about the cause of the HTTP 500 errors.
+
+For this walkthrough, imagine an evaluation procedure that uses one explicitly invented criterion: how useful the procedure estimates each candidate will be for reducing the agent's current uncertainty. To make the mechanics visible, suppose it assigns the following example values:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}P{0.46\linewidth}P{0.19\linewidth}X@{}}
+\toprule
+\textbf{Candidate} & \textbf{Illustrative value} & \textbf{What the value means here} \\
+\midrule
+Inspect deployment metadata & 0.80 & A high value under this invented uncertainty-reduction criterion. \\
+Query database connectivity & 0.60 & A lower illustrative value under the same criterion. \\
+Ask the on-call engineer & 0.45 & A still lower illustrative value under the same criterion. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+These values are not from the CoALA paper, are not estimates of real incident outcomes, and are not probabilities that an action will succeed. They are numbers chosen for one book-created example so the reader can see how a selection method might consume values. A different criterion or evaluation procedure could assign different values.
+
+If the selection method is argmax, it carries forward the candidate with the largest represented value: inspecting deployment metadata. This does not prove that the deployment caused the issue. It means only that, under the invented evaluation rule and the illustrated values, argmax returns that candidate. Another selection method could behave differently, and a procedure may instead reject the current set and return to proposal.
+
+\BookDiagram[0.58\textheight]
+  {Tex/diagrams/generated/part1/chapter07/productx-evaluation-selection.png}
+  {Book-created Product X illustration: three candidates receive invented values under a stated example criterion, then a selection method acts on the candidate/value set. The numbers are not paper results or probabilities.}
+  {fig:productx-evaluation-selection}
+
+The example demonstrates the division of responsibility. Evaluation supplies values under a chosen method. Selection determines what to do with the proposed set. Execution has not yet occurred, and the incident's root cause remains unknown.
+
+\begin{warningbox}
+Do not turn the largest illustrative value into a factual claim that an action is safest, most accurate, or certain to solve the incident. The example uses an invented criterion and invented values. CoALA does not prescribe this scale.
+\end{warningbox}
+
+\section{Common confusions and chapter boundaries}
+\label{sec:evaluation-boundaries}
+
+The following distinctions are useful when reading agent descriptions:
+
+\begin{itemize}
+  \item \textbf{Proposal is not evaluation.} Proposal generates candidates. Evaluation assigns values to proposed candidates when multiple actions are considered.
+  \item \textbf{Evaluation is not selection.} Evaluation produces values; selection uses the candidates and values to decide what happens next.
+  \item \textbf{Selection is not execution.} Selection identifies an action for execution or rejects the current set. Execution applies the selected action.
+  \item \textbf{A value is not automatically a probability.} Its meaning depends on the evaluation procedure. The paper does not define one universal calibration standard.
+  \item \textbf{Simulation is not observation.} An internally imagined grounding consequence is not information received from the external environment.
+  \item \textbf{Selection is not a complete safety architecture.} Human authorization, policy checks, access control, and operational safeguards may be required by an application, but they are not defined by the CoALA selection passage.
+  \item \textbf{Rejection is not the end of the decision process.} Selection may reject the proposed set and return to proposal. Chapter 8 will place this option within the flexible planning process.
+\end{itemize}
+
+\section{Chapter recap}
+\label{sec:evaluation-recap}
+
+\begin{chapterrecap}
+CoALA separates evaluation from selection. When multiple actions are proposed, evaluation assigns a value to each candidate. The paper names heuristic rules, LLM or perplexity values, learned values, LLM reasoning, and combinations as possible value sources. A value is an output of an evaluation procedure; the paper does not prescribe a universal scale or meaning. Selection uses the proposed actions and their values to select an action for execution or reject the proposed set and return to proposal. Argmax, softmax, majority vote, and other alternatives are named as possible selection methods. Selection is not execution, and neither value assignment nor selection should be confused with human authorization or an operational safety gate.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item What is the difference between a candidate action and an evaluated candidate action?
+  \item Under what condition does CoALA describe evaluation as assigning values to proposed actions?
+  \item Name the possible value sources listed in Section 4.6 and explain one in your own words.
+  \item Why is an internally simulated consequence not an observation from the environment?
+  \item Explain the difference between evaluation and selection without using the words ``score'' or ``choose.''
+  \item What does argmax do, and what must be true of the represented values for the comparison to be meaningful?
+  \item How does a softmax-based selection differ in spirit from always choosing only the largest value? What does the paper leave unspecified?
+  \item What does it mean for selection to reject the proposed set and return to proposal?
+  \item Classify these events: generating a database check, assigning values to candidates, selecting one candidate, and invoking its grounding procedure.
+  \item Why is CoALA selection not the same thing as production authorization or human approval?
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account is grounded in \textsc{[CoALA]}, Section 4.6, especially the Evaluation and Selection sub-stages, pp. 12--13. Product X is a book-created teaching example. All criteria and numerical values in its walkthrough are invented for explanation and are not results from the paper. No Fan \& Lan mechanisms are used to reinterpret CoALA.

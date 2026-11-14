@@ -1,0 +1,182 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 4 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Internal Actions: Retrieval, Reasoning and Learning\par}
+\vspace{0.8cm}
+{\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Approved by the author on 14 November 2026. This is the approved chapter plan.
+
+\textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, especially Sections 4.3--4.5, with Section 4.1 used only to recall the memory distinctions introduced in Chapter 3.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+\section*{1. Chapter purpose and role in the book}
+Chapter 3 explains where different kinds of information are represented in CoALA's memory architecture. Chapter 4 explains what the agent does internally to read, transform, and write that information. Its central distinction is operational: retrieval reads from long-term memory into working memory; reasoning processes working-memory contents and writes new information back to working memory; learning writes information to long-term memory.
+
+The chapter should begin with a concrete Product X problem: the current agent needs to examine earlier incidents, compare them with the current evidence, form a useful hypothesis, and decide what experience or knowledge may be worth retaining. The reader should discover that these are three different internal operations, even though they may appear together in one ongoing task.
+
+The scope is internal actions only. External grounding is not a fourth internal action and is fully explained in Chapter 5. The top-level decision procedure and detailed proposal/evaluation/selection process belong to Chapters 6--8; this chapter only explains how internal actions can support planning and learning.
+
+\begin{takeawaybox}[Chapter thesis]
+CoALA distinguishes internal actions by what information they operate on and where information moves: retrieval reads long-term memory into working memory, reasoning updates working memory using the LLM, and learning writes information to long-term memory.
+\end{takeawaybox}
+
+\section*{2. Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain why memory categories alone do not describe the operations that use them.
+  \item Define retrieval as reading from long-term memory into working memory.
+  \item Recognize that retrieval can target episodic, semantic, or procedural memory and can use different retrieval methods.
+  \item Explain reasoning as processing working-memory contents with an LLM, reading from and writing to working memory.
+  \item Define learning as writing information to long-term memory and distinguish episodic, semantic, and procedural learning.
+  \item Explain how learning may modify model parameters or explicit agent code, and why procedural changes are riskier.
+  \item Distinguish retrieval, reasoning, and learning without confusing them with external grounding or top-level planning stages.
+\end{enumerate}
+
+\section*{3. Proposed chapter structure}
+\setcounter{chapter}{4}
+\section{From memory stores to internal actions}
+\textbf{Entry problem:} Product X's payment service is failing. The agent has a current working state, but needs past experience and system knowledge, must interpret the information, and may later preserve a useful outcome.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Recall the Chapter 3 memory map briefly; do not repeat the full taxonomy.
+  \item Introduce the question CoALA asks: what operation is performed on which memory?
+  \item Explain the read/write distinction and the memory location involved.
+  \item Introduce the three internal action types, then explore them one at a time.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 4.1:} \emph{The internal-action map}. Show retrieval, reasoning, and learning with their source and destination memory locations. Keep grounding outside this diagram as an external-action boundary, with a link to Chapter 5.
+
+\section{Retrieval: bringing long-term information into working memory}
+\textbf{Definition and mechanism:} A retrieval procedure reads information from long-term memory into working memory. Its result is available as part of the active information used in the current decision cycle.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Retrieval is a read from long-term memory, not a write and not the same thing as reasoning over the retrieved material.
+  \item The target may be episodic, semantic, or procedural memory; what is retrieved depends on the kind of information needed.
+  \item CoALA names several possible implementations: rule-based, sparse, or dense retrieval. Present these as possible procedures, not as required stages or a ranking mandated by the framework.
+  \item Use only examples the paper discusses: Voyager retrieving code-based skills from a procedural skill library; Generative Agents retrieving relevant episodes using recency, importance, and relevance; DocPrompting retrieving library documents as semantic knowledge.
+  \item The paper notes that adaptive, context-specific recall remains understudied in language agents and identifies a principled integration of decision-making and retrieval as a future direction.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 4.2:} \emph{One retrieval operation, three possible memory targets}. Show retrieval from episodic, semantic, or procedural long-term memory into working memory. It must not imply that every retrieval call queries all stores.
+
+\begin{tipbox}
+A useful diagnostic question is: did the operation bring already-stored information from long-term memory into the active working state? If yes, the operation is retrieval. The subsequent interpretation of that information is a different operation.
+\end{tipbox}
+
+\section{Reasoning: generating new information in working memory}
+\textbf{Definition and mechanism:} Reasoning uses the LLM to process working-memory contents and generate new information. Unlike retrieval, it reads from and writes to working memory.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Reasoning can summarize or distill the most recent observation, the recent trajectory, or information that was retrieved from long-term memory.
+  \item It may produce a hypothesis, interpretation, summary, or other active information that is placed into working memory.
+  \item The results can support later decision-making by providing context to subsequent LLM calls.
+  \item Reasoning can also support learning when its results are subsequently written to long-term memory.
+  \item Reasoning does not automatically mean that a long-term memory was updated; the write to long-term memory is the learning action.
+\end{itemize}
+
+\textbf{Product X example:} The agent retrieves prior incidents and current service facts, then reasons over the retrieved material and current observation to form a testable hypothesis in working memory. The hypothesis remains an active result until another operation stores it or uses it.
+
+\textbf{Boundary:} Do not make reasoning synonymous with chain-of-thought prompting, one named prompting strategy, or an external tool call. Explain it at CoALA's architectural level.
+
+\section{Learning: writing information to long-term memory}
+\textbf{Definition and mechanism:} Learning occurs by writing information to long-term memory. CoALA presents a spectrum of procedures rather than one universal learning algorithm.
+
+\subsection*{Updating episodic memory with experience}
+\begin{itemize}
+  \item Experiences and trajectories can be stored as episodes.
+  \item Later retrieval may use them as examples or as a basis for reasoning and decision-making.
+  \item Explain the distinction between an active working-memory record and an experience retained for later cycles.
+\end{itemize}
+
+\subsection*{Updating semantic memory with knowledge}
+\begin{itemize}
+  \item Reasoning over raw experience may produce a more general inference that is written to semantic memory.
+  \item Use the Reflexion example only as the example described by CoALA: an inference from failed episodes is stored as semantic knowledge for later use.
+  \item Explain why an episode and a generalized fact inferred from an episode are not interchangeable.
+\end{itemize}
+
+\subsection*{Updating procedural memory}
+\begin{itemize}
+  \item The paper discusses updating LLM parameters as a way to change implicit procedural knowledge, including supervised, imitation, reinforcement, human-feedback, or AI-feedback learning.
+  \item It also discusses updating explicit agent code, including reasoning procedures (such as prompt templates), grounding skills, retrieval procedures, and potentially learning or decision-making procedures.
+  \item Clearly state which forms the paper presents as existing examples and which it describes as theoretically possible, underexplored, or risky.
+  \item Explain that changing agent code or decision procedures can introduce bugs and undermine designer intentions; do not imply that autonomous self-modification is a default capability.
+  \item CoALA notes that modifying or deleting memory (unlearning) is understudied. Present this as a research gap, not as an already specified solution.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 4.3:} \emph{Learning paths into long-term memory}. Show experience written to episodic memory, inferred knowledge written to semantic memory, and possible procedural updates to model parameters or agent code. Use explicit risk styling for changes to code/decision procedures, and label speculative or underexplored paths carefully.
+
+\begin{warningbox}
+Do not collapse all learning into model fine-tuning. CoALA describes less expensive language-level memory updates as well as parameter and code changes. Conversely, do not imply that writing a note to episodic memory is equivalent to changing the model's parameters.
+\end{warningbox}
+
+\section{Putting retrieval, reasoning, and learning together}
+Return to Product X and present a short sequence in which the three operations are distinguishable:
+\begin{enumerate}
+  \item Retrieve an earlier incident episode and a service dependency fact into working memory.
+  \item Reason over the current observation and retrieved information to create a hypothesis in working memory.
+  \item After the incident outcome is known, write the experience to episodic memory and, where justified, a generalizable fact to semantic memory.
+\end{enumerate}
+
+The sequence is an illustrative teaching example, not a mandatory three-step pipeline. A real decision cycle may use retrieval and reasoning repeatedly or in another arrangement, and learning occurs when information is written to long-term memory.
+
+\textbf{Planned Mermaid figure 4.4:} \emph{Product X: distinguish the three internal actions}. Show the data movement in the example with explicit labels for read, working-memory update, and long-term write. The figure must not depict this example as a required execution order for all CoALA agents.
+
+\section{Common confusions and boundaries}
+Address the most likely conceptual mistakes:
+\begin{itemize}
+  \item Retrieval is not reasoning: retrieval reads stored information; reasoning processes active information and produces new working-memory content.
+  \item Reasoning is not learning: new information in working memory has not necessarily been stored in long-term memory.
+  \item Learning is not synonymous with fine-tuning: it covers several ways to write to long-term memory.
+  \item Procedural learning is not necessarily safe: code and decision-procedure modification carry distinct risks.
+  \item Internal actions are not external grounding actions. Tool/environment interaction is handled in Chapter 5.
+  \item These three action categories do not replace the top-level decision-making procedure. Proposal, evaluation, selection, execution, and iteration are developed in Chapters 6--8.
+\end{itemize}
+
+\section{Chapter recap and review}
+Include a compact table comparing each action by what it reads, what it writes, which memory it interacts with, and its typical purpose. Add short classification exercises and one question asking the reader to diagnose a mistaken claim that reasoning automatically persists information.
+
+\section*{Source and example note}
+The theoretical account is grounded in CoALA Sections 4.3, 4.4, and 4.5, with Section 4.1 used for the memory terminology. Figure 5 and Section 4.6 may be referenced only to orient the reader to the wider action space and planning context; their complete treatment is reserved for later chapters. Product X is a book-created example. No Fan \& Lan mechanism should appear in this chapter. \CoALACite{\S 4.3--4.5}
+
+\section*{4. Visual and pedagogical plan}
+Use three or four Mermaid diagrams: action map, retrieval targets, learning paths, and Product X operation sequence. If the final chapter becomes too long or redundant, combine the learning paths and Product X operation sequence only after checking that their different teaching purposes remain clear.
+
+All `.mmd` files belong under `Tex/diagrams/source/part1/chapter04/`, use the shared theme and include `accTitle`/`accDescr`, and are rendered by CI to high-resolution PNGs. Chapter prose uses the shared \verb|\BookDiagram| macro for image placement. No TikZ, ASCII art, or custom LaTeX drawing.
+
+Use the shared teaching environments selectively: learning objectives; a retrieval diagnostic tip; a warning about procedural-memory modification; a note for boundaries; a takeaway; recap and review questions. Keep the ordinary explanatory prose outside boxes.
+
+\section*{5. Source and attribution plan}
+\begin{itemize}
+  \item Primary source: Sumers et al., CoALA (TMLR 2024), Sections 4.3--4.5.
+  \item Memory taxonomy needed for context: CoALA Section 4.1; do not repeat Chapter 3's complete treatment.
+  \item Action-space context: CoALA Figure 5 and Section 4.6, used only to maintain the boundary between internal actions and grounding.
+  \item Use examples only as presented in the CoALA paper and explain them to the extent needed for the classification of internal actions.
+  \item Keep all Product X details labelled as book-created examples; distinguish source claims from teaching simplifications.
+\end{itemize}
+
+\section*{6. Explicit exclusions}
+Do not teach external grounding in depth; it belongs to Chapter 5. Do not teach proposal, evaluation, selection, execution, or the full iterative decision process; these belong to Chapters 6--8. Do not turn the chapter into a survey of vector search, RAG products, memory frameworks, model fine-tuning recipes, or code self-modification systems. Do not invent an algorithm for unlearning or imply that CoALA prescribes a particular memory implementation.
+
+\section*{7. Proposed length and review gate}
+Estimated depth: approximately 22--30 finished pages, without a hard page limit. The final length depends on the explanation of the three internal operations and the diagrams.
+
+\begin{takeawaybox}[Approval recorded]
+The author approved Outline v1.0 on 14 November 2026. This document remains the approved scope reference for Chapter 4; any material scope change will be submitted for author review.
+\end{takeawaybox}
+\end{document}

@@ -1,0 +1,20 @@
+flowchart LR
+    accTitle: Evaluation and selection have different responsibilities
+    accDescr: Evaluation receives proposed candidate actions and assigns values, producing candidate and value pairs. Selection receives those pairs and decides whether to select one action or reject the current set and return to proposal.
+
+    CAND[Proposed candidate actions]
+    EVAL[Evaluation<br/>assign values]
+    PAIRS[Candidate and value pairs]
+    SELECT[Selection<br/>make the control decision]
+    EXEC[Selected action<br/>carried forward]
+    REJECT[Reject current set<br/>return to proposal]
+    CAND --> EVAL --> PAIRS --> SELECT
+    SELECT --> EXEC
+    SELECT --> REJECT
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    classDef boundary fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px;
+    class EVAL,SELECT process;
+    class EXEC,REJECT result;
+    class CAND,PAIRS boundary;

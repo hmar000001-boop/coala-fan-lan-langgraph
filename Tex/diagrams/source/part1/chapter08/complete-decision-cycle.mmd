@@ -1,0 +1,25 @@
+flowchart TB
+    accTitle: The complete CoALA decision cycle
+    accDescr: Current working information enters a planning stage. Planning contains proposal, evaluation, and selection, with flexible relationships rather than one mandated internal order. Execution applies a selected external grounding action or internal learning action. An observation may follow external grounding, and the decision procedure continues into another cycle.
+
+    WM[Current working information]
+    PLAN[Planning stage<br/>Proposal • Evaluation • Selection<br/>flexible internal relationships]
+    EXEC[Execution<br/>apply selected procedure]
+    GROUND[External grounding action]
+    LEARN[Internal learning action]
+    OBS[Possible environmental observation]
+    NEXT[Information available for the next cycle]
+    WM --> PLAN --> EXEC
+    EXEC --> GROUND
+    EXEC --> LEARN
+    GROUND -. observation may be available .-> OBS
+    OBS --> NEXT
+    LEARN --> NEXT
+    NEXT --> WM
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef action fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class WM,PLAN,EXEC process;
+    class GROUND,LEARN action;
+    class OBS,NEXT result;

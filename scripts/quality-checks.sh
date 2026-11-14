@@ -54,7 +54,9 @@ for expected in \
   'Internal Actions' \
   'Retrieval, Reasoning and Learning' \
   'External Actions and Grounding' \
-  'Planning: From a Problem to Candidate Actions'; do
+  'Planning: From a Problem to Candidate Actions' \
+  'Evaluation and Selection' \
+  'Interleaving, Iteration and the Complete CoALA Decision Process'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;

@@ -1,0 +1,206 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 8 Outline Review: Interleaving, Iteration and the Complete CoALA Decision Process},pdfsubject={Approved detailed chapter outline},pdfkeywords={CoALA, decision cycle, interleaving, iteration, proposal, evaluation, selection, execution}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 8 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Interleaving, Iteration and the Complete CoALA Decision Process\par}
+\vspace{0.8cm}
+{\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Approved by the author on 14 November 2026 after a final review of minor issues. This is the approved chapter plan.
+
+\textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, Section 4.6 and Figure 4B (pp. 12--13). Sections 4.3--4.5 are recalled only to explain how retrieval, reasoning, and learning participate in the cycle. Sections 4.1--4.2 are recalled only to identify memory and grounding roles. No later mechanism-level theory is imported.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\setcounter{chapter}{8}
+\section{Chapter purpose and role in the book}
+Chapters 1 and 2 introduced CoALA's architecture and decision-cycle view. Chapters 3--5 then examined memory, internal actions, and external grounding. Chapter 6 explained how the proposal sub-stage generates candidate actions, while Chapter 7 separated evaluation from selection. The reader now has the pieces needed to understand how CoALA describes the complete decision process over time.
+
+The chapter's central teaching problem is a common but misleading picture: proposal, evaluation, selection, and execution can look like a fixed four-step pipeline that runs exactly once. CoALA's account is more flexible. During planning, reasoning and retrieval can be applied flexibly to propose, evaluate, and select actions; these sub-stages may interleave or iterate to build multi-step simulations before an external action is taken. The paper also describes iterative improvement of candidate solutions through simulation, defect identification, and modification. Selection may reject the current proposed actions and return to proposal. After selection, execution applies the chosen grounding or learning action; an observation may be made, and the decision cycle continues.
+
+The chapter must explain this flexibility without inventing a formal algorithm that the paper does not define. The terms \emph{interleave} and \emph{iterate} should be taught as useful readings of the paper's wording, not as newly formalized CoALA operators with prescribed schedules. The chapter should connect the complete loop to the recurring Product X incident and demonstrate how the agent's internal work and external interaction relate across more than one cycle.
+
+\begin{takeawaybox}[Chapter thesis]
+CoALA's decision procedure is a repeated planning-and-execution process, not necessarily a rigid one-pass pipeline. Reasoning and retrieval can support proposal, evaluation, and selection flexibly; planning sub-stages may interleave or iterate; selection can reject a candidate set and return to proposal; and execution applies a selected grounding or learning action before the cycle continues.
+\end{takeawaybox}
+
+\section{Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Explain the decision-making procedure as the top-level or ``main'' agent program that coordinates actions over decision cycles.
+  \item Distinguish the planning stage from the execution stage.
+  \item Explain how reasoning and retrieval can be applied flexibly in proposal, evaluation, and selection.
+  \item Describe interleaving and iteration in plain language while respecting the fact that CoALA does not define one mandatory schedule or algorithm for them.
+  \item Explain how internal simulation can support multi-step reasoning and iterative improvement of candidate solutions before an external action is taken.
+  \item Distinguish simulated feedback from an observation received after an executed grounding action.
+  \item Locate the explicit reject-and-return-to-proposal decision at selection.
+  \item Explain that execution applies the selected action, which may be an external grounding action or an internal learning action.
+  \item Explain that an observation may follow execution and that the decision cycle then continues.
+  \item Walk through the complete CoALA decision process using the Product X example without confusing paper claims with book-created details.
+\end{enumerate}
+
+\section*{Proposed chapter structure}
+
+\section{From separate stages to a process that unfolds over time}
+\textbf{Teaching entry:} Return to Product X. The agent has a problem description, available memory, internal operations, and external grounding procedures. It must repeatedly decide what to do as its information changes.
+\begin{itemize}
+  \item Recall the role of the decision procedure as the top-level or ``main'' program.
+  \item Explain why a static list of components is not enough: the decision procedure coordinates their use over time.
+  \item Revisit the two broad stages named by CoALA: planning and execution.
+  \item Preview that the cycle repeats; do not yet present a rigid linear pipeline as the only way to implement planning.
+\end{itemize}
+\CoALACite{\S 4.6, pp. 12--13; Figure 4B}
+
+\section{The two broad stages: planning and execution}
+\subsection{Planning}
+Explain that the planning stage uses reasoning and retrieval to propose and evaluate alternatives, and that proposal, evaluation, and selection are described as sub-stages. Keep the explanation tied to the work each stage performs, referring back to Chapters 4, 6, and 7 rather than repeating them.
+\subsection{Execution}
+Explain that execution applies the selected action by executing the relevant procedures in the agent's source code. The action may be an external grounding action, such as an API call, or an internal learning action, such as writing to episodic memory. Explain that the decision process does not end simply because an action has been selected; execution is the point at which the relevant procedure is applied.
+\subsection{The cycle continues}
+Explain that an observation can be made from the environment after an external grounding action, providing feedback; the cycle then loops again. Preserve the paper's modal wording: an observation \emph{can} be made, so do not claim that every execution necessarily produces an observation or that every execution is external.
+\CoALACite{\S 4.6, pp. 12--13}
+
+\textbf{Planned Mermaid figure 8.1:} \emph{The complete CoALA decision cycle}. Show the agent's current working information, planning, selection, execution, a possible observation, and return to a subsequent cycle. Clearly label planning as containing proposal, evaluation, and selection, but avoid presenting a single mandatory micro-order inside planning. Proposed source path: \path{Tex/diagrams/source/part1/chapter08/complete-decision-cycle.mmd}.
+
+\section{Planning is flexible: reasoning and retrieval support the sub-stages}
+\textbf{Core source statement:} CoALA says that reasoning and retrieval can be flexibly applied to propose, evaluate, and select actions. The sub-stages could interleave or iterate to build multi-step simulations before an external action.
+\begin{itemize}
+  \item Explain the significance of ``flexibly applied'': reasoning and retrieval are supporting internal actions that can be used where the planning procedure needs them, not necessarily separate steps that each run exactly once.
+  \item Show how retrieved information may inform a candidate, how reasoning may elaborate or simulate it, and how the result can feed further planning activity. These are book-created explanatory sequences; do not label one as the mandatory CoALA order.
+  \item Explain that proposal, evaluation, and selection name different responsibilities even when the broader planning procedure revisits or interweaves them.
+  \item Avoid implying that reasoning and retrieval are themselves the proposal/evaluation/selection stages. They are internal actions that can support those stages.
+\end{itemize}
+\begin{notebox}
+The paper gives the high-level flexibility claim; it does not define a universal scheduling algorithm for every interleaving. The chapter must not turn a teaching diagram into a mandatory sequence. Use labels such as ``one possible pattern'' whenever an illustrative ordering is drawn.
+\end{notebox}
+\textbf{Planned Mermaid figure 8.2:} \emph{Flexible support within planning}. Show reasoning and retrieval as capabilities that can support proposal, evaluation, and selection, with multiple possible connections and no prescribed single sequence. Proposed source path: \path{Tex/diagrams/source/part1/chapter08/flexible-planning-support.mmd}.
+\CoALACite{\S 4.6, planning-stage paragraph, p. 12}
+
+\section{Interleaving and iteration: related but not identical ideas}
+This section should introduce the two terms only after the reader understands the planning activities they relate to.
+\subsection{Interleaving as a teaching interpretation}
+Explain interleaving in ordinary language as planning sub-stages being mixed or woven together, rather than being treated as an isolated, one-time block each. The paper uses the wording that these sub-stages could interleave; it does not provide a formal algorithmic definition. Mark any concrete sequence as an illustrative reading, not a paper-prescribed schedule.
+\subsection{Iteration as a teaching interpretation}
+Explain iteration as revisiting or repeating planning activity. The paper connects this flexibility to building multi-step simulations and to iterative improvement of candidate solutions. Keep the explanation anchored to those stated uses.
+\subsection{Why the distinction helps}
+Contrast the ideas without suggesting that CoALA defines separate technical operators or strict conditions for each. Interleaving highlights how activities may be mixed; iteration highlights how they may be revisited. These descriptions are explanatory distinctions introduced by the book to make the paper's wording easier to understand.
+\begin{warningbox}
+Do not invent a fixed ordering such as Proposal → Evaluation → Retrieval → Proposal → Selection and call it the CoALA algorithm. The paper explicitly allows flexibility but does not prescribe one universal schedule. Use small, clearly marked illustrations and state what they do and do not demonstrate.
+\end{warningbox}
+\CoALACite{\S 4.6, planning-stage paragraph, p. 12}
+
+\section{Multi-step simulation and candidate improvement}
+\textbf{Entry problem:} An action may have consequences that are not obvious from its short description. Before acting externally, an agent may use reasoning to simulate possible grounding feedback and inspect a candidate for defects.
+\begin{itemize}
+  \item Explain that CoALA connects flexible planning sub-stages with the ability to build multi-step simulations before taking an external action.
+  \item Explain the paper's candidate-improvement example: the LLM can simulate candidate solutions, identify defects, and propose modifications that address those defects.
+  \item Distinguish internal simulation from actual grounding. Simulation is part of planning; environmental feedback is obtained through interaction after execution.
+  \item Explain that candidate improvement can feed back into proposal and later evaluation/selection, without claiming the paper specifies one universal loop implementation.
+  \item Avoid expanding into search-algorithm tutorials or introducing Tree of Thoughts or RAP as additional theoretical foundations. They may be named only if needed as brief examples cited by CoALA; no separate treatment is planned.
+\end{itemize}
+\textbf{Planned Mermaid figure 8.3:} \emph{Internal simulation and candidate improvement}. Show a candidate being simulated, a possible defect being identified, and a modified candidate returning to planning. Visually mark the sequence as an illustrative pattern and keep it separate from external execution. Proposed source path: \path{Tex/diagrams/source/part1/chapter08/candidate-improvement.mmd}.
+\CoALACite{\S 4.6, planning-stage paragraph, p. 12}
+
+\section{When selection rejects the current proposals}
+This section connects Chapter 7's selection role to the broader process.
+\begin{itemize}
+  \item Recall that selection can either select an action to execute or reject the proposed actions and loop back to proposal.
+  \item Emphasize that rejection is stated as a selection outcome, not as an evaluation outcome.
+  \item Explain the practical conceptual meaning: the current candidate set is not carried forward, so planning returns to generating possibilities.
+  \item Do not invent a universal rejection threshold, timeout, maximum retry count, or mandatory reason code. Those are not specified by the CoALA description.
+  \item Connect the rejection path to interleaving and iteration while preserving the distinction between the paper's explicit statement and the book's explanatory interpretation.
+\end{itemize}
+\textbf{Planned Mermaid figure 8.4:} \emph{Selection can choose or return to proposal}. Show candidate values arriving at selection, with one branch toward execution and another branch labelled reject current proposals / return to proposal. Proposed source path: \path{Tex/diagrams/source/part1/chapter08/selection-rejection-loop.mmd}.
+\CoALACite{\S 4.6, ``Selection,'' p. 13}
+
+\section{Execution and the next decision cycle}
+\begin{itemize}
+  \item Explain that the selected action is applied through the relevant source-code procedure.
+  \item Show the two outcome types identified by CoALA: external grounding or internal learning.
+  \item For grounding, an observation may be received from the environment and made available to the agent; do not imply every action is guaranteed to produce a useful observation.
+  \item For learning, the selected action may write information to long-term memory; explain only enough to connect this to Chapter 4.
+  \item Explain the cycle's continuation: subsequent decision-making can use changed working information and any newly available observation or learned information.
+  \item Keep the execution description conceptual; implementation and operational controls belong to Part III.
+\end{itemize}
+\CoALACite{\S 4.6, ``Execution,'' p. 13}
+
+\section{A multi-cycle Product X walkthrough}
+\BookExampleLabel\ Use the payment-service incident as a single running example across more than one decision cycle. It must demonstrate the relationships, not invent a specific root cause.
+\begin{enumerate}
+  \item \textbf{Initial situation:} working memory contains the reported HTTP 500 errors and a limited amount of current context.
+  \item \textbf{Planning activity:} reasoning and optional retrieval support proposal of possible grounding or learning actions.
+  \item \textbf{Candidate development:} one candidate may be internally simulated; a possible weakness is identified and a revised candidate is proposed. Mark this as an illustrative planning pattern.
+  \item \textbf{Evaluation and selection:} values are assigned when appropriate; selection may choose a candidate or reject the set and return to proposal.
+  \item \textbf{Execution:} a selected grounding action is applied through its procedure. The example may show a possible observation, but must not assume an outcome.
+  \item \textbf{Next cycle:} the agent continues with the information now available. If it chooses a learning action, that action may update long-term memory; do not conflate this with a grounding observation.
+  \item \textbf{Interpretation:} point out which parts are explicit CoALA roles and which details are book-created to help the reader follow the process.
+\end{enumerate}
+\begin{warningbox}
+The Product X walkthrough must not assert that the payment service has a database failure, that deployment metadata proves a cause, or that any proposed action is safe or successful. It is an illustrative scenario, not evidence from the paper.
+\end{warningbox}
+\textbf{Planned Mermaid figure 8.5:} \emph{Product X across decision cycles}. Use a compact timeline or cycle map with planning activity, a selected action, possible feedback, and a subsequent cycle. If a rejection path is included, show it as one possible branch rather than an inevitable event. Proposed source path: \path{Tex/diagrams/source/part1/chapter08/productx-multiple-cycles.mmd}.
+
+\section{Common misreadings, recap, and transition}
+Address these distinctions:
+\begin{itemize}
+  \item \textbf{Not a rigid pipeline:} the named sub-stages do not require one universal one-pass ordering.
+  \item \textbf{Interleaving is not simply repeating:} describe the terms as book teaching interpretations of the paper's flexible wording, not as formal CoALA operators.
+  \item \textbf{Simulation is not grounding:} imagined consequences are part of planning; actual environmental feedback follows external interaction.
+  \item \textbf{Evaluation is not selection:} values are assigned in evaluation; selection chooses or rejects.
+  \item \textbf{Rejection belongs to selection:} the paper explicitly places the reject-and-loop option there.
+  \item \textbf{Selection is not execution:} selecting an action is not yet applying its procedure.
+  \item \textbf{Observation is not guaranteed after every action:} the paper says an observation can be made.
+  \item \textbf{Execution is not always external:} a selected action can be external grounding or internal learning.
+\end{itemize}
+
+\begin{chapterrecap}
+CoALA's decision procedure coordinates repeated decision cycles. Each cycle has a planning stage and an execution stage. During planning, reasoning and retrieval can support proposal, evaluation, and selection flexibly; the sub-stages may interleave or iterate to build multi-step simulations and improve candidate solutions. Selection can choose an action or reject the current proposals and return to proposal. Execution applies the selected grounding or learning action. An observation may follow an external action, and the cycle continues. The paper gives a flexible architectural account, not one universal algorithm or schedule for every agent.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and short exercises}
+\begin{enumerate}
+  \item What is the role of the decision-making procedure in CoALA?
+  \item What are the two broad stages of a decision cycle?
+  \item How can reasoning and retrieval support proposal, evaluation, and selection?
+  \item Explain interleaving and iteration in your own words. Which parts of your explanation are teaching interpretations rather than formal definitions in the paper?
+  \item Why is internal simulation different from receiving an observation from an external environment?
+  \item What does CoALA say an agent may do when it identifies a defect in a candidate solution during simulation?
+  \item Which sub-stage explicitly allows rejecting proposed actions and returning to proposal?
+  \item What does execution do, and what kinds of selected actions does CoALA name?
+  \item Why should the book say an observation may be made rather than that one always follows execution?
+  \item Trace the Product X example through two cycles, marking proposal, evaluation, selection, execution, and any possible feedback without inventing a root cause.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+The theoretical account is grounded primarily in \textsc{[CoALA]}, Section 4.6 and Figure 4B, pp. 12--13. Sections 4.3--4.5 are recalled only to explain retrieval, reasoning, and learning as supporting or executable action types. Sections 4.1--4.2 are referenced only to identify memory and grounding roles. The distinctions used to teach the ordinary-language difference between interleaving and iteration must be explicitly presented as explanatory interpretations of the paper's wording, not as a formal algorithm defined by CoALA. Product X is a book-created teaching example. No Fan \& Lan mechanisms are used to reinterpret CoALA.
+
+\section*{Acceptance criteria for the eventual chapter}
+The eventual chapter is ready for author review only when it:
+\begin{itemize}
+  \item explains the decision procedure as the top-level coordinating program and distinguishes planning from execution;
+  \item accurately describes the flexibility of reasoning and retrieval across proposal, evaluation, and selection;
+  \item explains interleaving and iteration carefully, without inventing formal operators or a fixed schedule;
+  \item distinguishes internal simulation from actual environment feedback;
+  \item places rejection and return-to-proposal at selection;
+  \item explains execution as applying a selected grounding or learning action and preserves the paper's statement that an observation may be made;
+  \item presents a coherent multi-cycle Product X walkthrough with every invented detail labelled as a book example;
+  \item uses the shared preamble, semantic boxes, footnote macros, glossary/index infrastructure, and Mermaid-to-PNG pipeline;
+  \item includes five focused Mermaid diagrams, captions, stable labels, explanatory text, recap, and review questions;
+  \item maintains the CoALA-only theoretical boundary and leaves Fan \& Lan analysis for Part II.
+\end{itemize}
+\begin{takeawaybox}[Approval recorded]
+The author approved Outline v1.0 on 14 November 2026. This document remains the approved scope reference for Chapter 8; any material scope change will be submitted for author review.
+\end{takeawaybox}
+\end{document}

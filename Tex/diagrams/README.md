@@ -1,6 +1,6 @@
 # Mermaid diagrams
 
-All book diagrams are authored as editable Mermaid text (`.mmd`) under `source/partN/chapterNN/`. CI renders every source recursively to a PNG with Mermaid CLI 12.2.0. Chapters 1–6 include generated PNGs through the shared `\BookDiagram` macro; LaTeX only places each completed image, caption, and reference.
+All book diagrams are authored as editable Mermaid text (`.mmd`) under `source/partN/chapterNN/`. CI renders every source recursively to a PNG with Mermaid CLI 12.2.0. Chapters 1–8 include generated PNGs through the shared `\BookDiagram` macro; LaTeX only places each completed image, caption, and reference.
 
 ## Workflow
 

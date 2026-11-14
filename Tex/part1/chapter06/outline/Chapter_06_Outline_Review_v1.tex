@@ -1,0 +1,215 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\hypersetup{pdftitle={Chapter 6 Outline Review: Planning from a Problem to Candidate Actions},pdfsubject={Approved detailed chapter outline},pdfkeywords={CoALA, planning, proposal, candidate actions}}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\sffamily\Large\color{BookBlue} FROM COGNITIVE ARCHITECTURES TO PRODUCTION AGENTIC SYSTEMS\par}
+\vspace{1.2cm}
+{\sffamily\huge\bfseries\color{BookBlue} Chapter 6 Outline\par}
+\vspace{0.45cm}
+{\sffamily\LARGE Planning: From a Problem to Candidate Actions\par}
+\vspace{0.8cm}
+{\large Part I -- CoALA: Understanding Language Agents as Cognitive Systems\par}
+\vfill
+\begin{learningbox}
+\textbf{Review status:} Approved by the author on 14 November 2026. This is the approved chapter plan.
+
+\textbf{Primary theoretical source:} Sumers et al., \emph{Cognitive Architectures for Language Agents}, especially the Planning stage and Proposal sub-stage in Section 4.6. The surrounding decision cycle is introduced only as context; evaluation and selection are reserved for Chapter 7, and interleaving and iteration are reserved for Chapter 8.
+\end{learningbox}
+\vfill
+{\sffamily\large Outline review version 1.0\par}
+{\small 14 November 2026\par}
+\end{center}
+\clearpage
+
+\section*{1. Chapter purpose and role in the book}
+The reader now understands CoALA's architecture, its memory categories, its internal actions, and its external grounding actions. The next question is how an agent begins to decide what to do. Given its current working information and the action possibilities available to it, how does it produce something that can be considered?
+
+This chapter focuses on the first part of CoALA's planning stage: proposal. It explains how reasoning, and optionally retrieval, can be used to generate one or more candidate actions. It also introduces the different ways candidate actions may be produced: sampling from an LLM, enumerating a limited set of available actions, using program control structures, or using a structured simulator in a well-defined domain.
+
+The chapter is not a general planning-algorithm survey. It must not teach evaluation and selection in detail, because those are the subject of Chapter 7. It must also avoid teaching the interleaving and iteration of planning sub-stages, which belong to Chapter 8. Its job is to explain how a problem and the agent's current information can lead to a set of candidate actions, and to make clear that a candidate is not yet a value judgment, a selected action, or an executed action.
+
+\begin{takeawaybox}[Chapter thesis]
+Proposal turns the agent's current situation and available action possibilities into one or more candidate actions for consideration. A proposal identifies what the agent might do; it does not by itself determine which candidate is best, which one is selected, or whether one is executed.
+\end{takeawaybox}
+
+\section*{2. Learning outcomes}
+By the end of the chapter, a beginner should be able to:
+\begin{enumerate}
+  \item Locate proposal within CoALA's larger decision-making procedure and explain why planning is not the same as execution.
+  \item Describe an action candidate as a possible action generated for consideration, not as an evaluated or selected action.
+  \item Explain the role of reasoning and the optional role of retrieval in generating candidates.
+  \item Describe how an LLM may generate one or more candidates and why a proposal stage may also enumerate all actions in a small, limited action space.
+  \item Recognize the role of code-based control structures and structured simulators in generating possible actions or plausible rollouts in more constrained domains.
+  \item Apply the proposal idea to Product X without confusing candidate generation with evaluation, selection, or execution.
+  \item State which questions are deliberately deferred to Chapters 7 and 8.
+\end{enumerate}
+
+\section*{3. Proposed chapter structure}
+\setcounter{chapter}{6}
+
+\section{The problem before the first candidate}
+\textbf{Teaching entry:} Return to Product X. The payment endpoint is returning HTTP 500 responses. The agent has active information about the incident and may have retrieved relevant history or service facts. It has access to several possible external interactions: inspect a health endpoint, examine deployment metadata, query a database status service, or ask an operator for clarification. How does it turn the situation into possible next actions?
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Establish that an agent needs a set of possible actions before it can compare alternatives.
+  \item Explain the difference between knowing the problem and having a candidate action to consider.
+  \item Introduce the term \emph{proposal} only after the reader sees the gap between the current situation and a possible next step.
+  \item Keep the Product X possibilities illustrative and provisional; they are not rankings, recommendations, or actions known to be correct.
+\end{itemize}
+
+\textbf{Boundary:} Do not teach a formal incident-management workflow or introduce a bespoke problem representation. CoALA's proposal stage is a conceptual part of a general decision procedure, not a prescribed incident-response algorithm.
+
+\section{Where proposal fits: planning before execution}
+\textbf{Core question:} What does the planning stage do before an action is applied?
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Briefly recall the decision cycle introduced in Chapter 2: a top-level decision procedure coordinates planning and execution and repeats across cycles.
+  \item Explain the planning stage as the part in which reasoning and retrieval are used to work on possible actions.
+  \item Explain that execution is different: it applies the action chosen by the decision procedure by invoking the relevant procedure in the agent's code.
+  \item Note that a decision cycle may ultimately produce an external grounding action or an internal learning action. Keep the focus of this chapter on the paper's description of proposing external grounding action candidates.
+  \item Introduce proposal as one sub-stage of planning; evaluation and selection will be explained in Chapter 7.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 6.1:} \emph{Proposal's place in the decision cycle}. Show the larger loop only as context: current working information enters planning; proposal creates candidates; evaluation and selection are shown as later stages without detail; execution applies the selected action; the cycle can continue. The diagram must label the chapter's focus clearly and avoid suggesting that the sub-stages always run in one rigid order. \CoALACite{\S 4.6, Figure 4B}
+
+\begin{notebox}
+The chapter uses the decision cycle only to locate the proposal sub-stage. It must not try to explain the complete propose--evaluate--select process, the selection rejection path, or the interleaving and iteration of sub-stages. Those are reserved for Chapters 7 and 8.
+\end{notebox}
+
+\section{What is an action candidate?}
+\textbf{Teaching question:} If the agent says ``inspect the deployment metadata,'' is that already the decision? No: it is one possible action that can be considered alongside other possibilities.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Define a candidate as one possible action produced during proposal for later consideration.
+  \item Explain that candidates should be understood in relation to the action space already introduced in Chapter 2 and the grounding categories explained in Chapter 5.
+  \item Distinguish a candidate from the procedure that implements it. An action description identifies what may be done; explicit agent code contains the procedure that performs it.
+  \item Distinguish a candidate from an evaluation value, a selected action, and an executed action. Do not teach the details of those later stages here.
+  \item Explain that proposal can produce one candidate or several; the paper explicitly describes both possibilities.
+\end{itemize}
+
+\textbf{Important source boundary:} Section 4.6 describes the usual proposal approach as using reasoning, and optionally retrieval, to sample one or more external grounding actions from the LLM. The overall decision cycle can yield grounding or learning actions, but the outline should not overstate the proposal paragraph as a complete account of every possible learning-action proposal mechanism. \CoALACite{\S 4.6, ``Proposal''}
+
+\section{Using reasoning and retrieval to generate candidates}
+\textbf{Core mechanism:} During planning, reasoning and retrieval can be applied to propose possible actions. The proposal description identifies reasoning as the usual means of sampling one or more external grounding actions from the LLM, with retrieval as an optional support.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Recall reasoning from Chapter 4 only as needed: it processes working-memory contents and can produce new information.
+  \item Explain how the agent can use its current working information to generate an action candidate through reasoning.
+  \item Explain the optional role of retrieval: relevant stored information may be brought into working memory and used as additional context for candidate generation.
+  \item Explain why retrieval is not a mandatory precondition for every proposal. The paper says reasoning and optionally retrieval; it does not mandate the same preparation for all tasks.
+  \item Clarify that the proposal stage may produce one candidate or multiple candidates, depending on the agent's procedure and action domain.
+\end{itemize}
+
+\textbf{Product X example:} Given the HTTP 500 observation and available service information, the agent may generate a candidate to inspect deployment metadata, another to query database connectivity, or another to ask the on-call engineer for a recent-change clarification. These are possible actions, not conclusions about cause or priority.
+
+\textbf{Planned Mermaid figure 6.2:} \emph{Reasoning with optional retrieval in candidate generation}. Show current working information feeding reasoning, with an optional retrieval path bringing stored information into working memory, and reasoning producing one or more candidate actions. Do not show evaluation scores or a winning candidate.
+
+\section{When the action set is small: proposing all available actions}
+The paper notes that for simple domains with limited actions, the proposal stage may simply include all possible actions.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Explain why candidate generation does not always require an LLM to invent actions: a small action set can be enumerated.
+  \item Use the SayCan example only at the level presented in CoALA: a limited action domain can make it practical for the proposal stage to include all actions.
+  \item Explain the conceptual difference between enumerating the available set and sampling candidate actions from the LLM.
+  \item Avoid treating enumeration as evaluation. Listing all available actions does not assign values or decide which one should be executed.
+\end{itemize}
+
+\textbf{Boundary:} Do not explain SayCan as an independent research framework or introduce its implementation in detail. It is an example explicitly discussed by CoALA to illustrate a limited action set. \CoALACite{\S 4.6, ``Proposal''; \S 5, SayCan case study}
+
+\section{Program structures and structured simulators as proposal mechanisms}
+CoALA also describes more structured ways that agents can generate candidate actions.
+
+\textbf{Coverage:}
+\begin{itemize}
+  \item Explain that more sophisticated agents may use code structures such as \texttt{if--else} or \texttt{while--if} to generate proposals.
+  \item Explain the intuition: the proposal process can include domain-specific program logic rather than relying only on a fresh LLM sample.
+  \item Explain that agents in well-defined domains may use structured simulators to generate plausible rollouts.
+  \item Clarify that a simulator can help generate possible sequences or outcomes for consideration, but the chapter does not teach simulation-based evaluation or value assignment.
+  \item Keep the explanation at the level of the mechanisms and possibilities identified by CoALA; do not turn this section into a general course on planning languages or search algorithms.
+\end{itemize}
+
+\textbf{Planned Mermaid figure 6.3:} \emph{Different ways to create a candidate set}. Show four conceptual alternatives: LLM-based sampling, enumerating a limited action set, code-based branching/loop structures, and structured-simulator rollouts. Use the diagram to compare proposal mechanisms, not to rank them.
+
+\CoALACite{\S 4.6, ``Proposal''}
+
+\section{A Product X proposal walkthrough}
+Use a single book-created scenario to show the transition from a situation to candidate actions.
+\begin{enumerate}
+  \item The current working information contains the HTTP 500 observation, the incident goal, and known service context.
+  \item The action space includes available digital grounding procedures and dialogue interactions that the agent can invoke.
+  \item Reasoning uses the current information to generate possible next actions. Retrieval may optionally add a relevant earlier incident or service fact.
+  \item The resulting candidates might include checking deployment metadata, querying database connectivity, or asking an operator for clarification.
+  \item The chapter stops when the candidate set is available. It does not decide which candidate is most valuable, which one is selected, or whether it should be executed.
+\end{enumerate}
+
+\textbf{Planned Mermaid figure 6.4:} \emph{Product X: from problem to candidate set}. Show the incident state and action space feeding the proposal process; optional retrieval supplements working information; reasoning produces a set of candidate actions. Label all candidates as unranked and unselected.
+
+\begin{warningbox}
+A plausible candidate is not necessarily a good candidate, a safe candidate, or the candidate that will be selected. Proposal creates possibilities; evaluation and selection are separate parts of the decision procedure. Do not use words such as ``best'', ``preferred'', or ``approved'' for the output of this stage unless explicitly referring to a later stage.
+\end{warningbox}
+
+\section{Common confusions and boundaries}
+The chapter should correct these misunderstandings:
+\begin{itemize}
+  \item Proposal is not the entire planning stage. It is one named sub-stage within planning.
+  \item A candidate is not an evaluated option. Evaluation assigns values when multiple actions are proposed; Chapter 7 explains that operation.
+  \item A candidate is not a selected action. Selection decides what to do with the candidate set; Chapter 7 explains that operation.
+  \item A candidate is not an executed action. Execution applies the selected action through the agent's procedures.
+  \item Reasoning is the usual mechanism described for LLM-based proposal; retrieval can optionally support it but is not mandatory in every case.
+  \item An action set can be enumerated when the domain is limited; proposal is not always open-ended LLM generation.
+  \item Program structures and simulators are alternative ways to generate possibilities; their presence does not imply that every agent uses them.
+  \item The chapter does not impose a rigid one-pass ordering. The flexibility to interleave or iterate planning sub-stages is treated in Chapter 8.
+\end{itemize}
+
+\section{Chapter recap and review}
+The recap should summarize the path from current working information to one or more candidate actions. Include a comparison table with rows for LLM-based proposal, action-set enumeration, program-structured proposal, and simulator-generated rollouts; columns should describe the input basis, how candidates arise, and what the approach does not decide.
+
+Review questions should ask readers to identify candidates in a Product X scenario, distinguish a candidate from a selected action, explain why retrieval may be optional, and recognize when a small action space can be enumerated. One short exercise should ask the reader to rewrite an overconfident statement (``the agent selected the database check'') into a proposal-stage statement (``the proposal included a database check as one candidate'').
+
+\section*{Source and example note}
+The theoretical account is grounded primarily in CoALA Section 4.6, especially the description of the Planning stage and Proposal sub-stage, with Figure 4B used to place planning in the overall decision cycle. Sections 4.3 and 4.4 are recalled only to explain retrieval and reasoning as supporting internal actions; Section 4.2 is recalled only to orient the reader to grounding actions as candidate types. SayCan may be named only as the example used by CoALA for a limited action set. Product X remains a book-created teaching example. No Fan \& Lan mechanisms should appear in Part I. \CoALACite{\S 4.6, Figure 4B; supporting context from \S\S 4.2--4.4}
+
+\section*{4. Visual and pedagogical plan}
+Use three or four Mermaid diagrams:
+\begin{enumerate}
+  \item Proposal's location within planning and execution, with later stages visibly marked as outside this chapter's detailed scope.
+  \item Reasoning with optional retrieval producing one or more action candidates.
+  \item Different candidate-generation approaches: LLM sampling, enumeration, code structures, and structured simulators.
+  \item Product X: an unranked candidate set generated from the current problem and available action space.
+\end{enumerate}
+
+All diagram sources will be stored under the following chapter-specific folder:
+\begin{center}\small\url{Tex/diagrams/source/part1/chapter06/}\end{center}
+Use the shared theme, and include \texttt{accTitle} and \texttt{accDescr}. CI will render PNGs before XeLaTeX. Chapter figures will use the shared \verb|\BookDiagram| macro. No TikZ, ASCII diagrams, or custom LaTeX drawing libraries are permitted.
+
+Use shared teaching environments selectively: a learning objective, a note locating proposal in the cycle, a tip distinguishing candidate from selected action, a warning against treating candidates as recommendations, a recap, and review questions. Ordinary explanations remain outside boxes.
+
+\section*{5. Source and attribution plan}
+\begin{itemize}
+  \item Primary source: Sumers et al., CoALA (TMLR 2024), Section 4.6, Planning and Proposal.
+  \item Decision-cycle context: CoALA Figure 4B and the opening of Section 4.6.
+  \item Supporting operations: CoALA Sections 4.3 and 4.4 for retrieval and reasoning; do not repeat Chapter 4.
+  \item Candidate action context: CoALA Section 4.2 for external grounding; do not repeat Chapter 5.
+  \item Limited action set example: SayCan only as discussed by CoALA in Sections 4.6 and 5.
+  \item Every example created for Product X must be identified as book-created; no example may be presented as a source claim.
+\end{itemize}
+
+\section*{6. Explicit exclusions}
+Do not teach evaluation values, value functions, comparison methods, selection methods, rejection and return-to-proposal behavior, or action execution in depth; these belong to Chapter 7. Do not teach the interleaving or iteration of proposal, evaluation, and selection, multi-step simulation as a full process, or iterative candidate improvement; these belong to Chapter 8. Do not turn this chapter into an independent tutorial on Tree of Thoughts, RAP, search algorithms, PDDL, reinforcement learning, or general planning theory. Do not introduce a fixed candidate schema, scoring rubric, or mandatory planning algorithm not prescribed by CoALA.
+
+\section*{7. Proposed length and review gate}
+Estimated depth: approximately 20--28 finished pages, without a hard page limit. The chapter should explain proposal in enough detail to distinguish LLM sampling, enumeration, code-based generation, and structured-simulator approaches, while preserving a clear handoff to evaluation and selection.
+
+\begin{takeawaybox}[Approval record]
+The author approved this outline on 14 November 2026. The chapter draft was prepared from this approved plan, preserving the source map, scope boundaries, examples, and figure requirements. The review checklist below records the matters covered by that approval.
+
+Approval recorded: the author approved Outline v1.0 on 14 November 2026. Chapter 6 prose has been drafted from this approved scope.
+\end{takeawaybox}
+\end{document}

@@ -1,0 +1,30 @@
+flowchart TB
+    accTitle: Product X across successive decision cycles
+    accDescr: A book-created two-cycle illustration begins with an HTTP 500 report. Planning produces and considers candidates, selection carries forward an inspection, and execution may make a hypothetical deployment timestamp available. The next cycle uses the available information to plan again. The timestamp is not a causal finding.
+
+    subgraph CYCLE1[Decision cycle 1 - book-created example]
+      direction TB
+      WM1[Working information<br/>HTTP 500 report and investigation goal]
+      PLAN1[Planning<br/>reasoning and optional retrieval]
+      CANDS[Candidate set<br/>inspect deployment metadata<br/>query connectivity<br/>ask on-call engineer]
+      SEL1[Evaluation and selection]
+      EX1[Execute selected grounding action<br/>inspect deployment metadata]
+      OBS1[Possible hypothetical observation<br/>deployment timestamp]
+      WM1 --> PLAN1 --> CANDS --> SEL1 --> EX1
+      EX1 -. response may be available .-> OBS1
+    end
+    subgraph CYCLE2[Decision cycle 2 - subsequent planning]
+      direction TB
+      WM2[Working information now includes<br/>any available observation]
+      PLAN2[Plan again using current information]
+      NEXT[Possible next decision<br/>query connectivity or choose a learning action]
+      WM2 --> PLAN2 --> NEXT
+    end
+    OBS1 --> WM2
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef candidate fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class WM1,PLAN1,SEL1,EX1,PLAN2 process;
+    class CANDS,NEXT candidate;
+    class OBS1,WM2 result;

@@ -1,0 +1,31 @@
+flowchart TB
+    accTitle: Possible sources of evaluation values
+    accDescr: Proposed actions enter an evaluation role. Alternative value sources include heuristic rules, LLM or perplexity values, learned values, LLM reasoning, and combinations. The procedure assigns a value to each candidate when multiple actions are considered.
+
+    CAND[Proposed action candidates]
+    EVAL[Evaluation procedure]
+    subgraph SOURCES[Possible value sources]
+      direction LR
+      HEUR[Heuristic rules]
+      LLM[LLM or perplexity values]
+      LEARN[Learned values]
+      REASON[LLM reasoning]
+      COMBO[Some combination]
+    end
+    VALUE[Value assigned to each candidate]
+    CAND --> EVAL
+    HEUR -. possible source .-> EVAL
+    LLM -. possible source .-> EVAL
+    LEARN -. possible source .-> EVAL
+    REASON -. possible source .-> EVAL
+    COMBO -. possible source .-> EVAL
+    EVAL --> VALUE
+    NOTE[Alternatives, not a mandatory checklist]
+    SOURCES -.-> NOTE
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef option fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    class CAND,EVAL process;
+    class HEUR,LLM,LEARN,REASON,COMBO,NOTE option;
+    class VALUE result;

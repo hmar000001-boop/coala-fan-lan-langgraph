@@ -1,0 +1,20 @@
+flowchart TB
+    accTitle: Selection can choose or reject the candidate set
+    accDescr: Candidate actions and their values enter selection. Selection may carry one action forward to execution or reject the proposed set and return to proposal. Rejection is a selection outcome, not an evaluation result or an executed action.
+
+    PAIRS[Candidate actions and values]
+    SELECT[Selection]
+    CHOOSE[Select one action]
+    EXEC[Execution]
+    REJECT[Reject current proposals]
+    PROP[Return to proposal]
+    PAIRS --> SELECT
+    SELECT --> CHOOSE --> EXEC
+    SELECT --> REJECT --> PROP
+
+    classDef process fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px;
+    classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px;
+    classDef alternative fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.1px;
+    class SELECT process;
+    class CHOOSE,EXEC result;
+    class PAIRS,REJECT,PROP alternative;
