@@ -1,0 +1,28 @@
+flowchart TB
+  accTitle: Different objects selected by modern and historical workspace baselines
+  accDescr: LIDA competition selects a codelet coalition and GWA provides a bounded working stage with attention selection and broadcast. DyLAN selects an agent team. Adaptive graph pruning selects agent nodes and communication edges. Hearsay-II schedules knowledge sources over shared partial hypotheses. Top-k retrieval selects individual items. These mechanisms should not be treated as selecting the same object.
+  subgraph W[Content and workspace]
+    L[LIDA] --> LC[Codelet coalition]
+    G[GWA] --> GC[Working content and broadcast]
+  end
+  subgraph A[Agent collaboration]
+    D[DyLAN] --> DT[Agent team]
+    P[Adaptive graph pruning] --> PG[Agent nodes and edges]
+  end
+  subgraph S[Other shared-context mechanisms]
+    H[Hearsay-II] --> HP[Partial hypotheses and enabled sources]
+    T[Top-k retrieval] --> TI[Individual retrieved items]
+  end
+  LC --> GAP[Distinct candidate objects; B3 targets typed content coalitions]
+  GC --> GAP
+  DT --> GAP
+  PG --> GAP
+  HP --> GAP
+  TI --> GAP
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class L,G,D,P,H,T source
+  class LC,GC,DT,PG,HP,TI process
+  class GAP caution

@@ -1,0 +1,45 @@
+flowchart TB
+  accTitle: Proposed B3 workspace runtime architecture
+  accDescr: Memory, agent, tool, monitor, and planner producers emit typed candidates. A registry validates provenance and scope. A coalition builder preserves member identities and relations. An authoritative admission governor applies a bounded policy and creates a workspace snapshot. A broadcast router delivers the immutable snapshot to authorized consumers. Consumer receipts and task outcomes flow to an attribution service; a separate policy learner creates candidate future policies for shadow evaluation and guarded promotion. Consumers and models cannot commit admission or authorize external actions.
+  subgraph Producers
+    M[Memory producer]
+    A[Agent workers]
+    T[Tool adapters]
+    O[Monitors]
+    P[Planners]
+  end
+  V[Candidate registry and validator]
+  C[Coalition builder]
+  G[Competition and admission governor]
+  W[(Cycle workspace store)]
+  R[Broadcast router]
+  subgraph Consumers
+    RC[Reasoning and action proposal]
+    MC[Monitoring]
+    LC[Memory and learning]
+  end
+  CR[Consumer receipts]
+  OA[Outcome attribution]
+  PL[Policy learner]
+  PG[Policy registry and rollout gate]
+  M --> V
+  A --> V
+  T --> V
+  O --> V
+  P --> V
+  V --> C --> G --> W --> R
+  R --> RC
+  R --> MC
+  R --> LC
+  RC --> CR
+  MC --> CR
+  LC --> CR
+  CR --> OA
+  OA --> PL --> PG --> G
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class M,A,T,O,P source
+  class V,C,G,R,OA,PL process
+  class W,CR,PG output

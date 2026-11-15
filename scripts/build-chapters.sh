@@ -5,7 +5,7 @@ cd "$ROOT"
 bash scripts/render-diagrams.sh
 bash scripts/check-diagrams.sh
 mkdir -p Tex/Output
-for n in 01 02 03 04 05 06 07 08 09 10 11 12 13; do
+for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14; do
   job="Chapter_${n}"
   latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
     -jobname="$job" -output-directory=Tex/Output "Tex/standalone/chapter${n}.tex"
@@ -18,4 +18,4 @@ for n in 01 02 03 04 05 06 07 08 09 10 11 12 13; do
   latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
     -jobname="$job" -output-directory=Tex/Output "Tex/standalone/chapter${n}.tex"
 done
-printf 'Chapter PDFs are in Tex/Output/Chapter_01.pdf through Chapter_13.pdf\n'
+printf 'Chapter PDFs are in Tex/Output/Chapter_01.pdf through Chapter_14.pdf\n'

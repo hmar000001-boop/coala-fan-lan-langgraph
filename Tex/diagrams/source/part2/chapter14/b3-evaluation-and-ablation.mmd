@@ -1,0 +1,29 @@
+flowchart TB
+  accTitle: B3 evaluation trace, ablations, and falsification
+  accDescr: The experiment records candidate types, decision evidence, selected coalition, broadcast recipients, consumer use, outcome attribution, and policy update. It compares top-k, GWA-style bounded broadcast, learned agent or edge admission adaptations, and B3. Ablations remove the new state object, the authoritative control edge, and the learning update. The bundle is rejected if top-k matches within the preregistered margin or decisive evidence is suppressed.
+  T[Candidate pool and task] --> P[Policy admission decision]
+  P --> W[Winner and workspace snapshot]
+  W --> B[Broadcast and consumer receipts]
+  B --> U[Downstream use and proposal]
+  U --> O[Task outcome and attribution]
+  O --> L[Candidate policy update]
+  L --> E[Held-out and shadow evaluation]
+  E -->|pass| C[Canary and guarded promotion]
+  E -->|regression| R[Rollback to accepted policy]
+  subgraph X[Ablation controls]
+    A1[Remove new state object]
+    A2[Remove authoritative control edge]
+    A3[Remove learning update]
+  end
+  X -. compare .-> E
+  E --> F{Top-k non-inferior or rare decisive evidence suppressed?}
+  F -->|yes| N[Reject or narrow B3]
+  F -->|no| K[Continue preregistered evaluation]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class T,W,B,U,O source
+  class P,L,E,C process
+  class R,K output
+  class A1,A2,A3,F,N caution

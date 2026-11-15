@@ -1,0 +1,28 @@
+stateDiagram-v2
+  accTitle: Proposed B3 workspace cycle state machine
+  accDescr: The cycle moves from collection to validation, coalition formation, competition, admission, broadcast, consumption, outcome recording, policy update, and expiry. Invalid candidates are rejected before competition. A cycle with no eligible coalition follows a no-admission path. Delivery failure is recorded without changing the selected snapshot. Late candidates and late outcomes cannot rewrite an expired cycle.
+  [*] --> COLLECTING
+  COLLECTING --> VALIDATING : cycle deadline or collection complete
+  VALIDATING --> COALITION_FORMATION : eligible candidates remain
+  VALIDATING --> NO_ADMISSION : no eligible candidates
+  COALITION_FORMATION --> COMPETING
+  COMPETING --> ADMITTED : winner fits hard budget
+  COMPETING --> NO_ADMISSION : no eligible coalition
+  ADMITTED --> BROADCAST
+  BROADCAST --> CONSUMING : at least one delivery succeeds
+  BROADCAST --> DELIVERY_FAILURE : all deliveries fail
+  DELIVERY_FAILURE --> OUTCOME_RECORDED : record failed delivery
+  CONSUMING --> OUTCOME_RECORDED : consumers finish or deadline
+  OUTCOME_RECORDED --> POLICY_UPDATE : feedback batch eligible
+  OUTCOME_RECORDED --> EXPIRED : no update in this window
+  POLICY_UPDATE --> EXPIRED
+  NO_ADMISSION --> EXPIRED
+  EXPIRED --> [*]
+  note right of ADMITTED
+    Snapshot is immutable
+    and versioned.
+  end note
+  note right of EXPIRED
+    Workspace content expires;
+    audit and outcome records persist.
+  end note

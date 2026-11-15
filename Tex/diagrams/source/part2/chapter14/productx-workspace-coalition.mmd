@@ -1,0 +1,29 @@
+flowchart TB
+  accTitle: Product X competing payment incident coalitions
+  accDescr: The diagnostic coalition contains a pending ledger observation, a processor delay alert, and applicable idempotency evidence. The action coalition contains an unsupported retry proposal and plan fragment. In this teaching scenario the diagnostic coalition is admitted and broadcast to authorized read-only consumers. The broadcast does not authorize a payment retry; action authorization remains a separate control.
+  subgraph D[Diagnostic evidence coalition]
+    L[Pending ledger observation]
+    A[Processor delay alert]
+    I[Idempotency memory evidence]
+  end
+  subgraph R[Action-oriented coalition]
+    P[Immediate retry proposal]
+    F[Retry plan fragment]
+  end
+  D --> G[Bounded admission governor]
+  R --> G
+  G -->|admit diagnostic coalition| W[Cycle workspace snapshot]
+  G -->|defer or reject| X[Non-admitted proposal remains outside]
+  W --> B[Broadcast to authorized consumers]
+  B --> C[Read-only status check and reasoning]
+  C --> O[Outcome record]
+  O --> U[Future policy evaluation]
+  C -. separate authority .-> T[Action authorization gate]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class L,A,I source
+  class P,F,X caution
+  class G,W,B,C process
+  class O,U output

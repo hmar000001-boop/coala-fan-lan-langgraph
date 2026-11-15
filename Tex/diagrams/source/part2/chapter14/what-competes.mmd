@@ -1,0 +1,16 @@
+flowchart LR
+  accTitle: Five distinct objects often called shared context
+  accDescr: A message is a transport unit. A shared store or blackboard is an addressable representation. An agent team determines who participates. A communication topology defines which agents can exchange messages. A content coalition bundles typed evidence or proposals for bounded workspace admission. B3 concerns the final object rather than the other four.
+  M[Message] --> MT[Transport]
+  S[Shared store or blackboard] --> ST[Addressable state]
+  A[Agent team] --> AT[Who participates]
+  G[Communication topology] --> GT[Who can communicate]
+  C[Typed content coalition] --> CT[What enters bounded workspace]
+  CT --> B[B3 candidate object]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class M,S,A,G,C source
+  class MT,ST,AT,GT process
+  class CT,B output

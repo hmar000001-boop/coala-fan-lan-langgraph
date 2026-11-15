@@ -263,14 +263,10 @@ A minimal architecture separates observation, policy, local recovery, parent com
 
 The model can help interpret events, propose a diagnosis, or suggest a recovery action. The governor controls branch creation. The validator controls result acceptance. The committer controls parent mutation. The rule registry controls promotion. These authorities should be explicit in code and tests, rather than implied by prompt instructions.
 
-% Keep this architecture figure in reading order before the typed-contract
-% listings; a floating figure here could split a multi-page code listing.
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\linewidth,height=0.46\textheight,keepaspectratio]{Tex/diagrams/generated/part2/chapter13/b2-reference-implementation.png}
-  \caption{A proposed implementation separates model suggestions from runtime-controlled branch creation, result validation, parent commit, and recovery-rule promotion.}
-  \label{fig:ch13-reference-architecture}
-\end{figure}
+% The source-level BookDiagram call is the validator's authoritative link
+% between the accessible Mermaid source and this chapter's generated PNG.
+% Keep the figure in reading order before the typed-contract listings.
+\BookDiagram[0.46\textheight]{Tex/diagrams/generated/part2/chapter13/b2-reference-implementation.png}{A proposed implementation separates model suggestions from runtime-controlled branch creation, result validation, parent commit, and recovery-rule promotion.}{fig:ch13-reference-architecture}
 
 \subsection{Typed contracts}
 \label{subsec:ch13-contracts}

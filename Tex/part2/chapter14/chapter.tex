@@ -1,4 +1,687 @@
 \chapter{Content Competition, Workspace and Broadcast: B3}
+\label{ch:b3-workspace}
+
+\section*{Chapter at a glance}
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+An agent can have a shared message history, a vector store, a blackboard, and several collaborating agents without having a mechanism that decides which information should become common working content now. The distinction matters when the available context is limited and several different kinds of evidence arrive at once. A workspace mechanism adds a competition and admission decision: candidate content is considered against a bounded capacity, a selected coalition is made available to relevant processes for a cycle, and later outcomes can influence future admission.
+
+This chapter studies B3 in Fan and Lan's review: the proposed coupling of typed-content competition, a bounded \gls{globalworkspace}, cycle-scoped \gls{broadcast}, and outcome-dependent admission learning. Its historical anchor is LIDA's codelet-coalition competition and broadcast. Its modern comparison set includes Global Workspace Agents (GWA), DyLAN, and adaptive graph pruning. The candidates in those systems are not all the same: LIDA's historical competitors are codelet coalitions; DyLAN selects agents; graph pruning selects nodes and communication edges; B3 concerns typed content coalitions.
+
+The practical question is how to implement this as a real runtime subsystem. We develop a proposed architecture with typed candidate envelopes, content coalitions, a competition governor, an immutable workspace snapshot, a broadcast router, consumer receipts, outcome attribution, and a versioned admission policy. Product X provides a running example. The records, interfaces, policy lifecycle, and control loop are \EngineeringLabel{} designs developed in this book; they are not schemas or a trained algorithm supplied by Fan and Lan or LIDA.
+
+By the end of the chapter, you should be able to explain the LIDA competition/broadcast chain; distinguish a workspace from a message bus, blackboard, agent team, or communication topology; reconstruct B3 through the seven fields; design and test a bounded, cycle-scoped workspace; distinguish selection, broadcast, consumption, use, and helpfulness; and evaluate the proposed coupling against simpler baselines.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+\textbf{The central question.} When different kinds of information compete for limited shared context, what should be admitted, who should receive it, how long should it remain active, and what evidence should change the next admission decision?
 \end{notebox}
+
+\section{A busy context is not yet a workspace}
+\label{sec:ch14-opening}
+
+\BookExampleLabel{} Consider the Product X payment incident used in the previous chapters. A payment request has timed out, but the processor's settlement status is not yet known. Near the same time, the runtime receives a read-only ledger observation, a monitor alert about delayed processor notifications, an older memory item explaining the provider's idempotency contract, an agent proposal to retry, and a plan fragment that suggests checking the original operation first.
+
+The next reasoning step has a limited input budget. It cannot safely treat every candidate as equally relevant, and it should not let a fluent proposal displace a small but decisive observation. The runtime therefore needs to decide which information should be present in the next shared working context. The selection also has consequences: once a coalition is admitted and broadcast, reasoning, monitoring, action selection, and learning can respond to it.
+
+A message bus transports events. A shared store makes records addressable. A top-$k$ retriever ranks candidates against a query. An agent-team selector chooses which agents participate. Each can be useful infrastructure, but none alone expresses the complete B3 question. A workspace mechanism imposes scarcity, makes an admission decision over content, broadcasts the selected content to relevant consumers, and connects the resulting cycle to later admission.
+
+This is not an argument against shared stores or retrieval. A persistent store can feed candidates to a workspace; a message bus can transport its broadcast; retrieval can help form a candidate set. The mechanism-level question is whether the runtime has an authoritative control point that turns competition into bounded shared availability and learns from what happens afterward.
+
+\section{B3 in Fan and Lan's mechanism map}
+\label{sec:ch14-b3-map}
+
+Fan and Lan describe B3 as typed candidates from memory, agents, tools, monitors, and plans competing for a bounded shared workspace. A winning coalition becomes globally available for one cycle, and downstream utility updates later admission. The insertion point is pre-inference admission: the decision changes what the next reasoning or action-selection processes can consume. The stated falsifier is equally important: if outcome-trained content admission adds no value over GWA's selection or simpler top-$k$ retrieval, the residual is not supported.\FanLanCite{\S VI-C, B3; Table VI; Appendix D, Table X}
+
+The bundle is composed of four related elements:
+\begin{enumerate}
+  \item \textbf{Content competition:} typed candidates or candidate coalitions are evaluated against limited workspace capacity.
+  \item \textbf{Bounded workspace:} admission changes what is available in a shared working stage; the workspace is not the entire persistent store.
+  \item \textbf{Broadcast:} selected content becomes available to relevant downstream processes for a bounded cycle.
+  \item \textbf{Outcome-dependent admission:} evidence about downstream utility changes later admission decisions.
+\end{enumerate}
+
+The review does not provide a universal B3 score, a canonical coalition-construction algorithm, a trained admission model, a production schema, or experimental validation of the complete coupling. It supplies the residual hypothesis, its insertion point, adjacent baselines, measurements, and rejection criterion. The rest of this chapter turns that hypothesis into a testable engineering proposal; it must not be read backward as a claim that the source paper already built the proposed subsystem.\FanLanCite{\S V-B; \S V-D; \S VI-B--VI-C; Appendix D}
+
+\subsection{Why B3 is not B1 or B5}
+
+B1, studied in Chapter 12, concerns the accessibility and value of memory items during context assembly. B3 has a broader candidate domain: memory evidence, agent proposals, tool observations, monitor alerts, and plan fragments may all compete. B1 can supply memory candidates to B3, but B3 is not simply a memory-ranking equation. A B1 policy can decide which memory items are worth proposing; B3 decides which content coalition enters the shared workspace for the current cycle.
+
+B5, by contrast, concerns skill governance. Fan and Lan close that candidate after closest-baseline screening against GraSP. An executable skill or its output may contribute a candidate to B3, but skill invocation, verification, repair, and fallback remain a different control problem. The workspace should not become an indirect way to bypass B5's execution boundary.\FanLanCite{\S VI-B; \S VI-C; \S VII-C}
+
+\subsection{Evidence relation and migration depth remain separate}
+
+The review maps the LIDA-like workspace/broadcast chain to GWA at E2/D3. DyLAN and adaptive graph pruning are mapped at E3/D4 for learned agent-team or communication-edge admission. These are case-specific codes for particular preserved mechanisms, not one combined score and not a ranking of complete systems.\index{Global Workspace Agents (GWA)}\index{DyLAN}\index{adaptive graph pruning} An E3/D4 learned team selector does not thereby implement the content-level broadcast relation; an E2/D3 workspace prototype does not thereby implement outcome-trained content admission.\FanLanCite{\S IV-B--IV-C; \S V-B; Table IV; Appendix C-E--C-F}
+
+\section{LIDA: competition before broadcast}
+\label{sec:ch14-lida}
+
+Fan and Lan use LIDA as the historical anchor for content-level coordination under attention limits. Specialized codelets process information and contribute to coalitions. The coalitions compete for access to a capacity-limited global workspace. A winning coalition is broadcast to processes that include memory, action selection, and learning. The selected content changes what those processes can do during the next portion of the cognitive cycle. This is the mechanism reconstructed for the comparison; the chapter is not a general survey of consciousness theories or a full account of LIDA's neuroscience.\FanLanCite{\S III-B, LIDA}\autocite{franklin2012lida}
+
+\subsection{Codelets and coalitions}
+
+A codelet is a specialized process in the LIDA account. Several codelets can contribute related information and form a coalition. The relevant competitive object is therefore not necessarily one isolated content fragment. A coalition expresses a coordinated candidate for workspace access. The workspace capacity is limited, so the architecture needs a competition mechanism to decide which coalition gains access.\index{LIDA}\index{global workspace}\index{workspace competition}\index{codelet coalition}\index{broadcast}
+
+This historical vocabulary must not be silently converted into a modern JSON schema. LIDA's codelets are components of a cognitive architecture; a B3 content coalition is a proposed bundle of typed records produced by modern runtime components. The analogy concerns a control pattern—coalition formation, constrained competition, and broadcast—not identity of implementation objects.
+
+\subsection{The cycle}
+
+The mechanism can be taught as a chain:
+\begin{enumerate}
+  \item specialized codelets process available information and produce candidate contributions;
+  \item related contributions participate in coalition formation;
+  \item coalitions compete for access to the limited workspace;
+  \item a winning coalition gains workspace access;
+  \item its content is broadcast to memory, action-selection, and learning processes;
+  \item downstream processes work with the newly available content;
+  \item later processing and learning can affect future cycles.
+\end{enumerate}
+
+The source account motivates these relationships; it does not establish a universal numeric competition equation, a fixed number of slots, or one parameter setting that applies to every LIDA implementation. Those details should not be invented merely to make a diagram look complete.\autocite{franklin2012lida}\FanLanCite{\S III-B; Appendix A, LIDA entry}
+
+\BookDiagram[0.54\textheight]{Tex/diagrams/generated/part2/chapter14/lida-competition-broadcast-cycle.png}{LIDA's competition and broadcast pattern as reconstructed for this chapter: specialized codelets contribute to coalitions, a coalition wins limited workspace access, and the selected content is broadcast to downstream cognitive processes.}{fig:ch14-lida-cycle}
+
+\subsection{What persists, and what is temporary}
+
+The workspace opportunity is bounded by the cycle. That does not mean that every item in the broadcast becomes a permanent memory, nor that all longer-lived memory is deleted when the workspace cycle ends. The distinction is between active availability now and durable retention for later tasks. A modern system must make the lifetime boundary explicit: workspace state can expire while provenance, decision records, and outcome evidence remain available for audit or future policy learning.
+
+\begin{takeawaybox}[What LIDA contributes]
+LIDA supplies a historical mechanism in which related contributions form coalitions, compete for limited workspace access, and a winning coalition is broadcast to downstream processes. The modern B3 proposal changes the candidate objects and asks how typed content admission should learn from downstream utility.
+\end{takeawaybox}
+
+\section{Blackboard control is a neighbor, not a synonym}
+\label{sec:ch14-blackboard}
+
+Fan and Lan also include Hearsay-II and blackboard systems in their historical catalog. Hearsay-II maintains layered partial hypotheses on a shared blackboard. When a hypothesis or blackboard state changes, knowledge sources may become enabled; an agenda scheduler chooses which enabled source receives control next. The distinctive object is an evolving partial solution, not merely a message moving between components.\FanLanCite{\S III-B, Hearsay-II; Appendix A, Hearsay-II entry}
+
+This differs from the LIDA-like workspace chain. In blackboard control, contributors post or refine partial hypotheses in a shared problem representation, and the scheduler chooses the next enabled knowledge source. In the workspace/broadcast pattern, candidate coalitions compete for bounded access; the winner is made broadly available for a cycle, and outcomes can affect later admission. A blackboard can be an implementation substrate for some workspace data, but shared storage alone does not implement bounded competition or broadcast.\FanLanCite{\S V-D; Appendix B, Hearsay-II}
+
+Fan and Lan map AutoGen and AgentScope as shared message/state interfaces in the Hearsay-II comparison, while noting the absence of a common partial-solution value model and opportunistic agenda scheduler in the reviewed mapping. This is a boundary clarification, not a reason to repeat Chapter 11's complete historical-to-modern ledger.\FanLanCite{\S V-D; Appendix C, Hearsay-II records}
+
+\section{Modern baselines: similar competition, different objects}
+\label{sec:ch14-baselines}
+
+The three modern cases matter because they show that selection and learning are not missing from contemporary agent systems. The residual is narrower: the reviewed mechanisms do not integrate outcome-dependent admission of typed content coalitions into the same bounded broadcast cycle.\FanLanCite{\S V-B; \S V-D; Table IV}
+
+\subsection{Global Workspace Agents}
+
+Fan and Lan identify Global Workspace Agents (GWA), described in \emph{Theater of Mind for LLMs}, as the closest structural broadcast baseline. Their review describes a limited working stage, attention selection, global broadcast, specialized proposal write-back, and an entropy-conditioned drive. They map the LIDA-like workspace chain to E2/D3 and identify outcome-trained admission of typed content coalitions as the remaining breakpoint. The cited GWA work is an arXiv preprint in the frozen corpus; it should be described with that publication status rather than as an established standard.\FanLanCite{\S IV-B; \S V-D}\autocite{shang2026theaterofmind}
+
+The important comparison is not that GWA lacks every workspace property. It preserves a bounded working stage and broadcast-like control. The remaining question is whether feedback about downstream usefulness updates the admission of typed content coalitions inside that same cycle. The source does not report an experiment that has already answered this B3 question.
+
+\subsection{DyLAN}
+
+DyLAN selects an agent team based on task-specific contribution evidence, then uses the selected agents in a dynamic interaction structure. Fan and Lan use it as evidence that learned competition can change the active team, and assign E3/D4 to that learned agent-admission edge. The candidate is an agent: selection changes who participates. It is not a content coalition that wins a bounded workspace and becomes available to memory, action selection, monitoring, and learning.\autocite{liu2024dylan}\FanLanCite{\S IV-B; \S V-B; Appendix C-F}
+
+\subsection{Adaptive graph pruning}
+
+Adaptive Graph Pruning (AGP) learns to hard-prune the agent set and soft-prune communication edges. The primary paper describes task-adaptive control over both the number of participating agents and their communication topology. Fan and Lan use it as a learned competition/topology baseline, coded E3/D4 for the mapped agent/edge-admission mechanism. Its object is the active graph, not a content coalition in a broadcast workspace.\autocite{li2025adaptivegraphpruning}\FanLanCite{\S IV-B; \S V-B; Appendix C-F}
+
+\subsection{Comparison without a leaderboard}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{The reviewed systems select different objects and preserve different control edges.}
+\label{tab:ch14-baselines}
+\begin{tabularx}{\linewidth}{@{}P{0.15\linewidth}P{0.18\linewidth}P{0.20\linewidth}X@{}}
+\toprule
+\textbf{Case} & \textbf{Object selected} & \textbf{Control property} & \textbf{B3 distinction} \\
+\midrule
+LIDA & Codelet coalition & Bounded workspace competition and broadcast & Historical content/workspace pattern; not the modern typed-record schema. \\
+GWA & Content or attention-selected working material & Limited working stage, global broadcast, specialized write-back & Closest structural baseline; outcome-trained typed-content admission is not established in the review. \\
+DyLAN & Agent team & Task-specific agent selection and dynamic interaction & Selects who participates, not which content coalition is broadcast. \\
+Adaptive graph pruning & Agent nodes and communication edges & Learned hard/soft pruning of the active collaboration graph & Selects participants and channels, not workspace content. \\
+Hearsay-II & Partial hypotheses and enabled knowledge sources & Blackboard update plus agenda scheduling & Shared problem state and opportunistic scheduling, not the same broadcast cycle. \\
+Top-$k$ retrieval & Individual retrieved items & Query relevance ranking under a token or item limit & Necessary simple baseline; does not inherently form coalitions or broadcast a cycle snapshot. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\BookDiagram[0.52\textheight]{Tex/diagrams/generated/part2/chapter14/modern-baseline-object-map.png}{Comparison of the object selected by LIDA, GWA, DyLAN, adaptive graph pruning, a blackboard scheduler, and top-k retrieval; only the LIDA/GWA line provides the reviewed bounded-workspace broadcast structure.}{fig:ch14-baseline-map}
+
+The E/D labels should remain attached to their specific mapping. The E axis describes the relation of evidence to the historical mechanism; the D axis describes the depth of the mapped implementation. Neither axis tells us that a system as a whole is more capable, safer, or better. In particular, a deeper agent-team selection mechanism does not automatically subsume content-level admission.\FanLanCite{\S II-D; \S V-B; Table IV}
+
+\section{What exactly is competing?}
+\label{sec:ch14-semantic-distinction}
+
+Several different objects are often called context. A mechanism-level description needs to name the object that actually competes and the state that changes when it wins.
+
+\begin{description}
+  \item[Message.] A transport unit passed from one component to another. A message can carry an observation or proposal, but transmission alone does not imply admission to shared working context.
+  \item[Shared store or blackboard.] A persistent or semi-persistent representation that components can read or update. A store makes information addressable; it does not necessarily decide what becomes common and active for the next cycle.
+  \item[Agent team.] The set of agents permitted to participate in a collaboration. DyLAN selects this kind of object.
+  \item[Communication topology.] The nodes and edges through which agents exchange information. Adaptive graph pruning changes this object.
+  \item[Content coalition.] A proposed bundle of typed evidence or proposals that competes for bounded workspace access. This is the object targeted by the modern B3 residual.
+\end{description}
+
+The historical LIDA coalition is a coalition of specialized codelets. The modern B3 candidate coalition may instead contain a memory record, tool observation, monitor alert, agent proposal, or plan fragment. The relationship is a migration analogy around competition and broadcast; the items are not the same architecture-level data structure.
+
+\BookDiagram[0.50\textheight]{Tex/diagrams/generated/part2/chapter14/what-competes.png}{The five objects that can be confused under the label shared context: messages, shared stores, agent teams, communication topologies, and typed content coalitions.}{fig:ch14-what-competes}
+
+\subsection{Selected is not the same as helpful}
+
+The practical bridge requires six distinct events:
+\begin{enumerate}
+  \item \textbf{Selected:} the admission policy chose the candidate or coalition.
+  \item \textbf{Admitted:} the workspace governor granted it capacity.
+  \item \textbf{Broadcast:} an immutable snapshot was made available to eligible consumers.
+  \item \textbf{Consumed:} a consumer actually read the snapshot or a member.
+  \item \textbf{Used:} a consumer incorporated content into a proposal, decision, or action.
+  \item \textbf{Helpful:} evidence supports that the content improved the downstream result.
+\end{enumerate}
+
+A broadcast receipt does not prove that a consumer read the content. A read receipt does not prove that the consumer relied on it. A model mentioning a candidate does not establish that it improved the decision. Outcome attribution must preserve these differences rather than turning all six into one Boolean field.\index{workspace admission}\index{outcome attribution}
+
+\subsection{Global does not mean unbounded}
+
+In this mechanism, global availability means broad availability to the relevant downstream processes in the current cycle. It does not mean unrestricted disclosure to every component, every user, or every session. A modern implementation must apply consumer authorization, task scope, and data sensitivity before broadcast. The active workspace can be global within a control domain while remaining deliberately restricted across trust boundaries.
+
+\section{B3 through the seven mechanism fields}
+\label{sec:ch14-seven-fields}
+
+Chapter 10 introduced the seven-field tuple as an analytical representation, not as a mandatory software architecture. We can use it to state B3 precisely without pretending that Fan and Lan specify every implementation detail.\FanLanCite{\S II-C; Appendix A, LIDA entry; Table VI}
+
+\subsection{State (S)}
+
+The operative state includes typed candidate content; source and provenance; validity and scope; coalition membership; workspace capacity; the current admitted snapshot; eligible consumers; consumer receipts; downstream outcomes; and the policy history used for later admission. The active workspace and durable feedback ledger are different state objects.\index{workspace lifecycle}\index{content coalition}
+
+\subsection{Control (C)}
+
+A competition/admission governor decides which coalition enters the workspace. Candidate producers can propose content but do not grant themselves admission. A broadcast router makes the chosen snapshot available to authorized consumers. Consumers can read the snapshot but cannot rewrite it. A separate action governor authorizes external actions; admission of a tool observation or plan fragment is not action permission.
+
+\subsection{Transition (T)}
+
+Candidate arrival, a cycle deadline, or a new reasoning round may trigger collection and competition. Admission changes the workspace state and triggers broadcast. Consumer outcomes and task completion generate feedback events; a validated feedback batch can update a later policy version. The trigger is not merely the presence of a message but the runtime's decision to open and close a bounded competition cycle.
+
+\subsection{Persistence (P)}
+
+The workspace snapshot is cycle-scoped. Provenance, admission decisions, receipts, outcome records, and policy versions may persist beyond the cycle. A durable audit trail should make it possible to reconstruct why a candidate was admitted without leaving old content implicitly active forever.
+
+\subsection{Failure (F)}
+
+Failures include missing decisive evidence, distractor domination, redundant or incoherent coalitions, stale candidates, conflicting claims, over-broadcast, source monopolization, rare-evidence suppression, misdelivery to unauthorized consumers, incorrect attribution, and policy regression under distribution shift. A no-admission result is a legitimate safe outcome.
+
+\subsection{Learning (L)}
+
+The residual proposes that downstream utility or outcome evidence changes future admission. The review does not specify an optimizer or one numeric learning law. A production design could compare offline supervised ranking, a conservative contextual policy update, or a rule-based adaptation. Each is an engineering choice and requires a separate evaluation.\FanLanCite{\S VI-C, B3; Appendix D}
+
+\subsection{Resources and governance (R)}
+
+The budget may include context tokens, number of admitted members, coalition assembly cost, selection latency, broadcast fan-out, consumer processing cost, and policy-update overhead. The workspace budget is distinct from the agent's global tool budget or authority to perform payment, deletion, or disclosure actions. Resource and uncertainty propagation across all stages belongs to B6 in Chapter 16.
+
+\section{Worked example: Product X and the payment timeout}
+\label{sec:ch14-productx}
+
+\BookExampleLabel{} The payment processor has not yet confirmed whether the original transaction settled. A read-only ledger observation says that the local record is pending. A monitor alert indicates delayed processor notifications. A prior memory record describes the provider's idempotency semantics. One agent proposes retrying immediately; another plan fragment recommends checking the original operation's status first.
+
+\subsection{Typed candidates}
+
+The candidate pool contains records with distinct types and independent provenance:
+\begin{itemize}
+  \item \texttt{MemoryEvidence}: a versioned note describing the provider's idempotency behavior;
+  \item \texttt{ToolObservation}: the current read-only ledger result;
+  \item \texttt{MonitorAlert}: a timestamped alert about delayed settlement notifications;
+  \item \texttt{AgentProposal}: a tentative explanation or recommended action;
+  \item \texttt{PlanFragment}: a proposed next step, such as querying the original operation's status.
+\end{itemize}
+
+Each envelope also carries scope, source, validity, confidence or validation state, estimated token cost, sensitivity, and dependency references. These fields are the book's implementation proposal; they are not a schema prescribed by B3. A model-generated proposal stays marked as a proposal. It cannot inherit the confidence of a tool observation simply because a coalition builder places the two in the same bundle.
+
+\subsection{Two competing coalitions}
+
+One coalition is diagnostic: the pending ledger observation, the processor-delay alert, and the applicable idempotency evidence. The second is action-oriented: an unsupported immediate-retry proposal and its plan fragment. The coalition builder records why each member belongs with the others and preserves each member's source, type, and validity. If the members contradict one another, the conflict remains explicit; coalition membership must not average away a contradiction.
+
+\subsection{Admission, broadcast, and outcome}
+
+For this teaching episode, the governor admits the diagnostic coalition because it contains current evidence needed to distinguish settlement from delayed notification. This choice is not the result of a B3 equation. It is an illustrative decision under the proposed rule-based baseline. The coalition is broadcast to authorized reasoning, monitoring, memory, and learning consumers. The reasoning consumer sees that the outcome is unknown and requests a further read-only status check. The admission event does not authorize a payment retry.
+
+The status check later returns authoritative evidence. The parent task explains the pending state and avoids issuing a duplicate payment. The outcome ledger records the selected coalition, broadcast snapshot, which consumers read it, which candidates were referenced in the proposal, the eventual outcome, and what the evaluator can actually establish. The runtime may have evidence that the monitor alert was used; it still cannot infer that every admitted member was helpful.
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter14/productx-workspace-coalition.png}{In the Product X teaching example, the diagnostic coalition competes with an unsupported retry coalition; the admitted snapshot is broadcast to authorized read-only consumers, while external payment authority remains separate.}{fig:ch14-productx}
+
+\subsection{Counterexample: popularity suppresses the decisive signal}
+
+Suppose the admission policy updates its score whenever a candidate is broadcast. A generic troubleshooting note is repeatedly selected because it is familiar, often read, and easy to fit. A rare monitor alert about a processor-wide delay appears only occasionally and receives little immediate feedback. If exposure is treated as usefulness, the common note becomes even more likely to win while the rare but decisive signal is suppressed. The system then reinforces the wrong admission pattern.
+
+This counterexample motivates event-level attribution, source/type coverage monitoring, and controlled evaluation. It does not justify a universal fairness term in the B3 equation; no such equation is supplied. Diversity or minimum-coverage constraints can be tested as engineering safeguards, but their value must be demonstrated rather than assumed.
+
+\section{From B3 to an implementable workspace subsystem}
+\label{sec:ch14-implementation}
+
+The following architecture is an \EngineeringLabel{} design for making B3 testable. It is deliberately more explicit than the residual hypothesis. LIDA provides the historical competition/broadcast pattern; Fan and Lan provide the modern typed-content residual and experiment agenda; the records and runtime contracts below are the book's implementation proposal.
+
+\subsection{Reference architecture and authority}
+
+The design has nine logical responsibilities:
+\begin{description}
+  \item[Candidate producers.] Memory retrieval, agent workers, tool adapters, monitors, and planners emit candidate envelopes. They can propose, not admit.
+  \item[Candidate registry and normalizer.] Validates schema, provenance, task scope, expiry, trust, sensitivity, and resource estimates. Invalid or untrusted records are rejected or quarantined before competition.
+  \item[Coalition builder.] Groups candidates when their relationship is explicit and useful. It retains member identity, type, source, dependencies, and contradictions rather than collapsing a coalition into an untraceable summary.
+  \item[Competition/admission governor.] Applies hard eligibility rules and then the active selection policy under the workspace budget. It may return no admission.
+  \item[Workspace store.] Holds one immutable, versioned snapshot for the current cycle under a lease and hard token/capacity limit.
+  \item[Broadcast router.] Publishes the snapshot to the authorized consumer set and records delivery receipts. It does not grant external action permissions.
+  \item[Consumers.] Reasoning, monitoring, action proposal, memory, and learning processes read the snapshot and return separate receipts or proposals.
+  \item[Outcome/attribution service.] Joins the cycle trace to downstream decisions and task outcomes while recording the strength and uncertainty of attribution.
+  \item[Admission-policy learner.] Produces candidate future policy versions from validated feedback batches; it does not modify the active policy in place.
+\end{description}
+
+The governor owns admission. The router owns delivery. The consumers own their local processing. The attribution service owns the feedback record. The policy registry controls promotion and rollback. The language model may propose candidates and explain a selection, but it does not commit workspace state or authorize an external action.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter14/b3-reference-architecture.png}{Proposed B3 runtime architecture: typed candidates are validated and grouped, an authoritative governor admits a coalition into a bounded cycle workspace, a router broadcasts an immutable snapshot, and outcomes update a versioned future policy.}{fig:ch14-reference-architecture}
+
+\subsection{Typed contracts}
+
+The following Java-like records make the hand-offs implementable. They are proposals, not existing LIDA structures or types mandated by Fan and Lan.
+
+\begin{lstlisting}[language=Java,caption={Proposed candidate, coalition, and workspace contracts.},label={lst:ch14-workspace-records}]
+enum CandidateKind {
+    MEMORY_EVIDENCE, AGENT_PROPOSAL, TOOL_OBSERVATION,
+    MONITOR_ALERT, PLAN_FRAGMENT
+}
+
+enum TrustState { VERIFIED, ATTESTED, UNVERIFIED, REJECTED }
+enum Sensitivity { PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED }
+
+enum AdmissionState { ADMITTED, REJECTED, DEFERRED, NO_ADMISSION }
+
+record CandidateRef(String candidateId, long version) {}
+
+record Provenance(
+    String sourceId,
+    String sourceType,
+    String sourceVersion,
+    String evidenceRef,
+    String producerId
+) {}
+
+record CandidateEnvelope(
+    String candidateId,
+    long version,
+    CandidateKind kind,
+    String contentRef,
+    Provenance provenance,
+    String taskScope,
+    Instant observedAt,
+    Instant validUntil,
+    TrustState trust,
+    Sensitivity sensitivity,
+    int estimatedTokens,
+    Set<String> dependencies,
+    Set<String> contradictions
+) {}
+
+record ContentCoalition(
+    String coalitionId,
+    long version,
+    List<CandidateRef> members,
+    String assemblyRationale,
+    String taskScope,
+    Instant validUntil,
+    int estimatedTokens,
+    Set<String> unresolvedConflicts
+) {}
+
+record WorkspaceSnapshot(
+    String cycleId,
+    long version,
+    String coalitionId,
+    List<CandidateRef> members,
+    int tokenBudget,
+    int tokensUsed,
+    Set<String> eligibleConsumers,
+    String admissionPolicyVersion,
+    String contentDigest,
+    Instant admittedAt,
+    Instant expiresAt
+) {}
+\end{lstlisting}
+
+Candidate version, coalition version, workspace snapshot version, and policy version are separate identifiers. A new version of one candidate does not silently rewrite a previous snapshot. The snapshot records the exact member versions used in that cycle. Provenance remains attached to each member even when the workspace presents a compact coalition summary.
+
+Consumer and outcome records need the same precision:
+
+\begin{lstlisting}[language=Java,caption={Proposed consumer receipt and outcome-attribution records.},label={lst:ch14-feedback-records}]
+record ConsumerReceipt(
+    String cycleId,
+    long snapshotVersion,
+    String consumerId,
+    Instant readAt,
+    Set<CandidateRef> referencedMembers,
+    boolean proposalProduced,
+    String proposalRef,
+    String ignoreReason
+) {}
+
+record OutcomeAttribution(
+    String episodeId,
+    String cycleId,
+    long snapshotVersion,
+    String coalitionId,
+    List<CandidateRef> memberVersions,
+    Set<String> consumersRead,
+    Set<CandidateRef> membersReferenced,
+    String outcomeType,
+    double observedTaskQuality,
+    double safetySignal,
+    long tokenCost,
+    long elapsedMillis,
+    String attributionMethod,
+    String confidenceNote,
+    String evaluatorVersion
+) {}
+
+record AdmissionPolicySnapshot(
+    String policyVersion,
+    String trainingWindow,
+    String featureContractVersion,
+    String objectiveVersion,
+    String validationReportRef,
+    String rolloutState,
+    String parentPolicyVersion
+) {}
+\end{lstlisting}
+
+The field \texttt{membersReferenced} is not proof of causation. It records an observable relationship between a downstream proposal and candidate content. The attribution method and confidence note explain whether the signal came from explicit citations, evaluator judgement, a controlled ablation, or another method. A policy update should not treat all these forms of evidence as equally strong.
+
+\subsection{Interfaces and decision authority}
+
+A small set of service contracts keeps the cycle testable:
+\begin{lstlisting}[language=Java,caption={Proposed workspace subsystem interfaces.},label={lst:ch14-workspace-interfaces}]
+interface CandidateProducer {
+    List<CandidateEnvelope> propose(CycleContext context);
+}
+
+interface CandidateValidator {
+    ValidationResult validate(CandidateEnvelope candidate,
+                              CycleContext context);
+}
+
+interface CoalitionBuilder {
+    List<ContentCoalition> form(List<CandidateEnvelope> candidates,
+                                CycleContext context);
+}
+
+interface AdmissionGovernor {
+    AdmissionDecision select(List<ContentCoalition> coalitions,
+                             WorkspaceBudget budget,
+                             AdmissionPolicySnapshot policy);
+}
+
+interface WorkspaceStore {
+    WorkspaceSnapshot open(AdmissionDecision decision,
+                           String cycleId, Instant expiresAt);
+    Optional<WorkspaceSnapshot> read(String cycleId, long version);
+    void expire(String cycleId, long expectedVersion);
+}
+
+interface BroadcastRouter {
+    List<DeliveryReceipt> publish(WorkspaceSnapshot snapshot,
+                                  Set<String> eligibleConsumers);
+}
+
+interface OutcomeAttributor {
+    OutcomeAttribution attribute(CycleTrace trace,
+                                 TaskOutcome outcome);
+}
+
+interface PolicyLearner {
+    PolicyCandidate update(AdmissionPolicySnapshot baseline,
+                           List<OutcomeAttribution> feedback);
+}
+\end{lstlisting}
+
+Only the governor can make an admission decision. The workspace store accepts a decision only once for the cycle. The router can publish only the stored snapshot and only to its authorized recipients. Consumers cannot mutate the snapshot; they return new proposals or receipts. The policy learner creates a candidate version; a policy registry and deployment gate decide whether that version can become active.
+
+\subsection{The workspace cycle state machine}
+
+A cycle should have an explicit lifecycle. The proposed normal path is \texttt{COLLECTING}, \texttt{VALIDATING}, \texttt{COALITION\_FORMATION}, \texttt{COMPETING}, \texttt{ADMITTED}, \texttt{BROADCAST}, \texttt{CONSUMING}, \texttt{OUTCOME\_RECORDED}, \texttt{POLICY\_UPDATE}, and \texttt{EXPIRED}. Invalid candidates can be rejected before competition. A cycle with no eligible coalition may close as \texttt{NO\_ADMISSION}; this is preferable to inventing content just to fill the budget.
+
+\BookDiagram[0.63\textheight]{Tex/diagrams/generated/part2/chapter14/b3-workspace-state-machine.png}{Proposed B3 cycle state machine from candidate collection through admission, broadcast, consumer processing, outcome attribution, policy update, and expiry, including no-admission and delivery-failure exits.}{fig:ch14-workspace-state}
+
+The transition guards matter more than the labels. A candidate must be valid for the cycle's task scope and deadline before it can compete. Admission must respect the hard budget. Broadcast must use the admitted snapshot version. A consumer receipt must identify that exact cycle and version. An outcome arriving after expiry can update the durable feedback ledger, but it cannot reopen or mutate the old workspace. A broadcast delivery failure is recorded; it does not silently replace the selected coalition.
+
+Cycles may be synchronous or event-triggered. In either case, the runtime needs a cycle identifier, an admission deadline, and a defined cutoff for late candidates. A producer that returns after the cutoff can target a later cycle; it must not mutate a broadcast that consumers have already read.
+
+\subsection{Coalition formation and competition}
+
+Coalition formation is not simply grouping by similarity. Two items can be semantically similar but refer to different tasks, time periods, or entities. Conversely, a ledger result and a monitor alert can be complementary even if their wording differs. The proposed coalition builder therefore uses typed relations, shared task scope, dependency references, contradiction links, temporal validity, and an explicit assembly rationale.
+
+Every member keeps its own provenance, trust state, and validity. The builder must not copy the highest confidence score from one member onto the entire coalition. If a coalition contains a conflict, the conflict is visible to the governor and downstream consumers. A summary may be generated for token efficiency, but the snapshot retains the member references from which the summary was derived.
+
+The first implementation should separate hard eligibility from competition. Hard eligibility checks provenance, authorization scope, validity, sensitivity, duplicate identity, and minimum structural requirements. Only eligible coalitions reach the selection policy. The policy can then compare a deterministic rule baseline, a top-$k$ baseline, a GWA-style attention-selection baseline, and an outcome-trained proposal.
+
+\begin{notebox}
+\textbf{No canonical B3 score is given.} A sample admission interface or engineering baseline is not a B3 equation. A production implementation should expose the decision evidence, constraints, capacity, and policy version; it should not hide an invented score behind a label that sounds source-derived.
+\end{notebox}
+
+An initial deterministic policy can prefer current, task-scoped, provenance-validated coalitions while enforcing the context budget and preventing a coalition with an unresolved critical conflict from being admitted as settled evidence. It is a baseline, not a proof that those features are sufficient. A later learner can use validated downstream outcomes to change the ranking or admission boundary, but it must be compared with the frozen baseline and must preserve the same hard safety checks.
+
+\subsection{Broadcast and read semantics}
+
+Broadcast publishes one immutable snapshot to the eligible consumers for the cycle. The router records which recipients were eligible, which deliveries succeeded, and which consumers actually read the snapshot. A consumer that declines to read it can return a reason, such as irrelevant scope or stale evidence. A consumer that creates a proposal can reference the candidate versions it used. It cannot overwrite or append directly to the active snapshot.
+
+This design separates the shared availability event from the processing that follows it. It also avoids a common implementation mistake: using the broadcast message itself as the durable record of what was admitted. The workspace store keeps the versioned snapshot; the event ledger keeps admission, delivery, and read events; the task state remains under its own owner.
+
+\subsection{Outcome attribution and the learning loop}
+
+A useful feedback loop cannot update policy merely because a candidate was selected. It needs an outcome and a defensible account of how the candidate participated. The proposed event chain records admission, broadcast, consumer read, use references, downstream action or answer, and episode outcome. The evaluator can classify an outcome as helpful, harmful, neutral, or uncertain, but should attach method and confidence rather than emit a false causal certainty.
+
+When several coalition members are used together, their individual contributions may not be identifiable from one episode. Controlled ablation can estimate whether removing a member or coalition changes performance, but the experiment may be expensive and interactions can make the effect non-additive. Explicit citations and model-reported use are weaker signals; they are useful telemetry but not causal proof. The system should retain these distinctions in the feedback record.
+
+The learner should operate on quality-controlled feedback batches. One conservative lifecycle is: train an offline candidate policy; evaluate it against a frozen baseline and held-out tasks; run it in shadow mode while the baseline still controls admission; canary the policy on a small, reversible fraction of traffic; promote only if task and safety metrics remain within preregistered limits; and roll back on regression. This lifecycle is a governance proposal, not an optimizer prescribed by Fan and Lan.
+
+\BookDiagram[0.54\textheight]{Tex/diagrams/generated/part2/chapter14/b3-outcome-learning-loop.png}{The proposed feedback loop keeps admission, broadcast, consumer use, outcome attribution, offline policy evaluation, shadow/canary rollout, and rollback as separately observable stages.}{fig:ch14-learning-loop}
+
+\subsection{Concurrency, persistence, and reproducibility}
+
+Parallel producers may emit the same candidate more than once or return out of order. The registry should deduplicate by stable source/event identity while retaining distinct versions when the underlying evidence changes. The cycle manager establishes an admission cutoff; the governor serializes or transactionally commits one decision per cycle; the workspace store publishes an immutable digest; and all receipts reference the exact snapshot version.
+
+The active workspace has a short lifetime. The durable event ledger can retain candidate provenance, admission decisions, policy versions, consumer receipts, outcomes, and feedback quality according to the system's retention policy. This lets an operator replay a cycle using the same candidate versions and policy snapshot without keeping old content globally active. Sensitive payloads may be retained by reference rather than copied into every event; access to the referenced content must still follow its original authorization.
+
+\subsection{Security, privacy, and safety}
+
+The workspace is a data-sharing boundary. Before broadcast, the validator checks producer identity, source trust, task scope, data sensitivity, expiration, and consumer permissions. A coalition summary must preserve warnings, source labels, and uncertainty. Untrusted candidate payloads are data, not instructions to the runtime; their content must not override system policy or grant tools new permissions.
+
+A tool observation or plan fragment can be admitted as information. That does not authorize executing the represented action. Payment retries, refunds, data deletion, disclosure, or other external side effects remain behind their separate tool-governance and approval boundaries. Broadcast is read-only. A consumer that wants an external action must submit a new action proposal through the ordinary authorization mechanism.
+
+\subsection{Failure modes and safeguards}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Operational failures in a proposed B3 workspace and their first-line safeguards.}
+\label{tab:ch14-failures}
+\begin{tabularx}{\linewidth}{@{}P{0.22\linewidth}P{0.34\linewidth}X@{}}
+\toprule
+\textbf{Failure} & \textbf{Signal} & \textbf{Safeguard/test} \\
+\midrule
+Rare-evidence suppression & Decisive evidence is repeatedly absent from admitted snapshots & Track decisive-evidence recall; run rare-signal stress tests; compare with a no-learning baseline. \\
+Source monopolization & One producer or type dominates workspace occupancy & Measure source/type coverage and starvation; test optional coverage constraints. \\
+Coalition conflict masking & Conflicting claims are summarized as one settled conclusion & Preserve member-level contradictions; require consumer-visible conflict metadata. \\
+Stale candidate admission & Expired or superseded records enter a later cycle & Enforce validity at admission and again before use; test late-arriving updates. \\
+Broadcast leakage & A sensitive candidate reaches an unauthorized consumer & Apply recipient authorization before publish; test negative access cases. \\
+Use/helpfulness confusion & Selection or read receipts are treated as reward & Keep event types separate; require outcome evidence or controlled ablation. \\
+Feedback loop & Repeated exposure increases future selection without improvement & Train only from validated outcomes; monitor policy drift and exposure bias. \\
+Policy regression & New policy harms a held-out task or safety metric & Shadow, canary, version, and roll back to the last accepted policy. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The safeguards are not additional historical B3 invariants. They are implementation controls required to test the residual without creating avoidable reliability, privacy, or safety failures.
+
+\subsection{A vertical-slice implementation plan}
+
+A reader should implement the design incrementally:
+\begin{enumerate}
+  \item \textbf{Typed candidates and provenance.} Start with two producers and immutable versioned envelopes. Test invalid source, stale evidence, duplicate event, and task-scope mismatch.
+  \item \textbf{Static bounded workspace.} Add a deterministic governor and a hard context budget. Test exact capacity, no-admission, and duplicate coalition membership.
+  \item \textbf{Read-only broadcast.} Publish a versioned snapshot to two consumers. Test recipient authorization, delivery failure, snapshot immutability, and expired reads.
+  \item \textbf{Event instrumentation.} Record selected, admitted, broadcast, read, used, and outcome events. Test late events, idempotent receipt handling, and replay.
+  \item \textbf{Matched baselines.} Compare top-$k$ and GWA-style attention/broadcast under the same model, prompt, tool set, and budget.
+  \item \textbf{Outcome-dependent policy.} Build a feedback dataset with attribution method and uncertainty; train a candidate policy offline and evaluate on held-out tasks.
+  \item \textbf{Shadow, canary, rollback.} Keep the baseline in control until the candidate policy passes; test forced rollback and policy version reproducibility.
+  \item \textbf{Expanded integration.} Add B1 memory candidates and later B6 risk/resource signals only after the single-cycle subsystem is understandable and measurable.
+\end{enumerate}
+
+\begin{lstlisting}[language=Java,caption={Proposed B3 cycle: the governor admits; the router broadcasts; learning is deferred until outcomes are validated.},label={lst:ch14-cycle-pseudocode}]
+WorkspaceCycleResult runCycle(CycleContext context) {
+    List<CandidateEnvelope> raw = producers.stream()
+        .flatMap(p -> p.propose(context).stream())
+        .toList();
+
+    List<CandidateEnvelope> eligible = raw.stream()
+        .map(c -> validator.validate(c, context))
+        .filter(ValidationResult::isEligible)
+        .map(ValidationResult::candidate)
+        .toList();
+
+    List<ContentCoalition> coalitions = coalitionBuilder
+        .form(eligible, context);
+
+    AdmissionDecision decision = governor.select(
+        coalitions, context.workspaceBudget(), policyRegistry.active());
+
+    if (decision.state() != AdmissionState.ADMITTED) {
+        ledger.recordNoAdmission(context.cycleId(), decision);
+        workspace.expire(context.cycleId(), decision.expectedVersion());
+        return WorkspaceCycleResult.noAdmission(decision);
+    }
+
+    WorkspaceSnapshot snapshot = workspace.open(
+        decision, context.cycleId(), context.expiresAt());
+    List<DeliveryReceipt> delivery = router.publish(
+        snapshot, context.authorizedConsumers());
+    ledger.recordBroadcast(snapshot, delivery);
+
+    List<ConsumerReceipt> receipts = consumers.collectReceipts(
+        snapshot.cycleId(), snapshot.version());
+    ledger.recordReceipts(receipts);
+    return WorkspaceCycleResult.broadcast(snapshot, delivery, receipts);
+}
+
+void closeEpisode(WorkspaceCycleResult cycle, TaskOutcome outcome) {
+    OutcomeAttribution feedback = attributor.attribute(
+        ledger.trace(cycle.snapshot()), outcome);
+    ledger.recordOutcome(feedback);
+    policyTrainer.enqueueValidatedFeedback(feedback);
+    workspace.expire(cycle.cycleId(), cycle.snapshotVersion());
+}
+\end{lstlisting}
+
+The pseudocode leaves coalition policy and learning details behind interfaces on purpose. It makes the authority boundaries executable: producers propose; validators filter; the governor admits; the workspace stores one snapshot; the router publishes; consumers return receipts; an outcome service records feedback; and a separate trainer queues validated data. The code does not silently treat a model's recommendation as an admission decision or external-action authorization.
+
+\subsection{Tests that exercise the control law}
+
+At minimum, test the following cases:
+\begin{itemize}
+  \item a candidate with invalid provenance never reaches competition;
+  \item a candidate outside the task scope is rejected even if its relevance score is high;
+  \item a coalition whose token cost exceeds the workspace budget is not admitted;
+  \item two parallel admission requests cannot create two active snapshots for one cycle;
+  \item a consumer cannot change a published snapshot;
+  \item an unauthorized consumer receives no sensitive candidate;
+  \item a late candidate is assigned to a later cycle rather than rewriting an existing snapshot;
+  \item a read receipt is not automatically recorded as use or helpfulness;
+  \item an outcome update cannot mutate the active policy version in place;
+  \item a policy regression restores the previous accepted version;
+  \item the same candidate and policy snapshots reproduce the same deterministic baseline decision.
+\end{itemize}
+
+\section{Evaluation: does B3 add value?}
+\label{sec:ch14-evaluation}
+
+Fan and Lan's Appendix D requires the base model, prompt, tools, environment, and task budget to be held fixed. It also requires internal-state instrumentation because an outcome score alone cannot establish that an added control edge caused the difference. For B3, the source's trace includes candidate type, score or decision evidence, winner, broadcast recipients, and admission update. Its primary outcomes are relevant-evidence density and distractor robustness; its safety/efficiency measures include context cost, rare-evidence suppression, and workspace turnover. The bundle is rejected if top-$k$ matches the results or decisive evidence is suppressed.\FanLanCite{Appendix D, Table X; \S VI-C, B3}
+
+\subsection{Baselines and matched conditions}
+
+The experiment should compare at least:
+\begin{enumerate}
+  \item top-$k$ or simple score-based retrieval under the same context budget;
+  \item a GWA-style bounded attention-selection and broadcast baseline without outcome-trained typed-content admission;
+  \item an experimental adaptation of learned agent/edge admission, clearly labelled as an adaptation rather than the original DyLAN or AGP system;
+  \item the proposed B3 cycle with typed content coalitions and outcome-dependent admission.
+\end{enumerate}
+
+The same base model, prompts, candidate producers, tools, environment, task population, and resource budget should be used where feasible. If an adapted baseline changes the candidate type or architecture, document the difference instead of claiming it is a direct reproduction of the original system.
+
+\subsection{Required state trace and metrics}
+
+Record candidate type, candidate and coalition versions, policy version, score or decision evidence, selected winner, workspace occupancy, broadcast recipients, delivery receipts, consumer reads, use references, outcome attribution, and admission update. These fields make it possible to determine whether the mechanism actually operated as designed.
+
+The source's primary measures can be operationalized as follows:
+\begin{description}
+  \item[Relevant-evidence density.] The proportion of admitted tokens or candidate units judged relevant to the task's gold evidence or a blinded task rubric.
+  \item[Distractor robustness.] Change in task performance and evidence density as controlled irrelevant, contradictory, or misleading candidates are added.
+  \item[Context cost.] Admitted tokens and associated inference cost per completed task, including candidate and broadcast overhead.
+  \item[Rare-evidence suppression.] Rate at which decisive low-frequency evidence is omitted when present in the eligible candidate pool.
+  \item[Workspace turnover.] Number of candidate/coalition replacements or expiries per task, with the reason for each transition.
+\end{description}
+
+Additional book-proposed diagnostics include candidate-to-admission latency, admission-to-broadcast latency, consumer fan-out, source/type coverage, starvation, receipt coverage, outcome-attribution confidence, policy stability, and cost per successful task. These supplement the source's measures; they should not be misattributed to the original review's required metric set.
+
+\subsection{Ablations and preregistration}
+
+The three cross-bundle ablations in Appendix D are essential:\index{ablation}\index{outcome attribution}\index{admission policy} remove the new state object while preserving a comparable interface; remove the authoritative control edge while retaining logging; and remove the learning update while retaining the runtime transition. For B3, additional ablations can remove coalition formation, broadcast, outcome attribution, or optional source/type coverage controls. The goal is to separate the contribution of representation, immediate control, broadcast, and adaptive learning.\FanLanCite{Appendix D}
+
+Before running the experiment, preregister the task population, experimental unit, model and dependency versions, random replications, sample size, metric formulas, non-inferiority or equivalence margin, uncertainty intervals or statistical tests, exclusions, and stopping rule. Fan and Lan explicitly state that these templates define required decisions rather than report a completed B3 experiment. No benchmark result should be invented for this chapter.\FanLanCite{Appendix D}
+
+\BookDiagram[0.54\textheight]{Tex/diagrams/generated/part2/chapter14/b3-evaluation-and-ablation.png}{Evaluation trace and experimental loop for B3: record the admission/broadcast state, observe downstream use and task outcome, test attribution, compare policy updates against baselines, and preserve the source-required ablations and falsification rule.}{fig:ch14-evaluation}
+
+\subsection{Falsification and stopping rule}
+
+B3 should be rejected or narrowed if top-$k$ or GWA-style selection is non-inferior within the preregistered margin and costs no more; if decisive evidence is suppressed; if outcome-dependent updates do not improve later admission; if broadcast does not change what downstream consumers can access; or if gains depend on unbounded context, excessive fan-out, or an unacceptably fragile attribution process. A simpler mechanism that performs as well under the same resources is a meaningful result, not a failure to build a sufficiently elaborate architecture.\FanLanCite{\S VI-C, B3; Appendix D, Table X}
+
+\section{Boundaries, dependencies, and recap}
+\label{sec:ch14-boundaries}
+
+B3 interacts with the other bundles but does not absorb them:
+\begin{itemize}
+  \item \textbf{B1} supplies memory candidates and memory-specific accessibility/value estimates; B3 decides whether broader typed coalitions enter shared context.
+  \item \textbf{B2} can return a verified recovery result that becomes candidate evidence; opening and validating a recovery substate is not workspace admission.
+  \item \textbf{B4} maintains task intention and reconsideration authority; workspace evidence may trigger reconsideration, but the workspace does not own the goal.
+  \item \textbf{B5/GraSP} may produce an executable skill or skill result; workspace admission does not authorize skill execution.
+  \item \textbf{B6} governs resource and uncertainty signals across stages; this chapter uses workspace budgets but does not claim to implement the complete cross-stage governor.
+\end{itemize}
+
+Fan and Lan's dependency analysis treats B1 and migrated skills as candidate suppliers to B3, while B6 contributes resource/risk governance and workspace evidence may affect B4 reconsideration. Chapter 18 will integrate the full cross-bundle composition.\FanLanCite{\S VI-D; Figure 8}
+
+\begin{chapterrecap}
+A global workspace is not merely a shared transcript or database. In the LIDA mechanism reconstructed by Fan and Lan, codelet coalitions compete for limited access and a winner is broadcast to downstream processes. The modern B3 residual changes the candidate object to typed content coalitions from memory, agents, tools, monitors, and plans, and asks whether outcomes can improve later admission within the same bounded broadcast cycle. GWA is the closest structural baseline; DyLAN and adaptive graph pruning demonstrate learned admission over agents and communication edges, not content-level workspace admission. A practical implementation must make candidates, coalitions, cycles, snapshots, consumers, outcomes, and policy versions explicit—and it must prove that the added control is better than simpler baselines.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions}
+\begin{enumerate}
+  \item Why is a message bus insufficient to establish a global-workspace mechanism?
+  \item What is the difference between LIDA's codelet coalitions and the typed content coalitions proposed in B3?
+  \item What does GWA preserve, and what admission-learning edge remains in Fan and Lan's analysis?
+  \item Why do DyLAN and adaptive graph pruning count as learned-admission precedents without implementing B3 content broadcast?
+  \item Distinguish selected, admitted, broadcast, consumed, used, and helpful.
+  \item Reconstruct B3 through S/C/T/P/F/L/R. Which elements are source-described and which are implementation choices?
+  \item Why must broadcast of a tool observation remain separate from authorization to execute an external action?
+  \item What evidence would justify changing a later admission policy, and what evidence is too weak?
+  \item Under what result should B3 be rejected in favor of top-$k$ or GWA-style selection?
+\end{enumerate}
+\end{reviewquestions}
+
+\begin{reviewquestions}{Practical exercises}
+\begin{enumerate}
+  \item Classify eight candidate records from a multi-agent task. For each, specify type, provenance, task scope, validity, sensitivity, estimated token cost, and dependencies.
+  \item Build two competing content coalitions. Show which relations justify grouping their members and preserve at least one unresolved contradiction.
+  \item Design a workspace state machine with a no-admission path, a late-candidate rule, and a delivery-failure path. Explain what remains durable after expiry.
+  \item Construct a rare-evidence suppression test and a feedback-loop test. Identify the trace fields needed to diagnose each failure.
+  \item Write a preregistered comparison of top-$k$, GWA-style selection, and outcome-trained B3. Specify the required ablations and a falsification condition.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+
+The mechanism-level reconstruction, baseline set, evidence/depth classifications, cross-bundle dependencies, and Appendix D evaluation requirements are attributed to Fan and Lan. The historical LIDA description is cross-checked against Franklin et al. (2012), which Fan and Lan cite. GWA, DyLAN, and adaptive graph pruning are discussed only for the features reported in their cited work and in Fan and Lan's frozen-corpus mapping. Product X is a book-created teaching example. The candidate/coalition schemas, interfaces, workspace state machine, attribution records, policy rollout, security controls, and vertical-slice implementation are engineering proposals developed in this chapter; they are not claimed as existing implementations of B3.
+
+\FanLanCite{\S III-B; \S IV-B--IV-C; \S V-B and V-D; \S VI-B--VI-D; Tables IV and VI; Appendix D}
+\autocite{franklin2012lida,shang2026theaterofmind,liu2024dylan,li2025adaptivegraphpruning}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 15 turns from the admission of shared content to the persistence of an agent's commitments. B4 asks how an intention remains authoritative across changing observations and methods, when it should be reconsidered, and who may change the method without silently replacing the goal. Workspace evidence can inform that decision, but a workspace does not itself own the intention.

@@ -1,0 +1,32 @@
+flowchart TB
+  accTitle: LIDA competition and broadcast cycle
+  accDescr: Specialized codelets process available information and contribute to related coalitions. Coalitions compete for limited global workspace access. A winning coalition is broadcast to memory, action selection, and learning processes. Downstream activity and learning can influence later cycles. The diagram shows a mechanism pattern and does not prescribe a numeric competition formula.
+  subgraph C[Specialized processing]
+    C1[Codelet A]
+    C2[Codelet B]
+    C3[Codelet C]
+    C4[Codelet D]
+  end
+  C1 --> K[Related codelet coalition]
+  C2 --> K
+  C3 --> K2[Alternative coalition]
+  C4 --> K2
+  K --> X[Competition for limited workspace]
+  K2 --> X
+  X -->|winner| W[Global workspace]
+  X -->|not admitted| H[Other candidates remain outside]
+  W --> B[Broadcast selected content]
+  B --> M[Memory]
+  B --> A[Action selection]
+  B --> L[Learning]
+  M --> N[Later cycle]
+  A --> N
+  L --> N
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class C1,C2,C3,C4 source
+  class K,K2,X,W,B process
+  class M,A,L,N output
+  class H caution

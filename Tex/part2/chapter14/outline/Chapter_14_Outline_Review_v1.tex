@@ -1,0 +1,43 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2.2cm}
+{\Huge\bfseries Chapter 14 Outline}\par
+\vspace{0.7cm}
+{\LARGE Content Competition, Workspace and Broadcast: B3}\par
+\vspace{0.8cm}
+{\Large Part II --- From Cognitive Architectures to Mechanism-Level Understanding}\par
+\vspace{1.2cm}
+{\large Outline v1.0; theory-to-implementation bridge specified}\par
+\vfill
+\begin{minipage}{0.82\linewidth}
+\begin{quote}
+\textbf{Approval record.} Approved by the author on 15 November 2026. The implementation bridge has been explicitly assessed and expanded because B3 is a runtime-control hypothesis with direct implementation consequences. Chapter 14 prose is authorized and is being drafted against this outline.
+\end{quote}
+\end{minipage}
+\vfill
+{\large Source anchor: Fan \& Lan (2026), B3; LIDA/global-workspace mechanism and modern comparison set.}\par
+\FanLanCite{\S III-B; \S IV-B--IV-C; \S V-B and V-D; \S VI-B--VI-D; Tables III--VI; Appendices C-E, C-F and D}
+\vspace{0.5cm}
+\autocite{franklin2012lida,shang2026theaterofmind,liu2024dylan,li2025adaptivegraphpruning}
+\vspace{1cm}
+\end{center}
+\clearpage
+\tableofcontents
+\clearpage
+\markboth{Chapter 14 Outline v1.0}{Chapter 14 Outline v1.0}
+\setcounter{chapter}{13}
+\setcounter{secnumdepth}{0}
+\textbf{Outline version:} 1.0\\
+\textbf{Status:} Approved by the author on 15 November 2026; chapter prose authorized.\\
+\textbf{Primary source:} Haodi Fan and Zucong Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), especially the LIDA/Hearsay-II catalog, modern specialized baselines, workspace translation analysis, B3 residual, cross-bundle dependencies, and Appendix D experiment template.\\
+\textbf{Historical cross-check:} Franklin et al. (2012), the LIDA/global-workspace source cited by Fan and Lan as reference [11].\\
+\textbf{Modern comparison set:} Global Workspace Agents / Theater of Mind, DyLAN, and Adaptive Graph Pruning, all included in Fan and Lan's frozen analytical corpus.\\
+\textbf{Implementation bridge:} Typed candidate and coalition contracts, admission governor, cycle-scoped workspace, broadcast semantics, downstream consumer receipts, outcome attribution, concurrency/persistence, safeguards, Product X walkthrough, implementation sequence and executable evaluation.\\
+\input{Tex/part2/chapter14/outline/Chapter_14_Outline_v1_body.tex}
+\backmatter
+\nocite{fanlan2026mechanisms,franklin2012lida,shang2026theaterofmind,liu2024dylan,li2025adaptivegraphpruning}
+\printbibliography[heading=bibintoc,title={References}]
+\end{document}

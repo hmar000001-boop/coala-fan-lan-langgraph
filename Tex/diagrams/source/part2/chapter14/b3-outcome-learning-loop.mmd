@@ -1,0 +1,20 @@
+flowchart LR
+  accTitle: B3 outcome attribution and admission-policy learning loop
+  accDescr: An admitted coalition is broadcast to authorized consumers. Consumer receipts and task outcomes are collected separately. Attribution estimates which admitted elements contributed, and an evaluator tests a candidate policy against baselines before shadow, canary, promotion, or rollback.
+  A[Admitted coalition and workspace snapshot] --> B[Broadcast to authorized consumers]
+  B --> C[Consumer receipts and use references]
+  C --> D[Task outcome and independent evaluation]
+  D --> E[Outcome attribution with uncertainty]
+  E --> F[Candidate admission-policy update]
+  F --> G[Offline replay and baseline comparison]
+  G --> H[Shadow or canary evaluation]
+  H --> I{Promotion criteria met?}
+  I -->|Yes| J[Versioned policy promotion]
+  I -->|No| K[Retain current policy]
+  J --> A
+  K --> A
+  classDef state fill:#e8f0fe,stroke:#315b9a,color:#17365d;
+  classDef process fill:#e8f5e9,stroke:#39734d,color:#1d462b;
+  classDef decision fill:#fff4ce,stroke:#a87900,color:#624600;
+  class A,B,C,D,E,F,G,H,J,K state;
+  class I decision;
