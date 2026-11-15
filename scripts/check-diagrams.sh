@@ -24,6 +24,7 @@ chapters = [
     Path('Tex/part2/chapter10/chapter.tex'),
     Path('Tex/part2/chapter11/chapter.tex'),
     Path('Tex/part2/chapter12/chapter.tex'),
+    Path('Tex/part2/chapter13/chapter.tex'),
 ]
 sources = sorted(src_root.rglob('*.mmd'))
 if not sources:
@@ -108,7 +109,7 @@ for chapter in chapters:
 
 for key, source in source_rel.items():
     if key not in referenced:
-        errors.append(f'Mermaid source not referenced by Chapters 1-12: {source}')
+        errors.append(f'Mermaid source not referenced by Chapters 1-13: {source}')
 
 # Reject stale or hand-added PNGs that have no matching Mermaid source.
 generated_pngs = sorted(out_root.rglob('*.png')) if out_root.exists() else []
@@ -123,5 +124,5 @@ if errors:
         print(' - ' + error, file=sys.stderr)
     sys.exit(1)
 
-print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-12.')
+print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-13.')
 PY

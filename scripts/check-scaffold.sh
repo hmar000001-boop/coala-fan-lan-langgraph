@@ -8,8 +8,8 @@ for required in \
   Tex/part1/chapter03/chapter.tex Tex/part1/chapter04/chapter.tex \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
-  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex \
+  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -58,8 +58,38 @@ test -s "$outline.pdf" || { echo "Missing Chapter 11 outline PDF: $outline.pdf" 
 ! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter11/chapter.tex" || {
   echo "Chapter 11 has an approved outline but still contains a prose placeholder." >&2; exit 1;
 }
+# Chapter 13 has an author-directed revised outline and drafted prose.
+for artifact in \
+  "$ROOT/Tex/part2/chapter13/outline/Chapter_13_Outline_v2.md" \
+  "$ROOT/Tex/part2/chapter13/outline/Chapter_13_Outline_Review_v2.tex" \
+  "$ROOT/Tex/part2/chapter13/outline/Chapter_13_Outline_v2_body.tex" \
+  "$ROOT/Tex/part2/chapter13/outline/Chapter_13_Outline_Review_v2.pdf" \
+  "$ROOT/review/Chapter_13_Source_Review_v2.md" \
+  "$ROOT/review/Chapter_13_Drafting_Review_v1.md" \
+  "$ROOT/review/Batch_04_Chapter_13_Outline_Status_v2.md"; do
+  test -s "$artifact" || { echo "Missing Chapter 13 outline/draft artifact: $artifact" >&2; exit 1; }
+done
+for key in soar2025architecture soar2025procedural fanlan2026mechanisms; do
+  grep -q "{$key," "$ROOT/Tex/bibliography/references.bib" || {
+    echo "Missing Chapter 13 bibliography entry: $key" >&2; exit 1;
+  }
+done
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter13/chapter.tex" || {
+  echo "Chapter 13 prose source still contains a placeholder." >&2; exit 1;
+}
+grep -q '\\chapter{Understanding Typed Impasses, Substates and Compilation: B2}' "$ROOT/Tex/part2/chapter13/chapter.tex" || {
+  echo "Chapter 13 title is missing from the LaTeX source." >&2; exit 1;
+}
+# Chapter 13's five Mermaid sources are required and must be referenced by the chapter.
+for diagram in soar-impasse-substate-cycle b2-four-invariants b2-modern-baseline-map b2-reference-implementation productx-b2-recovery-example; do
+  source="$ROOT/Tex/diagrams/source/part2/chapter13/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 13 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part2/chapter13/chapter.tex" || { echo "Chapter 13 does not reference $diagram.png" >&2; exit 1; }
+done
 # Every authored chapter in Part II has a standalone build entry.
-for n in 09 10 11 12; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
+for n in 09 10 11 12 13; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
 # Chapter 12 retains its Markdown outline and has a chapter-local editable LaTeX outline and review PDF.
 for artifact in \
   "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_v3.md" \
@@ -68,4 +98,4 @@ for artifact in \
   test -s "$artifact" || { echo "Missing Chapter 12 outline artifact: $artifact" >&2; exit 1; }
 done
 ! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter12/chapter.tex" || { echo "Chapter 12 still contains a prose placeholder." >&2; exit 1; }
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-12 contain prose; Chapter 12 has Markdown, LaTeX, and PDF outline artifacts."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-13 contain prose; Chapter 13 has an author-directed revised Markdown/LaTeX/PDF outline, a standalone build entry, and five accessible Mermaid sources."

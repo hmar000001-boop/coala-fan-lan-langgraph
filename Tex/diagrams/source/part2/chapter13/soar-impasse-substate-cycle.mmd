@@ -1,0 +1,24 @@
+flowchart TB
+  accTitle: Soar operator selection, impasse, substate, and result cycle
+  accDescr: A parent Soar state proposes operators and preferences. The decision procedure either selects one operator or detects a typed impasse. An impasse creates a child substate with a superstate relation. Child problem solving may create a result linked to a higher state; the parent can then proceed and the substate may be removed. A changed dependency may instead regenerate the substate, while an external or higher-level change may eliminate an irrelevant impasse. Chunking is tied to result/dependency processing and must not be conflated with elimination or regeneration.
+  P[Parent state / superstate] --> O[Operators proposed]
+  O --> F[Preferences evaluated]
+  F --> D{Decision procedure}
+  D -->|one selected| N[Apply selected operator]
+  D -->|typed impasse| I[Impasse type and choices]
+  I --> C[Create child substate]
+  C --> L[Child-local problem solving]
+  L --> R[Result linked to parent]
+  R --> CH[Chunking may compile result dependencies]
+  R --> RS[Parent can proceed]
+  RS --> RM[Remove child-local non-results]
+  C --> X{Context or dependency changes?}
+  X -->|relevant dependency changed| RG[Regenerate substate]
+  X -->|problem becomes irrelevant| EL[Eliminate impasse]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class P,O,F,D,I,C,L source
+  class R,RS,RM,CH output
+  class X,RG,EL caution

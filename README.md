@@ -14,7 +14,7 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 - **Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,493 words). The approved outline PDF and editable source remain in `Tex/part1/chapter08/outline/`.
 - Chapters 9–10 have approved outline v1.0 PDFs and editable LaTeX sources stored inside their matching chapter folders. Both chapters are drafted and integrated (approximately 4,259 and 3,921 words). Their source and drafting reviews are recorded under `review/`.
 - **Chapter 12 — Understanding Activation, Retrieval Latency, and Utility: B1.** Substantive chapter redraft prepared from the author's review report and the Fan & Lan source audit. Active outline v3 is retained as Markdown and has matching chapter-local LaTeX and review-PDF artifacts; v2 remains preserved as a checkpoint. The chapter includes the B1 baseline set, three Mermaid source diagrams, footnote-style citations, shared glossary/index entries, a source/example note, and an expanded standalone build.
-- Chapters 1–12 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapter 12 adds three Mermaid figures and therefore follows the same render-before-compile requirement as the rest of the book.
+- Chapters 1–13 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapter 12 adds three Mermaid figures and therefore follows the same render-before-compile requirement as the rest of the book.
 
 ## Author-supplied preamble
 
@@ -26,7 +26,7 @@ Book-wide citation macros, glossary setup, bibliography integration, additional 
 
 The authoritative entry point is `Tex/main.tex`. The repository uses the author's known-working GitHub Actions route: `xu-cheng/texlive-action@v2`, `scheme: full`, XeLaTeX through `latexmk`, and a PDF artifact. Pushes and pull requests build the full book; pushes of `v*` tags also publish the compiled PDF to GitHub Releases.
 
-The workflow compiles the combined book PDF. Individual Chapter 1–12 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
+The workflow compiles the combined book PDF. Individual Chapter 1–13 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
 
 Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, Node.js 22.13 or later, npm, Chromium/Puppeteer dependencies, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs Node 24, the TeX Gyre browser fonts, the pinned Mermaid CLI, and the full TeX Live scheme.
 
@@ -42,17 +42,17 @@ bash scripts/check-diagrams.sh
 bash scripts/build-book.sh
 ```
 
-The authoritative workflow renders all 48 Mermaid sources for Chapters 1–12 to PNG before LaTeX compilation. Chapter 11 has six and Chapter 12 has three chapter-specific Mermaid sources and uses the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; a local Mermaid CLI install attempt during the Chapter 12 revision timed out, so no generated PNG is represented as validated in this package.
+The authoritative workflow renders all Mermaid sources for Chapters 1–13 to PNG before LaTeX compilation. Chapter 11 has six, Chapter 12 has three, and Chapter 13 has five chapter-specific Mermaid sources and uses the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; a local Mermaid CLI install attempt during the Chapter 12 revision timed out, so no generated PNG is represented as validated in this package.
 
-To regenerate the Chapter 3–12 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
+To regenerate the Chapter 3–13 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
 
 ```bash
 bash scripts/build-outlines.sh
 ```
 
-The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–12 have editable LaTeX outline sources and review PDFs. Chapter 12 retains its Markdown plan as well. Chapters 9–12 have author-directed outline revisions and completed source drafts.
+The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–13 have editable LaTeX outline sources and review PDFs. Chapter 12 retains its Markdown plan as well. Chapters 9–13 have author-directed outline revisions and completed source drafts.
 
-To build Chapters 1–12 separately:
+To build Chapters 1–13 separately:
 
 ```bash
 bash scripts/build-chapters.sh
@@ -89,7 +89,7 @@ All outline artifacts are stored within their matching chapter directory. Chapte
 - Both outlines were approved by the author on 14 November 2026 after a final minor-issue review. The `.tex` sources and approval-record PDFs remain in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`.
 - Chapter 9 — *Why Feature-Level Descriptions Are Not Enough* is drafted in `Tex/part2/chapter09/chapter.tex`. It introduces the documented mechanism as the unit of analysis, feature labels versus operational mechanisms, the independence of evidence relation and migration depth, the node--edge--invariant claim test, and the review's bounded validity claims.
 - Chapter 10 — *The Seven Fields of a Mechanism* is drafted in `Tex/part2/chapter10/chapter.tex`. It teaches the exact tuple `K = <S,C,T,P,F,L,R>` and applies it to the ACT-R record in Fan & Lan's Appendix A without filling undocumented fields.
-- Eight Mermaid sources were added (four per chapter). The shared renderer and validator cover all 45 Mermaid sources across Chapters 1–11, and the standalone build covers Chapters 1–11 and the combined-book PDF quality checks validate all twelve chapter headings currently drafted.
+- Eight Mermaid sources were added (four per chapter). At that earlier Chapter 9–10 checkpoint, the repository contained 45 Mermaid sources across Chapters 1–11. The current repository contains 53 sources across Chapters 1–13; the scaffold and chapter-specific checks now include Chapter 13.
 - The Chapter 11 source and attribution record is in `review/Chapter_11_Source_Review.md`; drafting and quality notes are in `review/Batch_11_Drafting_Review.md`.
 - The local npm registry could not be resolved during this batch, so real Mermaid PNG rendering and final figure inspection remain a first-GitHub-Actions-run gate. Disposable placeholder-image LaTeX tests are not represented as real Mermaid renders.
 
@@ -106,9 +106,19 @@ Both chapters were drafted after individual outline approval and received a fina
 - Three accessible Mermaid source diagrams now cover the distinct memory lifecycle decisions, B1 context assembly and feedback, and the event-evidence chain. They use `accTitle` and `accDescr`, the shared Mermaid theme, and the `\\BookDiagram` placement macro. The generated PNGs are CI build artifacts and are not represented as locally rendered or validated because the local pinned-CLI installation attempt timed out.
 - Comparative citations use the shared footnote-style citation route. The chapter now includes Fan & Lan source trace notes, shared glossary entries and first-use references, index entries, and glossary/index output in the standalone build.
 - The source-level chapter and diagram pipeline are prepared for the GitHub Actions render/build. The only local Chapter 12 PDF in this package is explicitly named `Chapter_12_LAYOUT_PREVIEW_NOT_FINAL.pdf`; it contains visible layout placeholders, not Mermaid figures, and uses temporary font substitutions. No file is presented as the final illustrated Chapter 12 PDF. The authoritative PDF must be rebuilt after the real Mermaid CI render and all three diagrams must be inspected at print size.
-- The next authorized writing batch is Chapter 13 (B2), but it must not begin until this revised Chapter 12 passes the actual CI render, compile, and visual-review gates.
+- Chapter 13 — *Understanding Typed Impasses, Substates and Compilation: B2* — has been revised to outline v2.0 after an explicit theory-to-implementation bridge audit. The author then directed that writing begin after the revision. The completed chapter source, standalone build entry, outline Markdown, editable LaTeX outline wrapper/body and outline review PDF are integrated in the matching chapter folder.
+- Chapter 13 preserves Soar's native operator-selection impasse semantics and Fan & Lan's B2 residual hypothesis as separate layers. Its practical bridge specifies component responsibilities, typed contracts, a guarded recovery state machine, persistence/concurrency, idempotency and side-effect controls, typed result validation, dependency-aware rule compilation/governance, a vertical-slice sequence, pseudocode and implementation tests.
+- Five accessible Mermaid source diagrams are included. The local pinned Mermaid CLI is unavailable, so real PNG generation and visual inspection remain first-CI-run gates. `Tex/Output/Chapter_13_LAYOUT_PREVIEW_NOT_FINAL.pdf` is a 43-page layout proof with conspicuously labelled temporary placeholders, not the final illustrated PDF. Chapter 12's separate real-diagram release gate remains open as well.
 
 
 ### Chapter 11 standalone layout validation
 
-A standalone XeLaTeX smoke build produced a 43-page, 7 × 10 inch PDF with bibliography, glossary, and index. Text extraction and page rendering completed; representative table, warning-box, recap, and end-matter pages were inspected. The local build used temporary Nimbus font substitutes and conspicuously marked placeholder PNGs only to test LaTeX integration and page layout. Those outputs are not final illustrated chapter PDFs and are excluded from the repository archive. The original author-supplied `Tex/preamble.tex` was restored and its SHA-256 verified as `99a73ba8204130f4eba6f5a9e9874a8be0cf61ea9a62a0546b57c96de833c18b`. The actual Mermaid CLI could not run locally because `registry.npmjs.org` was not resolvable; the first GitHub Actions run must generate and visually validate the real PNG figures.
+A standalone XeLaTeX smoke build produced a 43-page, 7 × 10 inch PDF with bibliography, glossary, and index. Text extraction and page rendering completed; representative table, warning-box, recap, and end-matter pages were inspected. The local build used temporary Nimbus font substitutes and conspicuously marked placeholder PNGs only to test LaTeX integration and page layout. Those Chapter 11 smoke-build outputs are not final illustrated chapter PDFs and are not included as chapter deliverables. The original author-supplied `Tex/preamble.tex` was restored and its SHA-256 verified as `99a73ba8204130f4eba6f5a9e9874a8be0cf61ea9a62a0546b57c96de833c18b`. The actual Mermaid CLI could not run locally because `registry.npmjs.org` was not resolvable; the first GitHub Actions run must generate and visually validate the real PNG figures.
+
+
+### Part II Batch 4 — Chapter 13 (B2) drafted against revised outline v2.0
+
+- The author requested an implementation-bridge audit and explicitly instructed that chapter writing begin after revising the outline, without a second approval pause. Outline v2.0 adds the concrete implementation architecture and is stored as Markdown with editable LaTeX wrapper/body and a review PDF in `Tex/part2/chapter13/outline/`.
+- Chapter 13 is drafted in `Tex/part2/chapter13/chapter.tex` and has an independent entry point at `Tex/standalone/chapter13.tex`. The drafting review and source-fidelity review are stored in `review/`.
+- Five Mermaid source diagrams have accessibility titles/descriptions and use the shared rendering theme. The local environment does not contain the pinned Mermaid CLI, so the chapter's final illustrated-PDF gate remains CI-dependent; placeholder previews, if included, are not final PDFs.
+- The implementation bridge includes typed records, component contracts, state transitions, parent-state versioning, transactional/side-effect safeguards, result validation, dependency-aware rule compilation, rollback, implementation tests and an evaluation plan. These are explicitly labelled as book-level engineering proposals rather than source-paper implementations.

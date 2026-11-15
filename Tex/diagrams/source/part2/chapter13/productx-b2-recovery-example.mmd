@@ -1,0 +1,23 @@
+flowchart TB
+  accTitle: Product X payment-timeout recovery contract
+  accDescr: In the illustrative Product X case, a payment request times out and settlement is unknown. The parent task and no-duplicate-charge invariant are preserved. A bounded child scope performs read-only status checks using the original transaction and idempotency reference. It returns settled, not-settled, or still-unknown with evidence. The parent validates the result and current version before acting. A narrowly guarded rule may later be tested only after repeated validated episodes.
+  A[Payment attempt times out] --> B[Classify: outcome unknown]
+  B --> C[Preserve parent version and no-duplicate-charge invariant]
+  C --> D[Open child: read-only status check]
+  D --> E{Provider evidence}
+  E -->|settled| F[Return SETTLED]
+  E -->|not settled| G[Return NOT_SETTLED]
+  E -->|no reliable status| H[Return STILL_UNKNOWN]
+  F --> V[Validate parent version, evidence and dependencies]
+  G --> V
+  H --> V
+  V --> P[Parent resumes, retries under policy, or escalates]
+  V --> Q[Validated trace may become guarded rule candidate]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class A,B,C,D,E source
+  class V,P process
+  class F,G output
+  class H,Q caution

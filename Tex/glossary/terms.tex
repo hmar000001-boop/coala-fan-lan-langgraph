@@ -71,3 +71,49 @@
 \newglossaryentry{memoryretention}{name={memory retention},description={The policy governing whether an existing memory remains available, is strengthened, updated, consolidated, archived, invalidated, or evicted}}
 \newglossaryentry{contextassembly}{name={context assembly},description={The query-time process that filters, selects, orders, and inserts retrieved information into a particular model working context}}
 \newglossaryentry{memoryvalue}{name={memory value},description={An estimate of the expected contribution of a memory item or selected set to a task or candidate action under a particular context}}
+
+\newglossaryentry{impasse}{name={impasse},description={A typed condition in Soar operator selection that arises when the current preference structure does not produce a valid next operator}}
+
+\newglossaryentry{tieimpasse}{name={tie impasse},description={A Soar impasse in which two or more acceptable operators remain indistinguishable under the relevant preferences}}
+
+\newglossaryentry{conflictimpasse}{name={conflict impasse},description={A Soar impasse caused by mutually inconsistent better or worse preferences among candidate operators}}
+
+\newglossaryentry{constraintfailure}{name={constraint-failure impasse},description={A Soar impasse caused by incompatible required or prohibited preferences that prevent a legal operator selection}}
+
+\newglossaryentry{nochangeimpasse}{name={no-change impasse},description={A Soar impasse in which the decision procedure selects no new operator, with distinct state and operator forms}}
+
+\newglossaryentry{substate}{name={substate},description={A Soar state created to solve a subgoal arising from an impasse in a higher-level state}}
+
+\newglossaryentry{superstate}{name={superstate},description={The higher-level Soar state in which an impasse arose and to which a substate is related}}
+
+\newglossaryentry{goaldependencyset}{name={Goal Dependency Set (GDS)},description={The Soar-maintained set of higher-level working-memory dependencies whose change can invalidate and regenerate a subgoal}}
+
+\newglossaryentry{chunking}{name={chunking},description={Soar procedural learning that derives a production from a subgoal result and the dependencies that supported it}}
+
+\newglossaryentry{recoverysubgraph}{name={recovery subgraph},description={A proposed bounded child execution scope opened to investigate and resolve a typed failure while preserving the parent task state}}
+
+\newglossaryentry{typedresolution}{name={typed resolution},description={A proposed explicit recovery result carrying an outcome kind, evidence, dependency and parent-version references, postconditions, and side-effect information}}
+
+\newglossaryentry{recoverygovernor}{name={recovery governor},description={A proposed authoritative runtime component that controls recovery eligibility, branch scope, result acceptance, and rule promotion}}
+
+\newglossaryentry{parentstateversion}{name={parent-state version},description={A version identifier used to validate that a recovery result was derived from the current relevant parent state}}
+
+\newglossaryentry{idempotencykey}{name={idempotency key},description={A stable request identifier used by a tool or service to recognize repeated submissions as the same logical operation where the service supports it}}
+
+\newglossaryentry{compareandswap}{name={compare-and-swap},description={An update operation that commits a new value only if the current version matches an expected version}}
+
+\newglossaryentry{rulecandidate}{name={recovery rule candidate},description={A proposed reusable guarded recovery procedure extracted from a validated episode but not yet promoted for active execution}}
+
+\newglossaryentry{capabilityallowlist}{name={capability allowlist},description={An explicit set of operations or resources that a scoped recovery process is permitted to access}}
+
+\newglossaryentry{soar}{name={Soar},description={A cognitive architecture organized around states, operators, preferences, a decision procedure, and experience-based procedural learning}}
+
+\newglossaryentry{operator}{name={operator},description={In Soar, a representation of a possible transformation or action to be selected and applied to a state}}
+
+\newglossaryentry{preference}{name={preference},description={In Soar, a relation or constraint used by the decision procedure to select among proposed operators}}
+
+\newglossaryentry{subgoalresult}{name={subgoal result},description={A working-memory element or preference created in a substate and linked directly or indirectly to a superstate}}
+
+\newglossaryentry{parentstatesnapshot}{name={parent-state snapshot},description={A proposed immutable or versioned view of the parent task state captured when a recovery branch is opened}}
+
+\newglossaryentry{dependencycondition}{name={dependency condition},description={A parent-state fact, version, or external contract on which a recovery result or compiled rule depends}}

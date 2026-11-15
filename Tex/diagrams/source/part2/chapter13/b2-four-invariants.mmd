@@ -1,0 +1,14 @@
+flowchart LR
+  accTitle: Four B2 invariants and their dependency chain
+  accDescr: Fan and Lan propose four linked runtime invariants. Typed diagnosis establishes why recovery is needed and defines its scope. A protected parent and bounded child substate isolate the recovery attempt. A typed result returns with evidence and dependency information and must be validated against the parent. Only a validated resolution and its necessary conditions may become a reusable recovery rule. This is a research hypothesis, not an established standard.
+  A[Typed diagnosis] --> B[Protected parent + bounded substate]
+  B --> C[Typed resolution return]
+  C --> D[Parent and dependency validation]
+  D --> E[Condition-safe compilation]
+  E --> F[Reusable guarded recovery rule]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class A,B,C,D process
+  class E,F output

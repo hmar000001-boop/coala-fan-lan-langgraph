@@ -1,0 +1,38 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2.2cm}
+{\Huge\bfseries Chapter 13 Outline}\par
+\vspace{0.7cm}
+{\LARGE Understanding Typed Impasses, Substates and Compilation: B2}\par
+\vspace{0.8cm}
+{\Large Part II --- From Cognitive Architectures to Mechanism-Level Understanding}\par
+\vspace{1.2cm}
+{\large Revised outline v2.0; implementation bridge expanded}\par
+\vfill
+\begin{minipage}{0.82\linewidth}
+\begin{quote}
+\textbf{Drafting status.} Revised after the author's request to strengthen the bridge from theory to implementation. The same instruction authorized drafting after revision; Chapter 13 prose has now been drafted against this v2 outline. This is an author-directed drafting authorization, not a claim of a separate outline-approval event.
+\end{quote}
+\end{minipage}
+\vfill
+{\large Source anchor: Fan \& Lan (2026), B2; Soar Architecture and Procedural Knowledge Learning manuals.}\par
+\FanLanCite{\S III-A; \S V-A--V-B; \S VI-B--VI-C; Appendices C-B--C-D and D}
+\vspace{1cm}
+\end{center}
+\clearpage
+\tableofcontents
+\clearpage
+\markboth{Chapter 13 Outline v2.0}{Chapter 13 Outline v2.0}
+\textbf{Outline version:} 2.0\\
+\textbf{Status:} Revised after an implementation-bridge audit; drafting authorized by the author on 14 November 2026.\\
+\textbf{Primary source:} Haodi Fan and Zucong Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), especially the Soar reconstruction, B2 residual bundle, modern baseline map and Appendix D experiment.\\
+\textbf{Historical cross-check:} Soar Architecture and Procedural Knowledge Learning manuals, University of Michigan.\\
+\textbf{Engineering bridge:} Component architecture, typed contracts, guarded recovery state machine, persistence/concurrency model, side-effect controls, dependency-aware rule governance, reference pseudocode and executable evaluation plan.\\
+\input{Tex/part2/chapter13/outline/Chapter_13_Outline_v2_body.tex}
+\backmatter
+\nocite{fanlan2026mechanisms,soar2025architecture,soar2025procedural}
+\printbibliography[heading=bibintoc,title={References}]
+\end{document}

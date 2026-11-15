@@ -1,0 +1,28 @@
+flowchart TB
+  accTitle: Modern systems cover separate B2 control edges
+  accDescr: PALADIN and AgentDebugX contribute failure diagnosis and recovery selection. Shepherd contributes reversible execution traces and branching. AgentHER and Reflexion contribute changes to later behavior from failed experience. Fan and Lan identify the full typed impasse, protected branch, typed return, and condition-safe compilation coupling as still absent from the reviewed systems.
+  subgraph D[Diagnosis and recovery]
+    P[PALADIN]
+    A[AgentDebugX]
+  end
+  subgraph B[Protected branch]
+    S[Shepherd]
+  end
+  subgraph L[Later behavior change]
+    H[AgentHER]
+    R[Reflexion]
+  end
+  D --> PD[Failure-specific recovery selection]
+  B --> PB[Reversible fork / replay]
+  L --> PL[Cross-episode behavior update]
+  PD --> GAP[Residual B2 coupling]
+  PB --> GAP
+  PL --> GAP
+  GAP[Typed impasse + protected substate + typed return + condition-safe compilation]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class P,A,S,H,R source
+  class PD,PB,PL process
+  class GAP caution

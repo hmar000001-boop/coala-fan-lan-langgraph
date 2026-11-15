@@ -1,4 +1,687 @@
 \chapter{Understanding Typed Impasses, Substates and Compilation: B2}
-\begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
-\end{notebox}
+\label{ch:typed-impasses-substates-compilation}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+An agent can encounter a failure and still have no safe idea what should happen next. A tool call may time out after the remote service has already acted. Two candidate operations may be equally plausible. A workflow may have contradictory preconditions. A recovery attempt may discover useful evidence while the original task state changes underneath it. If the runtime stores only a string such as \code{failed}, it cannot express why progress stopped, what kind of recovery is appropriate, which state must remain authoritative, or what evidence would make a result safe to use.
+
+This chapter studies B2 in Fan and Lan's review: the proposed coupling of typed failure diagnosis\index{typed failure diagnosis}, a protected recovery substate\index{recovery substate}, typed result return, and resolution compilation. Its historical anchor is \gls{soar}\index{Soar}. In Soar, operators\index{operator} are proposed for a state and preferences\index{operator preferences} are evaluated by a decision procedure. When the procedure cannot select a valid next operator, a typed \gls{impasse}\index{impasse} can create a child substate\index{substate} whose problem-solving is related to a parent superstate\index{superstate}. Results created in the child can contribute to the parent; dependencies help keep subgoal reasoning consistent with its context; and chunking\index{chunking} can derive reusable procedural knowledge from the result and its dependencies. The chapter distinguishes this native mechanism from Fan and Lan's proposed modern runtime analogue.
+
+The practical question is not whether a language agent should retry more intelligently. It is how to build a recovery subsystem that records the failure, preserves the parent task, limits what a child process may do, validates what returns, and learns only when a reusable rule has defensible applicability conditions. We develop a concrete reference design with component boundaries, typed contracts, a state machine, persistence and concurrency rules, external-side-effect safeguards, a candidate-rule lifecycle, implementation pseudocode, and tests. Product X\index{Product X} provides a running payment-timeout example. All modern schemas and controller interfaces are book-level engineering proposals, not claims about the exact internal designs of Soar or the modern systems reviewed by Fan and Lan.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain Soar's operator-selection impasses and subgoal processing; distinguish tie, conflict, constraint-failure, and no-change impasses; describe superstates, substates, results, the Goal Dependency Set\index{Goal Dependency Set}, and chunking; reconstruct B2's four residual invariants; distinguish partial modern baselines from the full proposed coupling; design a typed recovery subsystem with explicit parent/child authority and safe result return; and evaluate the mechanism through state traces, safety metrics, controlled baselines, and ablations.
+\end{learningbox}
+
+\begin{takeawaybox}[The B2 control chain]
+A useful recovery mechanism does more than notice an error and try again. It classifies why progress is blocked, scopes a child problem without surrendering the parent task, returns a typed result tied to its evidence and dependencies, validates that result before the parent changes, and only then considers compiling a guarded reusable rule. Fan and Lan propose this coupling as a falsifiable research hypothesis; they do not report it as a completed, validated production standard.
+\end{takeawaybox}
+
+\section{Failure is not yet a recovery policy}
+\label{sec:ch13-failure-policy}
+
+Consider an agent that submits a payment request and receives a timeout. The error message tells us that the client did not receive a response in time. It does not establish whether the provider received the request, whether the provider settled the payment, whether the request was rejected, or whether the response was lost after the side effect occurred. A blind retry can create a duplicate charge. Stopping immediately may leave a task unresolved. A reflection note saying ``check the payment status next time'' may help later, but it does not protect the current task state or constrain what the next recovery action is allowed to do.
+
+A production agent needs to separate at least six operations:
+
+\begin{enumerate}
+  \item \textbf{Observe.} Capture what the runtime and tool actually reported, including timestamps, request identifiers, and any partial output.
+  \item \textbf{Classify.} Decide which failure condition is supported by the evidence. A raw symptom and an attributed cause are not the same record.
+  \item \textbf{Scope.} Determine whether recovery is permitted, which parent state must be preserved, and which operations a recovery process may perform.
+  \item \textbf{Recover.} Investigate or repair the problem within the permitted scope.
+  \item \textbf{Return and validate.} Produce an explicit result and check that it still applies to the parent task and its current dependencies.
+  \item \textbf{Learn selectively.} Determine whether the episode supports a reusable rule, and whether that rule has been validated sufficiently to be used again.
+\end{enumerate}
+
+An ordinary retry loop typically combines several of these steps inside one control path. It observes a failed call, perhaps chooses a different parameter, and invokes the tool again. That may be entirely appropriate for a known transient failure with an idempotent operation. It is not enough for an uncertain external outcome, an inconsistent task state, or a recovery that could change what the parent task means. The point is not to replace all retries with a sophisticated subgoal architecture. It is to identify when a retry is merely an action and when the system needs a more explicit recovery control process.
+
+\subsection{The parent task must remain meaningful}
+
+A recovery process is opened because the parent task has encountered a problem. Its authority is therefore derivative: it exists to help the parent proceed, not to silently redefine the parent goal. The parent may contain a customer request, verified facts, constraints, completed work, pending operations, and external side effects already initiated. Recovery can add evidence, but speculative findings should not overwrite verified parent state.
+
+This introduces a distinction that will recur throughout the chapter. A checkpoint is a representation of state that may allow a workflow to resume. A B2-like recovery branch needs more: a typed reason for its creation, a bounded child scope, a relation to an authoritative parent, an explicit result contract, and a control rule that validates the result before the parent resumes. Fan and Lan specifically caution that a checkpoint alone does not establish a Soar-like typed impasse and substate transition.\FanLanCite{Appendix E-B, Checkpoint versus typed impasse; \S VI-C, B2}
+
+\begin{warningbox}
+An internal snapshot cannot undo an external action. Restoring the parent state after a timeout does not reverse a payment, sent email, deleted object, or submitted form. A recovery design must track external effects separately and use service-supported idempotency or verification where available. Compensation is a new external action with its own authorization and failure modes, not an automatic consequence of rolling back an internal branch.
+\end{warningbox}
+
+\subsection{The B2 question}
+
+The residual question is whether one runtime can couple four properties that current systems, in Fan and Lan's review, mostly implement separately: typed failure diagnosis; a protected child recovery state; a typed result returned to the parent; and compilation of the conditions that made the resolution valid. The failure type should help define the recovery scope. The return contract should determine whether the result can be accepted and what dependencies are relevant to later reuse. The compiled rule should not be a generic reminder extracted from a successful trajectory; it should be guarded by the conditions that explain why the resolution worked.
+
+\BookDiagram[0.52\textheight]{Tex/diagrams/generated/part2/chapter13/b2-four-invariants.png}{The four B2 invariants and their dependency chain. Typed diagnosis scopes recovery; protected state and a bounded child isolate it; typed return exposes evidence; and dependency-aware compilation is considered only after validation.}{fig:ch13-b2-invariants}
+
+\section{Soar: the historical mechanism behind B2}
+\label{sec:ch13-soar}
+
+Soar is organized around problem solving as the selection and application of operators to a state. A state represents the current problem-solving situation; an \gls{operator} represents a possible transformation; and the architecture's decision procedure evaluates \glspl{preference} to select an operator. Working memory holds the current state and its relevant working-memory elements. Production rules contribute knowledge and preferences used during the decision cycle. This is enough of Soar to understand the mechanism studied here; the chapter does not attempt to reproduce the full architecture.\autocite{soar2025architecture}
+
+\subsection{Operators and preferences}
+
+Suppose a problem-solving state proposes three operators. The proposal process may establish that each is acceptable, that one is better than another, that one is required, or that another is rejected or prohibited. Preferences are not simply numeric scores. They have defined semantics that the architecture's fixed decision procedure evaluates. If the available preferences distinguish one winning operator, the system can select it and apply it. If they do not, or if they are inconsistent in a way that prevents selection, the decision procedure can report an impasse.
+
+The important point is that the impasse appears at a specific control point: operator selection\index{operator selection}. It is not a general-purpose label attached after any failure in the environment. A tool timeout in a language agent may be a reason for a proposed recovery policy to open a child scope, but it is not literally a Soar operator-selection impasse.
+
+\subsection{Four typed impasses}
+\label{subsec:ch13-impasse-types}
+
+Soar's documentation distinguishes four categories. The type tells us what is wrong with the current selection problem; it does not merely name the fact that the system is unhappy.\autocite{soar2025architecture}
+
+\begin{description}
+  \item[Tie impasse.]\index{impasse!tie} Two or more acceptable operators remain tied because the current preferences do not distinguish them. The problem is insufficient discrimination among candidates.
+  \item[Conflict impasse.]\index{impasse!conflict} Better/worse preferences conflict, for example when one preference says that A is better than B while another says B is better than A, and neither candidate is rejected, prohibited, or required. The problem is inconsistency in the preference relations.
+  \item[Constraint-failure impasse.]\index{impasse!constraint failure} The constraints themselves are incompatible: for example, more than one value is required, or a value is both required and prohibited. Additional preferences do not automatically solve a contradiction in the constraints; the conflicting preference conditions must change or retract.
+  \item[No-change impasse.]\index{impasse!no-change} The decision procedure selects no new operator. The manual distinguishes a \emph{state no-change} case, where no acceptable or required operator is available (or acceptable candidates have been rejected), from an \emph{operator no-change} case, where an operator may have been selected but no further productions match during application, or no operator is selected in the next decision phase.
+\end{description}
+
+These distinctions matter because different causes need different resolution work. A tie may call for further evaluation that makes one option preferred, rejects alternatives, or establishes indifference. A conflict requires removing or superseding incompatible preference relations. Constraint failure requires changing the conflicting constraints, not simply adding another arbitrary preference. A state no-change problem may require proposing a usable operator; an operator no-change problem may require applying the current operator, changing the state so its proposal no longer applies, or proposing and preferring another operator. These are source-specific descriptions of Soar's decision procedure, not a generic taxonomy for all software exceptions.\autocite{soar2025architecture}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Soar's typed impasses identify different operator-selection problems.}
+\label{tab:ch13-impasse-types}
+\begin{tabularx}{\linewidth}{@{}p{0.20\linewidth}p{0.37\linewidth}X@{}}
+\toprule
+\textbf{Type} & \textbf{What is blocked} & \textbf{Resolution direction} \\
+\midrule
+Tie & Several acceptable candidates are not distinguished & Add discriminating preference knowledge, reject alternatives, or establish indifference \\
+Conflict & Preference relations contradict one another & Remove or resolve the inconsistent preference relations \\
+Constraint failure & Required/prohibited constraints are mutually incompatible & Retract or change the conflicting constraints \\
+No-change & No new operator can be selected or applied productively & Propose a valid operator, apply the current one, or change the state so selection can proceed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{A substate is a child problem with a parent relation}
+\label{subsec:ch13-substates}
+
+When an impasse is detected, Soar creates a new state to represent a subgoal: the problem of resolving the impasse. The new child contains a description of the impasse and the state in which it arose. From the child's perspective, that higher-level state is its \gls{superstate}. The child is a \gls{substate} because its problem-solving is nested under the parent state. It can propose and apply its own operators. Those operators may be similar to the parent operators, or they may be quite different. An additional impasse can create another subgoal, resulting in a stack of related states.\autocite{soar2025architecture}
+
+This is a more structured relation than a separate process receiving a copied prompt. The child exists to resolve a specific parent-level problem. The parent-child relationship is explicit in the architecture's working-memory representation. It is not accurate, however, to translate the Soar superstate into an immutable database snapshot or an operating-system process. Those may be useful engineering analogies for a modern runtime, but they are not the native Soar semantics.
+
+\subsection{Results: what is allowed to cross the boundary?}
+\label{subsec:ch13-results}
+
+A Soar subgoal result is a working-memory element or preference created in the substate and linked directly or indirectly to a superstate. The architecture can identify these elements as results because their creation is related to higher-level working-memory context. When the substate is removed, child-local contents that are not results disappear, while results linked to a higher state remain available to the parent. The result is therefore not any arbitrary child message. It is an element with a defined relationship to the higher-level state.\autocite{soar2025architecture}
+
+An impasse is resolved when processing in the subgoal creates results that let the parent state make progress—for example, when the parent can now select an operator. The child can then be removed, including its substructure and non-result elements. The parent resumes with the result that matters to its own problem-solving.\autocite{soar2025architecture}
+
+\subsection{Resolved, eliminated, and regenerated are different outcomes}
+\label{subsec:ch13-impasse-lifecycle}
+
+An impasse does not always disappear because the child successfully solved it. Soar distinguishes three important cases:
+
+\begin{description}
+  \item[Resolved.] The subgoal creates results that enable progress in the state where the impasse arose. The parent can make a new decision. This is the result-producing path associated with procedural learning.
+  \item[Eliminated.] A higher-level change or external input makes the old subgoal irrelevant. The problem the child was solving no longer matters. The impasse is removed, but this is not the same as resolving it through a result; the manual says Soar does not learn from this elimination path.
+  \item[Regenerated.] The child has relied on information in a higher-level context that changes. The old substate is removed and a new one is created so problem-solving can restart against the updated context. The old child reasoning is not treated as a valid resolution of the changed problem.
+\end{description}
+
+The \gls{goaldependencyset} (GDS) supports this consistency mechanism. For each subgoal/substate, Soar records relevant higher-level working-memory elements that were tested in the production dependencies leading to persistent, o-supported child structures linked to the substate. If a dependency changes, the substate can be regenerated. Not every fact that changes in a superstate causes regeneration; the dependency set is not the set of all parent facts, but the subset relevant to the supported structures under the manual's rules. The manual also distinguishes i-supported structures and o-supported results in its dependency accounting.\autocite{soar2025architecture}
+
+This is not simply a general-purpose version counter. A version number can tell a modern runtime that some parent field changed. A dependency model asks whether the changed field was actually part of the basis for the child result. A coarse parent hash is safer in some settings but may invalidate more branches than necessary. A precise dependency set is more selective, but it requires the system to record dependencies faithfully.
+
+\subsection{Chunking: deriving procedural knowledge from results}
+\label{subsec:ch13-chunking}
+
+Soar's \gls{chunking} is a mechanism for learning procedural knowledge from subgoal processing. A newly created result in a higher-level state can be summarized by a learned production. The conditions of the learned production represent the relevant state elements and dependency chain that supported the result; its action creates the result. Variables allow the learned production to apply in a similar future state, potentially avoiding the need to perform the same deliberation again. This is different from storing a transcript of the child, retaining a natural-language reflection, or caching the final action without its applicability conditions.\autocite{soar2025architecture,soar2025procedural}
+
+There is a timing nuance in the official manual that matters for source fidelity. The architecture chapter describes chunking as a learning opportunity in the context of resolving an operator impasse. The separate procedural-learning chapter says chunks are created when a subgoal creates a result in a superstate, and that chunk generation occurs as soon as the result is created rather than waiting for the substate to be finally removed. These descriptions should not be flattened into a universal rule that learning only starts after the child closes. The relevant mechanism is the result and its dependency analysis during subgoal processing. The same manual distinguishes chunks from justifications and discusses Explanation-based Behavior Summarization (EBBS) as a later treatment of generality and correctness issues; this chapter does not equate the proposed modern rule compiler with all those Soar mechanisms.\autocite{soar2025architecture,soar2025procedural}
+
+The central lesson is that the system does not simply store every successful trajectory. It derives a production from the conditions that support a result. If the learned rule is too broad, it may fire in situations where its action is no longer valid. Dependency analysis and generalization are therefore part of the learning mechanism, not optional annotations added afterward.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Soar result handling and chunking: related operations with distinct roles.}
+\label{tab:ch13-result-chunking}
+\begin{tabularx}{\linewidth}{@{}p{0.23\linewidth}XX@{}}
+\toprule
+\textbf{Operation} & \textbf{Question answered} & \textbf{What it contributes} \\
+\midrule
+Subgoal result & What child-produced information is linked to the parent? & A working-memory element or preference that remains relevant after child removal \\
+Dependency tracking & Which higher-level facts supported persistent child structures? & A basis for detecting context changes that make the subgoal inconsistent \\
+Chunking & Can the result and its supporting conditions become reusable procedural knowledge? & A generalized production that may create a similar result in a future matching state \\
+\shortstack[l]{Elimination/\\regeneration} & Is the old subgoal still relevant and consistent? & Removal or recreation of the child without treating stale reasoning as a resolved result \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{A small Soar cycle}
+
+\BookExampleLabel{} Imagine a parent state with two acceptable operators, \code{routeA} and \code{routeB}. The preference structure does not distinguish them, so the decision procedure detects a tie impasse. A child state is created to resolve the choice. Within that child, the system retrieves a current constraint about a route closure and uses it to generate a result preference that favors route B. The result is linked to the parent state. The parent can now select route B, and child-local structures that are not results can be removed. Chunking may derive a production whose conditions include the relevant parent facts that supported the preference, and whose action generates that result.
+
+Now add a counterexample: while the child reasons, the route closure information changes. If the child result depended on the old closure fact, the child reasoning is no longer consistent with the parent context. The system must not treat the old result as if it were a valid answer to the new state. The dependency mechanism allows Soar to regenerate the substate. This is not an unsuccessful retry; it is a response to a changed problem context. The example is a teaching illustration of the documented semantics, not a quoted Soar tutorial scenario.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter13/soar-impasse-substate-cycle.png}{Soar's operator decision may create a typed impasse and a child substate. Results can support the parent; dependency changes can instead regenerate the child, while an irrelevant impasse can be eliminated.}{fig:ch13-soar-cycle}
+
+\section{Translating the mechanism into a language-agent runtime}
+\label{sec:ch13-translation}
+
+Fan and Lan propose an execution-ledger design in which a failure is classified, the relevant parent state is frozen, a bounded recovery subgraph is opened, a typed resolution is returned, and a reusable recovery rule is compiled. They identify this coupling as B2 and keep it separate from B5 because B2 concerns recovery inside an episode, while B5 concerns general skill invocation and governance across tasks.\FanLanCite{\S VI-B, Table V; \S VI-C, B2}
+
+The translation is useful precisely because it is not a literal port of Soar. Soar's trigger is an operator-selection impasse. A modern runtime may open recovery after a tool error, a failed postcondition, or an uncertain external outcome. Soar has a native superstate/substate relationship and working-memory dependency semantics. A modern agent must choose an engineering representation for the parent version, child scope, evidence, permissions, and return validation. Soar results are working-memory elements/preferences linked to higher states; a modern runtime may use a typed resolution object. Soar chunking is a procedural learning mechanism; a modern recovery-rule compiler needs an explicit representation and validation policy.
+
+The four invariants proposed by Fan and Lan can be stated as follows:
+
+\begin{enumerate}
+  \item \textbf{Typed diagnosis.} The runtime records why the current execution is blocked and uses that type to define the recovery problem.
+  \item \textbf{Protected substate.} Recovery proceeds in a bounded child scope while the parent state remains authoritative.
+  \item \textbf{Typed return.} The child returns a structured resolution whose evidence and applicability can be checked against the parent.
+  \item \textbf{Resolution compilation.} The system can derive a reusable rule from the conditions that made a validated resolution correct.
+\end{enumerate}
+
+These invariants depend on one another. A branch without a typed trigger is only a generic fork. A typed diagnosis without protected state can still corrupt the task it is trying to repair. A protected child without a typed return leaves the parent to interpret arbitrary output. A reusable rule without dependency conditions can replay a repair outside the context where it worked. Fan and Lan's proposal is a residual hypothesis about the coupling, not a report that an existing system has already completed it.\FanLanCite{\S V-A; \S V-B; \S VI-B, Table V; \S VI-C, B2}
+
+\section{Modern systems: the closest pieces are distributed}
+\label{sec:ch13-modern-baselines}
+
+The modern comparison is not a leaderboard. Fan and Lan identify partial mechanisms that preserve different edges of the historical control chain. PALADIN and AgentDebugX contribute failure diagnosis and recovery selection. Shepherd provides a reversible, forkable execution trace. AgentHER and Reflexion change later behavior using failed experience. The review's conclusion is that these mechanisms cover diagnosis, protected branching, and experience-based learning in separate systems; the full typed-impasse, protected-substate, typed-return, condition-safe-compilation coupling remains the residual.\FanLanCite{\S V-A, Soar to typed recovery and experience learning; Appendix C-B--C-D}
+
+\subsection{Diagnosis and recovery}
+
+PALADIN classifies tool failures and retrieves recovery actions. AgentDebugX organizes a Detect--Attribute--Recover--Rerun loop. These approaches make the failure type or attributed cause relevant to the recovery choice, which preserves an important control edge: different failures can lead to different recovery actions. In Fan and Lan's ledger, the corresponding typed-recovery record is provisionally coded E3/D3. That code applies to the specific mapped edge, not to the entire system or B2 as a whole.\FanLanCite{Appendix C-B, R2a; Appendix F-B}
+
+\subsection{Reversible execution and later learning}
+
+Shepherd makes execution traces first-class and supports reversible operations such as forking and replaying. Fan and Lan map that mechanism to the protected-branch edge and provisionally code the correspondence E2/D3. Its missing properties in the review are typed impasse creation, typed result return, and condition-safe compilation. AgentHER and Reflexion make failed experience available to change later behavior. Their mapped learning edge is provisionally E3/D4, but it is not the same as compiling the necessary dependencies of a scoped Soar subgoal result.\FanLanCite{Appendix C-C, R2b; Appendix C-D, R3; Appendix F-B}
+
+\subsection{Runtime boundaries are insertion points, not proof}
+
+LangGraph, OpenHands, Magentic-One, and Shepherd provide state, orchestration, execution, or branching boundaries at which a recovery design could be hosted. A checkpoint or graph state can preserve workflow information. A reversible trace can provide a branch substrate. An orchestration loop can coordinate agents or actions. None of these facts alone establishes typed failure diagnosis, protected child-state semantics, typed return, and safe compilation. The chapter therefore treats the runtime as the place where the control law could be implemented, while the specialized systems are partial baselines for particular edges.\FanLanCite{\S IV-A--IV-C; \S V-A; Appendix E-B}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Modern B2-related systems preserve different parts of the control chain in Fan and Lan's review.}
+\label{tab:ch13-modern-baselines}
+\begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}p{0.30\linewidth}p{0.20\linewidth}X@{}}
+\toprule
+\textbf{Case} & \textbf{Preserved edge} & \textbf{Provisional record} & \textbf{Not established as a complete B2 chain} \\
+\midrule
+PALADIN & Failure classification selects a recovery action & E3/D3, typed recovery & Protected child state, typed return, condition-safe compilation \\
+AgentDebugX & Detection and attribution inform recovery and rerun & E3/D3, typed recovery & Parent isolation, typed result return, safe compilation \\
+Shepherd & Reversible trace, fork, and replay & E2/D3, protected branch & Typed impasse, parent-linked result, dependency-safe rule compilation \\
+AgentHER / Reflexion & Failed experience changes later behavior & E3/D4, learning edge & Compilation from the dependency structure of a scoped resolution \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The E and D codes are interpreted as in Chapter 11: evidence relation and migration depth answer different questions. They are neither additive nor one combined maturity score. The codes above are copied as case-specific provisional records from Fan and Lan; this chapter does not independently recode the source corpus.\FanLanCite{\S II-D; Appendix C-B--C-D}
+
+\BookDiagram[0.48\textheight]{Tex/diagrams/generated/part2/chapter13/b2-modern-baseline-map.png}{Reviewed modern cases preserve different B2-related edges: diagnosis/recovery, reversible branching, or later behavior change.}{fig:ch13-modern-baselines}
+
+\section{B2 as a composed runtime hypothesis}
+\label{sec:ch13-b2-hypothesis}
+
+Fan and Lan express B2 as a practical sequence. An execution ledger classifies a failure; the relevant parent state is frozen; a bounded recovery subgraph is opened; a typed resolution is returned; and a reusable recovery rule is compiled. The sequence is simple to state, but each verb implies a contract and a control decision.\FanLanCite{\S VI-C, B2}
+
+\subsection{Classify the failure}
+
+The runtime should preserve the raw event and distinguish symptom from attribution. A timeout is an observation; ``provider accepted request but response was lost'' is a possible attributed cause. If the evidence cannot distinguish outcomes, the classification should preserve uncertainty rather than invent certainty. A type should guide recovery, not merely decorate the log.
+
+\subsection{Preserve the parent state}
+
+The parent view\index{parent state!snapshot} should identify the goal, its invariants, verified facts, completed work, pending operation, current version, and relevant dependencies. A versioned snapshot is one practical implementation. It should be labelled as an engineering translation, not as a literal claim about Soar's superstate. Fan and Lan's formulation says to freeze the relevant parent state; the precise snapshot format and persistence policy are left to the implementation.\FanLanCite{\S VI-C, B2}
+
+\subsection{Open a bounded recovery subgraph}
+
+The child receives the reason for recovery, the parent reference, evidence, and an explicit set of permitted operations. It owns local working state but cannot directly rewrite the parent's verified facts or goal. A bounded attempt count and local operation policy prevent recursive retries. More general resource allocation, uncertainty propagation, interruption, and stopping belong to B6 in Chapter 16; B2 still needs local bounds to ensure its recovery branch terminates.
+
+\subsection{Return a typed resolution}
+
+The child should return an outcome type\index{typed resolution}, evidence references, parent version, dependency set, postconditions, proposed state delta, and an explicit account of any side effects. It may report \code{RESOLVED}, \code{STILL\_UNKNOWN}, \code{BLOCKED}, \code{PARENT\_STALE}, or \code{ESCALATE}. These names are a proposed engineering vocabulary, not Fan and Lan's prescribed enumeration. The parent must verify that the result applies to the same task state and that its evidence supports the claimed postconditions.
+
+\subsection{Compile only the conditions that made the resolution valid}
+
+A compiled recovery rule should carry the guard conditions, the reusable action or plan reference, provenance, dependencies, tool/environment version, validation evidence, and invalidation conditions. A recovery that succeeds once does not automatically justify compilation. It may depend on a one-off external condition, an uncertain diagnosis, or a manual intervention that cannot safely be automated. Rule creation and rule promotion should therefore be separate events.
+
+\section{From B2 to an implementable recovery subsystem}
+\label{sec:ch13-implementation}
+
+The theory-to-practice bridge is where the four invariants become software responsibilities. The design below is an \EngineeringLabel{} reference pattern, not an implementation specification contained in Fan and Lan's review. It is intentionally language-neutral; the interfaces can be expressed in Java records and services, Kotlin data classes, or another typed application language.
+
+\subsection{Component architecture and authority}
+\label{subsec:ch13-components}
+
+A minimal architecture separates observation, policy, local recovery, parent commit, and learning. That separation matters because the component that proposes a diagnosis should not also be the only authority that decides whether a state-changing recovery is safe.
+
+\begin{description}
+  \item[Execution adapter.] Wraps a tool or action boundary and emits a normalized execution event. It records request identity, raw outcome, timestamp, tool version, and any provider-side operation identifier.
+  \item[Failure classifier.] Converts an event and available evidence into a typed finding. The classifier can use deterministic rules, a model, or both. A model's suggested label is evidence for the governor, not the authority to open a branch.
+  \item[Parent-state store.] Maintains the authoritative parent task state and creates a versioned view for a recovery episode. It also references verified facts, goal invariants, pending actions, dependency versions, and the external side-effect ledger.
+  \item[Recovery governor.] Checks eligibility, selects a recovery policy, creates the child scope, and authorizes its capability allowlist. It owns state transitions.
+  \item[Recovery runner.] Executes the child subgraph in a separate namespace. The runner can inspect permitted evidence and return a proposed resolution; it cannot directly mutate the parent's state.
+  \item[Resolution validator.] Checks result type, evidence, expected parent version, dependency freshness, postconditions, and side-effect claims.
+  \item[Parent committer.] Applies a validated state delta only if the expected parent version is still current. It rejects stale results rather than silently merging incompatible state.
+  \item[Recovery ledger.] Stores an append-only trace connecting event, classification, parent snapshot, branch operations, child result, validation, commit, and any rule candidate.
+  \item[Rule compiler and registry.] Derive candidate guards/actions from validated traces, test them, and maintain quarantine, shadow, promotion, invalidation, and rollback states.
+\end{description}
+
+The model can help interpret events, propose a diagnosis, or suggest a recovery action. The governor controls branch creation. The validator controls result acceptance. The committer controls parent mutation. The rule registry controls promotion. These authorities should be explicit in code and tests, rather than implied by prompt instructions.
+
+% Keep this architecture figure in reading order before the typed-contract
+% listings; a floating figure here could split a multi-page code listing.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth,height=0.46\textheight,keepaspectratio]{Tex/diagrams/generated/part2/chapter13/b2-reference-implementation.png}
+  \caption{A proposed implementation separates model suggestions from runtime-controlled branch creation, result validation, parent commit, and recovery-rule promotion.}
+  \label{fig:ch13-reference-architecture}
+\end{figure}
+
+\subsection{Typed contracts}
+\label{subsec:ch13-contracts}
+
+The following records are \EngineeringLabel{} proposals. They are not native Soar objects and are not schemas supplied by Fan and Lan. Their purpose is to make each handoff explicit enough to implement, validate, and audit.
+
+\paragraph{ExecutionFailure.}
+
+This record captures what the action boundary observed before diagnosis begins:
+
+\begin{lstlisting}[language=Java,caption={Raw action-boundary event (illustrative Java record).},label={lst:ch13-execution-failure}]
+record ExecutionFailure(
+    UUID eventId,
+    UUID parentId,
+    UUID operationId,
+    Instant observedAt,
+    String rawError,
+    OutcomeCertainty outcomeCertainty,
+    String toolName,
+    String toolVersion,
+    List<EvidenceRef> evidenceRefs,
+    String externalOperationRef
+) {}
+\end{lstlisting}
+
+The key field is \code{outcomeCertainty}. A timeout can mean that the caller lacks a result, not that the remote operation did not happen. The raw event should be immutable; later attribution must not rewrite what the adapter actually observed.
+
+\paragraph{FailureFinding.}
+
+A typed finding adds interpretation: a failure category, execution phase, evidence, attribution status, uncertainty, classifier version, retryability, and side-effect risk. A category such as \code{payment\_outcome\_unknown} is useful only if its evidence and semantics are defined. The category should not be a free-form model string that silently changes meaning across model versions.
+
+\paragraph{ParentSnapshot.}
+
+The parent view should contain a stable parent ID, version, state digest, goal reference, invariant references, verified facts, pending operation, dependency versions, side-effect ledger reference, and capture time. A state digest detects changes to the captured representation; a dependency list supports more selective invalidation. Neither should be confused with a complete transaction or rollback of the external world.
+
+\paragraph{RecoveryScope.}
+
+The child scope carries a recovery ID, parent ID/version, failure ID, status, allowed and denied capabilities, local attempt budget, deadline, local state reference, dependency set, and opening time. The scope should explicitly record what the child can read, what it can write locally, and what actions require a separate authorization. A read-only recovery branch is the safest initial vertical slice.
+
+\paragraph{Resolution.}
+
+A resolution envelope should contain an ID, kind, parent version, evidence references, dependency versions, proposed delta, postconditions, side-effect summary, and creation time. Outcome kinds may include \code{RESOLVED}, \code{STILL\_UNKNOWN}, \code{BLOCKED}, \code{PARENT\_STALE}, and \code{ESCALATE}. The result is a typed claim supported by evidence; it is not a natural-language report that the parent must interpret without validation.
+
+\paragraph{RecoveryRuleCandidate.}
+
+A candidate rule records its guard, action/plan reference, dependency set, source trace references, tool/API/model versions, validation suite, promotion status, expiry/invalidation conditions, and rollback target. A candidate must be distinguishable from a rule already authorized for live execution.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Proposed B2 records and their ownership boundaries.}
+\label{tab:ch13-contracts}
+\begin{tabularx}{\linewidth}{@{}p{0.22\linewidth}p{0.31\linewidth}X@{}}
+\toprule
+\textbf{Record} & \textbf{Created by} & \textbf{What it must not be confused with} \\
+\midrule
+ExecutionFailure & Action/tool adapter & Attributed root cause \\
+FailureFinding & Classifier plus evidence & Raw error text or authorization to act \\
+ParentSnapshot & Parent-state store & A rollback of external side effects \\
+RecoveryScope & Recovery governor & A generic checkpoint or unbounded agent fork \\
+Resolution & Recovery runner, then checked by validator & Arbitrary child text or automatic parent mutation \\
+\shortstack[l]{RecoveryRule\\Candidate} & Compiler over a validated trace & A promoted/live rule \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Runtime state machine}
+\label{subsec:ch13-state-machine}
+
+A modern recovery runtime needs legal states and guarded transitions\index{recovery state machine}. The names below are a proposed implementation vocabulary, not Soar terminology:
+
+\begin{description}
+  \item[RUNNING.] The parent task is executing normally.
+  \item[FAILURE\_CAPTURED.] An action boundary emitted a failure or ambiguous outcome event.
+  \item[CLASSIFIED.] The classifier produced a typed finding with evidence and uncertainty.
+  \item[PARENT\_PROTECTED.] The parent version, invariants, pending operation and relevant dependencies have been captured.
+  \item[RECOVERY\_OPEN.] The governor created a bounded child scope and granted capabilities.
+  \item[RECOVERING.] Child-local investigation or permitted recovery actions are running.
+  \item[RESULT\_PROPOSED.] The child returned a typed resolution envelope.
+  \item[RESULT\_VALIDATED.] Evidence, postconditions, parent version and dependencies passed validation.
+  \item[PARENT\_COMMITTED.] A permitted state delta was applied against the expected parent version.
+  \item[ESCALATED / ABORTED.] Local recovery could not safely continue or policy rejected it.
+  \item[ELIMINATED / REGENERATED.] The recovery problem became irrelevant or a dependency changed so the child must be discarded and recomputed. These are engineering analogues informed by Soar's distinctions, not an assertion that every runtime must use these exact labels.
+\end{description}
+
+No transition may jump directly from \code{RESULT\_PROPOSED} to \code{PARENT\_COMMITTED}. A typed result is only a proposal until the validator has checked the evidence, state version and postconditions. Compilation is a separate learning path after a result and its outcome evidence have been recorded; it is not a mandatory terminal action of every recovery episode.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Guarded transitions in the proposed recovery controller.}
+\label{tab:ch13-state-transitions}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.28\linewidth}>{\raggedright\arraybackslash}p{0.34\linewidth}X@{}}
+\toprule
+\textbf{Transition} & \textbf{Required guard} & \textbf{Resulting effect} \\
+\midrule
+\shortstack[l]{RUNNING to\\FAILURE\_CAPTURED} & Adapter observes a defined failure or ambiguous outcome & Append immutable execution event \\
+\shortstack[l]{FAILURE\_CAPTURED to\\CLASSIFIED} & Finding type and supporting evidence recorded; uncertainty not hidden & Recovery eligibility can be evaluated \\
+\shortstack[l]{CLASSIFIED to\\PARENT\_PROTECTED} & Parent ID/version and goal invariants available & Capture authoritative parent view and dependencies \\
+\shortstack[l]{PARENT\_PROTECTED to\\RECOVERY\_OPEN} & Governor approves type, scope and capabilities & Create bounded child namespace \\
+\shortstack[l]{RECOVERING to\\RESULT\_PROPOSED} & Child emits a recognized result kind and evidence envelope & No parent mutation yet \\
+\shortstack[l]{RESULT\_PROPOSED to\\RESULT\_VALIDATED} & Evidence, postconditions, parent version and dependencies pass & Resolution may be considered for commit \\
+\shortstack[l]{RESULT\_VALIDATED to\\PARENT\_COMMITTED} & Compare-and-swap succeeds and delta remains authorized & Parent state advances exactly once for that accepted version \\
+\shortstack[l]{Any active child\\to ELIMINATED /\\REGENERATED} & External context makes task irrelevant, or a material dependency changes & Discard stale branch; restart or stop without learning from stale result \\
+\shortstack[l]{Any unsafe or\\unsupported path to\\ESCALATED /\\ABORTED} & Budget exhausted, permissions absent, evidence insufficient, or invariant threatened & Preserve trace; do not force a parent update \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Persistence, concurrency, and external effects}
+\label{subsec:ch13-persistence}
+
+A robust implementation needs two persistence domains. The branch-local state can change while the child reasons. The parent remains authoritative and advances only through an accepted commit. An append-only ledger records transitions and evidence; it should not be the same object as a mutable prompt transcript. A branch record can reference a parent version and store local findings, proposed deltas, and tool observations without changing the parent's verified facts.
+
+At return, the parent committer should verify an expected version. If the current parent version is still the version against which the child reasoned, and the dependencies it used remain valid, a compare-and-swap\index{compare-and-swap} update can apply the result. If the version differs, the system should inspect whether the changed fields intersect the child's dependency set. A whole-state hash is a safe, coarse first implementation: any change rejects the child result. More precise dependency versions reduce unnecessary invalidation, but they require a reliable dependency model. The trade-off should be measured rather than assumed.
+
+Concurrency makes this more important. Two recovery children may be opened from the same parent version. Both may return plausible results. The runtime cannot commit both if they make incompatible changes. One result may win the compare-and-swap; the other must be revalidated against the new parent or regenerated. The commit path should serialize transitions per parent version or provide an explicit arbitration policy. A child branch must never silently merge a stale patch merely because its JSON is syntactically valid.
+
+External effects\index{external side effects} require a separate ledger. Suppose a payment call times out. Retrying the same request may be safe only if the provider's idempotency contract guarantees that repeated requests with the same idempotency key represent the same logical operation. If that contract is absent or unknown, the recovery child should query the original operation's status before initiating another side effect. A local rollback cannot reverse the provider's action. A compensating transaction is another operation, which may fail and requires its own authority.
+
+Event processing also needs idempotency\index{idempotency}. A timeout callback may be delivered more than once; an adapter may emit a failure event and later receive a delayed success response. Stable event IDs and operation IDs allow the ledger to deduplicate observations. They do not create universal exactly-once semantics for external APIs. The system should state what guarantee it actually has—at-most-once dispatch, at-least-once dispatch with provider idempotency, or uncertain delivery—and test the behavior under duplicated and delayed events.
+
+\subsection{Validating a result before returning it}
+\label{subsec:ch13-result-validation}
+
+A result validator should check at least the following:
+
+\begin{enumerate}
+  \item the result kind is recognized and allowed for this failure category;
+  \item each decisive claim points to evidence with provenance and a source/tool version;
+  \item the parent ID and expected version match the branch's captured parent;
+  \item dependencies used by the child remain current;
+  \item the postconditions are independently checked where possible;
+  \item any proposed state delta is within the child capability boundary;
+  \item external side effects are accounted for and were authorized; and
+  \item uncertainty remains explicit, with a defined reject/escalate outcome.
+\end{enumerate}
+
+The last point prevents a dangerous collapse: a child may successfully diagnose that the settlement state is unknown. That is a useful resolution of the diagnostic question, but it is not permission to declare the payment settled or to retry it. A typed result can resolve one subproblem while returning an unresolved status for the parent's larger task.
+
+\subsection{Dependency-aware compilation and rule governance}
+\label{subsec:ch13-rule-compiler}
+
+A modern analogue of chunking should start from the validated result and its dependencies\index{dependency-aware compilation}. A practical compiler pipeline can:
+
+\begin{enumerate}
+  \item collect the branch trace and the validated resolution;
+  \item identify the smallest set of parent facts, tool contracts, and environmental conditions needed for the result;
+  \item express those conditions as explicit guards;
+  \item bind a bounded action or plan reference to the guard;
+  \item validate the candidate on held-out traces, counterexamples and current tool contracts;
+  \item retain it in quarantine or shadow mode before live use; and
+  \item promote it only under a stated policy, retaining versions and a rollback path.
+\end{enumerate}
+
+The compiler should not turn an LLM-generated narrative into executable authority. It should produce a reviewable intermediate representation: predicates, version constraints, an allowed plan reference, postconditions, and a maximum action scope. A candidate can be rejected when the trace's causal dependencies are unclear, when the outcome was uncertain, or when the resolution depended on human intervention. The absence of a safe rule is a valid result.
+
+Overgeneralization is the central learning risk. A rule learned from one payment provider may not apply to a second provider; a status endpoint can change semantics after an API version upgrade; an idempotency guarantee may expire; and a recovery that was safe for one customer/account state may be unsafe for another. A compiled candidate must therefore include its environment/tool version and invalidation conditions. The registry should support disablement and rollback when a counterexample appears\index{recovery rule!promotion and rollback}. This is a book-level governance proposal inspired by Soar's dependency-based learning, not a claim that Fan and Lan prescribe this exact compiler design.
+
+\subsection{A practical vertical-slice implementation plan}
+\label{subsec:ch13-vertical-slice}
+
+An engineering team should not implement all four invariants at once. The following sequence introduces observability and authority before learning:
+
+\begin{enumerate}
+  \item instrument action boundaries and persist immutable execution events;
+  \item introduce a small typed failure taxonomy, including explicit unknown/ambiguous outcomes;
+  \item capture parent versions and goal invariants before state-changing actions;
+  \item open isolated child scopes with a read-only capability allowlist;
+  \item return a typed resolution envelope and validate it before the parent resumes;
+  \item add version-checked parent commits and stale-result rejection;
+  \item record dependency references and test regeneration/invalidation;
+  \item store recovery-rule candidates, initially disabled;
+  \item evaluate candidates in replay or shadow mode, then promote only under a documented policy; and
+  \item measure the full B2 trace and ablations before claiming that the coupled mechanism adds value.
+\end{enumerate}
+
+A reasonable project layout might place action adapters and normalized failures in an execution package, parent/child state contracts in a recovery domain package, the governor and validator in an application layer, persistence adapters in an infrastructure layer, and the candidate-rule pipeline behind a separate learning boundary. This prevents a model wrapper from becoming the implicit owner of state transitions. The exact package names are project decisions; the important requirement is that the commit and promotion authorities remain explicit and testable.
+
+\subsection{Reference pseudocode}
+\label{subsec:ch13-pseudocode}
+
+The following Java-like pseudocode shows the intended authority boundaries. It is illustrative rather than a drop-in implementation. In particular, the model can suggest a failure type or recovery plan, but only the governor can open a child and only the committer can advance the parent.
+
+\begin{lstlisting}[language=Java,caption={B2-style recovery orchestration (illustrative pseudocode).},label={lst:ch13-recovery-orchestration}]
+RecoveryOutcome onFailure(ParentId parentId,
+                          ExecutionFailure event) {
+    ledger.append(event);
+
+    FailureFinding finding = classifier.classify(event);
+    ledger.append(finding);
+
+    RecoveryDecision decision = governor.evaluate(finding);
+    if (!decision.allowed()) {
+        return escalate(parentId, finding, decision.reason());
+    }
+
+    ParentSnapshot parent = parentStore.capture(parentId);
+    RecoveryScope scope = governor.open(parent, finding, decision);
+    ledger.append(scope);
+
+    Resolution proposed = recoveryRunner.run(scope);
+    ledger.append(proposed);
+
+    ValidationResult check = validator.validate(parent, scope, proposed);
+    ledger.append(check);
+    if (!check.accepted()) {
+        return escalate(parentId, finding, check.reason());
+    }
+
+    CommitResult committed = committer.applyIfVersion(
+        parent.id(), parent.version(), check.approvedDelta());
+    ledger.append(committed);
+
+    if (committed.accepted()) {
+        ruleCompiler.observeValidatedTrace(scope, check, committed);
+    }
+    return RecoveryOutcome.from(committed);
+}
+\end{lstlisting}
+
+The call to \code{observeValidatedTrace} records a candidate-learning opportunity; it does not directly promote a rule. Promotion requires a distinct validation and registry decision. The code also omits retries around transient storage failures, transaction-outbox implementation details, and error-specific policies; those belong in a production implementation, not in a short illustration.
+
+\subsection{Implementation tests that expose the missing edges}
+
+A B2 implementation should include tests at every contract boundary:
+
+\begin{itemize}
+  \item \textbf{Stale parent.} Open a child at parent version 7, advance the parent to version 8, and ensure the child cannot commit a patch based on version 7.
+  \item \textbf{Dependency-only change.} Change an unrelated parent field and compare coarse hash invalidation with a dependency-aware validator; confirm that only dependencies declared by the child govern selective reuse.
+  \item \textbf{Duplicate failure event.} Deliver the same event ID twice and verify that the ledger deduplicates it and does not open two independent recovery branches.
+  \item \textbf{Unknown external outcome.} Simulate a payment timeout after the provider has committed the charge. The child must query status or return \code{STILL\_UNKNOWN}; it must not create a second charge.
+  \item \textbf{Capability violation.} Have the child request a forbidden write or payment operation and verify that the governor/adapter rejects it regardless of model output.
+  \item \textbf{Nested branch loop.} Make a child encounter a repeated failure and confirm that local depth/attempt limits lead to escalation rather than infinite recursion.
+  \item \textbf{Rule overgeneralization.} Change a tool contract or API version and verify that a candidate's guard invalidates or requires revalidation before reuse.
+  \item \textbf{False diagnosis.} Supply evidence consistent with two failure classes and ensure uncertainty is retained or escalated rather than silently promoted to a single cause.
+\end{itemize}
+
+\section{Product X: a worked implementation from timeout to guarded rule}
+\label{sec:ch13-productx}
+
+\BookExampleLabel{} Reuse the Product X support agent from Chapter 12. A customer has asked the system to complete a payment. The agent submits the original payment operation with a provider-supported idempotency reference. The request times out. The incident details in this section are illustrative; they are not evidence about a real payment provider.
+
+The parent task records the customer request, the original operation ID, the invariant ``do not create a second charge'', verified account information, the pending payment action, and the current parent version. The execution adapter emits an \code{ExecutionFailure} event: the request timed out, the provider operation reference is known, and the outcome certainty is unknown. The classifier returns \code{payment\_outcome\_unknown}, not \code{payment\_failed}. The distinction prevents the governor from treating a missing response as evidence that the provider did nothing.
+
+The governor opens a child recovery scope. Its capability allowlist contains read-only status lookup for the original operation and retrieval of the provider's operation metadata. It explicitly excludes new payment creation, cancellation, refund, and any mutation to customer account state. The child can assemble evidence and return a typed resolution. It cannot change the parent or issue a second payment.
+
+Three outcomes are possible:
+
+\begin{description}
+  \item[SETTLED.] The provider returns authoritative evidence that the original operation settled. The child returns the evidence reference and provider operation version. The parent validator checks that it is the same operation and that the parent version/dependencies are current. The parent records completion and does not submit another payment.
+  \item[NOT\_SETTLED.] The provider returns authoritative evidence that the original operation did not settle. The parent can now consider the permitted retry policy. The new action remains a parent-level operation subject to its ordinary approval and idempotency rules; it is not performed merely because the child found a result.
+  \item[STILL\_UNKNOWN.] The status endpoint is unavailable or returns insufficient evidence. The child returns uncertainty with the failed query details. The parent escalates or waits; it does not guess that the payment failed.
+\end{description}
+
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter13/productx-b2-recovery-example.png}{An illustrative Product X payment-timeout recovery. A read-only child checks the original operation, returns a typed status, and leaves the parent to validate and decide.}{fig:ch13-productx}
+
+The result is not yet a compiled rule. Suppose several independent incidents later exhibit the same provider-specific timeout behavior and the status query reliably distinguishes settled from not-settled outcomes. A compiler may propose a guarded recovery rule: when the provider name and API version match, the operation carries the relevant idempotency reference, the raw error is the known timeout class, and the provider's status API confirms non-settlement, return a \code{NOT\_SETTLED} resolution to the parent. The rule should not match an unknown provider, missing operation reference, changed API contract, or ambiguous status response.
+
+A counterexample makes the guard's importance clear. Suppose the status API changes its semantics and now returns a cached pre-settlement state. A rule that ignores API version or status freshness may authorize a duplicate attempt. The candidate must be disabled or invalidated when the provider contract changes. The episode may still be useful as a failure trace, but it is no longer evidence that the old rule remains correct.
+
+This example demonstrates the bridge from mechanism to practice. The failure is typed; the parent and its invariant are preserved; the child scope is bounded and read-only; the returned result is typed and evidence-backed; the parent validates before it acts; and a reusable rule is only considered when the conditions that made the resolution correct can be stated and tested.
+
+\section{Represent B2 through the seven fields}
+\label{sec:ch13-seven-fields}
+
+Chapter 10 introduced the fixed tuple
+\[
+  K = \langle S,C,T,P,F,L,R\rangle,
+\]
+where state, control, transition, persistence, failure, learning, and resources/governance are analytical fields. We use the tuple exactly as defined there; it is not a claim that each field maps to one software module.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{B2 represented through the book's seven-field mechanism vocabulary.}
+\label{tab:ch13-seven-fields}
+\begin{tabularx}{\linewidth}{@{}p{0.15\linewidth}p{0.39\linewidth}X@{}}
+\toprule
+\textbf{Field} & \textbf{Soar mechanism} & \textbf{B2 runtime hypothesis / engineering design} \\
+\midrule
+State (S) & Working-memory state, operators, preferences, substates/superstates, results and dependency information & Execution ledger, parent version, typed failure, child recovery trace, typed resolution and guarded rule candidate \\
+Control (C) & Decision procedure and production/operator-selection machinery & Recovery governor authorizes classification-driven branch creation, result acceptance and candidate promotion \\
+Transition (T) & Operator selection or typed impasse; result/dependency/context change & Failure capture, classification, branch opening, validation, parent commit, invalidation and later rule matching \\
+Persistence (P) & Child-local structures are removed; results linked to higher states remain; learned chunks persist & Child-local namespace, append-only trace, authoritative parent, versioned rule registry \\
+Failure (F) & Typed impasse, resolution, elimination and regeneration & Misdiagnosis, unresolved child, stale parent/dependency, invalid result, forbidden side effect or unsafe rule reuse \\
+Learning (L) & Chunking derives a production from a result and its supporting dependencies & Proposed guarded recovery-rule extraction and outcome validation; distinct from cross-episode reflection alone \\
+\shortstack[l]{Resources/\\governance (R)} & Report only documented Soar behavior; do not invent a resource policy & Bound local recovery operations; wider budgets, uncertainty and interruption policy remain B6's subject \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The tuple makes an important point visible. A system may expose checkpoints or branch operations under state and persistence, while leaving the transition trigger and control authority unspecified. It may classify a tool error and select a retry, while leaving parent isolation and result return unspecified. It may learn from a failed trajectory but not capture the conditions that made a specific child result valid. These are not minor implementation details; they are the differences between the component edges and the proposed B2 coupling.
+
+\section{Failure modes, safety and authority}
+\label{sec:ch13-safety}
+
+\subsection{Misdiagnosis and uncertainty collapse}
+
+A false classification can open an unsafe recovery path. Treating an unknown payment outcome as a confirmed failure is a concrete example. A classifier should preserve the original event and evidence, record its model/rule version, and return uncertainty when multiple explanations remain possible. Evaluation should measure per-type precision and recall, but it should also measure the cost of a wrong type because not all errors have equal consequences.
+
+\subsection{Parent corruption and stale dependencies}
+
+The child may accidentally mutate shared state, return a result tied to an old parent version, or ignore a dependency that changed during recovery. Namespace isolation, immutable parent views, version checks, dependency tracking and compare-and-swap commits reduce these risks. A coarse whole-state hash is easier to implement but can trigger unnecessary regeneration. A fine-grained dependency map may reduce wasted work but can itself be incomplete. Both designs must be tested against injected changes.
+
+\subsection{External side effects and duplicate execution}
+
+An internal branch cannot undo the outside world. Tools can commit effects even when the agent does not receive a response. A system must record whether an operation is read-only, idempotent, compensatable, irreversible, or of unknown semantics. For state-changing operations, idempotency keys and status verification are preferred where the external service supports them. A compensating action must be separately authorized and logged. The recovery child should default to the smallest capability set that can resolve the diagnostic question.
+
+\subsection{Unsafe compilation and rule proliferation}
+
+An incorrect diagnosis can be compiled into a persistent shortcut. A missing dependency can make the guard too broad. A tool/API change can invalidate a previously correct rule. An environment-specific repair can fail in another account or tenant. Rule candidates therefore need provenance, version constraints, tests, shadow evaluation, promotion criteria and rollback. The system also needs a way to decline compilation when evidence is insufficient. More stored rules do not necessarily mean better recovery.
+
+\subsection{Unbounded recursion and authority confusion}
+
+A child that opens a child that opens another child can recurse indefinitely. Local attempt, depth and operation limits are necessary, with escalation as a terminal outcome. These are B2-local safeguards; Chapter 16 examines wider resource allocation and interruption. Authority must also be explicit: a language model may propose what to do, but the runtime governor and policy checks must decide whether an action is allowed, and a separate committer must decide whether a returned state change is valid.
+
+\section{Evaluation: test the full coupling}
+\label{sec:ch13-evaluation}
+
+Fan and Lan specify the required B2 trace fields as failure type, parent hash, substate trace, returned resolution and compiled rule. Their primary outcomes include recovery by failure type, repeated-failure rate and transfer to later similar cases. Safety and efficiency measures include diagnosis latency, parent-state corruption and unsafe rule reuse. The rejection condition is that a simple retry baseline matches the recovery outcome or compilation causes harm. The appendix also requires matched model, prompt, tools, environment and task budget, preregistration, and ablations that remove the new state object, authoritative control edge, or learning update.\FanLanCite{Appendix D, Table X, B2; \S VI-C, B2}
+
+\subsection{Required state trace}
+
+Every evaluation episode should record the raw execution event, typed finding, parent version/hash, child scope, branch trace, capability use, dependency set, returned resolution, validation result, commit outcome, compiled candidate and any subsequent rule invocation. The fields required by the paper should remain easy to extract; the additional details are engineering instrumentation needed to explain why a result was accepted or rejected.
+
+\subsection{Baselines and comparisons}
+
+A controlled comparison should include:
+
+\begin{enumerate}
+  \item a simple retry policy;
+  \item typed diagnosis and recovery selection without a protected child state;
+  \item reversible branch/replay without typed return validation;
+  \item cross-episode reflection or hindsight learning without dependency-safe compilation;
+  \item the complete proposed B2 composition; and
+  \item human-supervised escalation for cases where the risk makes automatic recovery inappropriate.
+\end{enumerate}
+
+Each baseline isolates a control edge. It should not be falsely represented as a single named product unless the evidence supports that attribution.
+
+\subsection{Metrics}
+
+Report recovery success by failure type, repeated-failure rate, transfer to a later similar case, diagnosis latency, total recovery latency, number of recovery operations, cost, escalation precision, parent-state corruption, invariant violations, harmful rule reuse and compile candidate rejection. Define each denominator. For example, repeated-failure rate should count only cases in which a genuinely comparable later failure occurs; transfer should measure whether the compiled rule applies correctly to a held-out similar situation. A system that reduces retries by abandoning more tasks is not necessarily improving recovery.
+
+\subsection{Ablations and rejection criteria}
+
+The required ablations\index{ablation studies} separate the contribution of state, control and learning:
+
+\begin{itemize}
+  \item Remove the new parent/child state object but retain the rest of the logic. This tests whether explicit substate representation contributes beyond the controller code.
+  \item Remove the authoritative transition while retaining logs. This tests whether the runtime control edge, rather than instrumentation alone, changes behavior.
+  \item Remove the learning update while retaining immediate recovery. This separates in-episode recovery from later reuse and transfer.
+\end{itemize}
+
+Add counterfactual tests for stale parent versions, missing dependencies, duplicated events, uncertain side effects, forbidden capabilities and changed tool contracts. Pre-register the task population, experimental unit, base model and dependency versions, stochastic replications, sample size, metric formulas, equivalence/non-inferiority margin, tests or uncertainty intervals, exclusions and stopping rule. A simpler baseline matches only if it is non-inferior under the pre-registered primary margin while using no more resources. The source paper supplies this protocol as a future experiment, not completed experimental results.\FanLanCite{Appendix D; \S II-E; \S VI-C, B2}
+
+\begin{warningbox}
+Do not claim B2 works because the recovery branch returned a plausible answer or because a later task happened to succeed. The evaluation must show that the proposed state and control coupling caused the improvement, while measuring state integrity and harmful rule reuse. If the retry baseline is non-inferior, or if compilation increases harmful reuse, the B2 claim should be rejected or narrowed.
+\end{warningbox}
+
+\section{Boundaries with the neighboring bundles}
+\label{sec:ch13-boundaries}
+
+B2 depends on neighboring mechanisms without absorbing them:
+
+\begin{description}
+  \item[B1, Chapter 12.] Memory accessibility and context selection may supply facts or prior recovery evidence to a child. B1 does not define the failure trigger, protected child scope or parent return protocol.
+  \item[B3, Chapter 14.] Workspace competition may decide which recovery findings or candidate outputs receive scarce shared capacity. It is not the protocol that opens and validates a recovery substate.
+  \item[B4, Chapter 15.] Persistent intentions and reconsideration authority define the goal that recovery must preserve. Fan and Lan's dependency figure identifies B4 as a scope for recovery; this chapter does not teach the BDI mechanism in detail.
+  \item[B5, Chapter 17.] B2 may produce a reusable recovery rule, but it remains an in-episode recovery transition. B5 concerns general skill invocation and governance across tasks. Fan and Lan close B5 as a residual candidate after closest-baseline screening against GraSP.
+  \item[B6, Chapter 16.] Local recovery needs a bound and escalation path. B6 studies broader uncertainty propagation, resource allocation, interruption and stopping authority.
+\end{description}
+
+The final synthesis in Chapter 18 will examine how B1, B2, B3, B4 and B6 compose, while retaining B5 as the closed GraSP case. Fan and Lan's proposed dependencies suggest that the mechanisms should be tested compositionally rather than assumed to add value merely because their diagrams can be connected.\FanLanCite{\S VI-D; Figure 8; \S VI-E}
+
+\begin{chapterrecap}
+Soar represents unresolved operator selection as a typed impasse and opens a substate to solve the corresponding subgoal. The child has a relation to its superstate; results are linked to higher-level context; dependency tracking can regenerate a subgoal when its relevant context changes; and chunking derives procedural knowledge from results and their dependencies. Fan and Lan translate this family of ideas into B2: typed diagnosis, protected recovery, typed return and resolution compilation. A production implementation needs explicit records, authority boundaries, a guarded state machine, version/dependency checks, side-effect handling, rule validation and a measurable fallback. The complete coupling remains a falsifiable research hypothesis, not a validated standard.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review and application questions}
+\begin{enumerate}
+  \item Why is a Soar impasse not the same as a generic tool exception?
+  \item Distinguish tie, conflict, constraint-failure, and the two forms of no-change impasse.
+  \item What makes a substate different from an independent agent process or a checkpoint?
+  \item What qualifies as a Soar subgoal result, and why is it not arbitrary child text?
+  \item Explain the difference between resolving, eliminating and regenerating an impasse.
+  \item What does the Goal Dependency Set record, and why can a dependency change require regeneration?
+  \item How should the procedural-learning manual's chunk-creation timing be explained alongside the architecture chapter's resolved-impasse discussion?
+  \item Which edge does PALADIN or AgentDebugX preserve? Which edge does Shepherd preserve? What remains missing?
+  \item Design a typed resolution for a payment timeout where the settlement outcome is unknown.
+  \item Why must an accepted child result be checked against a parent version and dependency set?
+  \item What can an internal rollback undo, and what can it not undo about external side effects?
+  \item Describe a safe path from a validated recovery trace to a promoted reusable rule.
+  \item Which tests would reveal an overgeneralized recovery rule after an API version change?
+  \item Which B2 ablations separate the value of state representation, runtime control, and learning?
+  \item Why does compilation of an in-episode recovery rule not make B2 identical to B5?
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+\phantomsection
+\addcontentsline{toc}{section}{Source and example note}
+
+The historical mechanism is presented from Fan and Lan's Soar reconstruction and the Soar Architecture documentation they cite. The official Procedural Knowledge Learning manual is also consulted to state the timing of chunk creation and distinguish chunking from EBBS. The B2 residual bundle, modern baseline mappings, case-specific E/D records and experiment template are attributed to Fan and Lan. Product X, the payment-timeout sequence, the component architecture, schemas, state-machine labels, Java-like pseudocode, database/concurrency recommendations, idempotency safeguards and rule-promotion pipeline are book-created teaching or engineering proposals. They should not be mistaken for implemented functionality in Soar, PALADIN, AgentDebugX, Shepherd, AgentHER, Reflexion, or the Fan and Lan paper.
+
+\FanLanCite{\S III-A; \S V-A--V-B; \S VI-B--VI-E; Appendices C-B--C-D, D, E-B, and F-B--F-C}
+\autocite{soar2025architecture,soar2025procedural}
+
+\section*{Looking ahead}
+\phantomsection
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 14 turns from recovery of a blocked parent decision to a different competition problem: how typed content from memory, agents, tools, monitors and plans competes for limited workspace capacity, and how selected content is broadcast to downstream processing. A recovery result from B2 may become a candidate for that workspace, but workspace admission is not the same mechanism as opening, validating or compiling a recovery substate.
