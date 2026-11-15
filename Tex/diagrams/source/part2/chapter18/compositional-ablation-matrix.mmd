@@ -1,0 +1,33 @@
+flowchart TB
+  accTitle: Compositional ablation plan
+  accDescr: The evaluation includes source-required ablations of state, authoritative control, and learning. Dependency experiments compare B2 with and without B4, B3 with native retrieval versus B1 and B1 plus B6, B2 recovery-trace admission policies for GraSP, and the B4 plus B6 interaction before staged full-composition testing.
+  CORE[Three required ablation types]
+  A[Remove new state object]
+  B[Remove authority edge but keep logging]
+  C[Remove learning update but keep transition]
+  DEP[Dependency experiments]
+  D1[B2 with and without B4]
+  D2[B3: native retrieval vs B1 vs B1 plus B6]
+  D3[B2 trace admission: none vs all vs verified only]
+  D4[B4 with B6]
+  FULL[Staged and full composition]
+  CORE --> A
+  CORE --> B
+  CORE --> C
+  A --> DEP
+  B --> DEP
+  C --> DEP
+  DEP --> D1
+  DEP --> D2
+  DEP --> D3
+  DEP --> D4
+  D1 --> FULL
+  D2 --> FULL
+  D3 --> FULL
+  D4 --> FULL
+  classDef required fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.4px
+  classDef experiment fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  classDef result fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px
+  class CORE,A,B,C required
+  class DEP,D1,D2,D3,D4 experiment
+  class FULL result

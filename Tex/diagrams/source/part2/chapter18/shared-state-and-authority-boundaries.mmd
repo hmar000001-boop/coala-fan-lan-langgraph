@@ -1,0 +1,17 @@
+flowchart TB
+  accTitle: Shared runtime state and separate authority boundaries
+  accDescr: A durable state tuple contains intention, workspace, memory, skills, uncertainty, budgets, and recovery state. The language model proposes. Specialized governors authorize scoped transitions. The runtime commits a versioned change, and a separate learning operation may update a policy from an attributed outcome.
+  X[Durable shared runtime state]
+  LLM[Model or component proposal]
+  G[Owning governor]
+  T[Runtime transition and receipt]
+  O[Observed outcome]
+  U[Separate learning update]
+  X --> LLM --> G --> T --> O --> U
+  U -.-> X
+  classDef store fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px
+  classDef proposal fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  classDef control fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px
+  class X,T,O store
+  class LLM proposal
+  class G,U control

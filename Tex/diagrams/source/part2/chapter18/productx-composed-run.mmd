@@ -1,0 +1,26 @@
+flowchart TB
+  accTitle: Product X composed payment-status investigation
+  accDescr: The authorized intention establishes the payment-status goal and duplicate-charge boundary. B1 retrieves memories. B3 admits relevant evidence to a bounded workspace. B4 approves read-only reconciliation as a method. GraSP prepares the status skill. B6 reserves and authorizes the request. A typed conflict opens B2 recovery. New evidence returns to the workspace and may trigger reconsideration. The runtime stops with verified status or an honest unresolved result.
+  I[B4 Authorized intention and goal boundary]
+  M[B1 Retrieve candidate memories]
+  W[B3 Admit bounded evidence]
+  METHOD[B4 Approve read-only method]
+  SKILL[GraSP Prepare status-query skill]
+  AUTH[B6 Reserve resources and authorize]
+  ACT[Execute read-only request]
+  FAIL{Typed status conflict?}
+  REC[B2 Open bounded recovery]
+  VERIFY[Verify settlement evidence]
+  REFRESH[B3 New workspace cycle]
+  STOP[B4 and B6 Complete or unresolved stop]
+  I --> M --> W --> METHOD --> SKILL --> AUTH --> ACT --> FAIL
+  FAIL -->|Yes| REC --> VERIFY --> REFRESH --> STOP
+  FAIL -->|No| VERIFY
+  VERIFY -->|new evidence or conflict| REFRESH
+  REFRESH -->|reconsider method if needed| METHOD
+  classDef control fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px
+  classDef evidence fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px
+  classDef action fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  class I,M,W,METHOD,SKILL,AUTH,REC,STOP control
+  class VERIFY,REFRESH evidence
+  class ACT,FAIL action

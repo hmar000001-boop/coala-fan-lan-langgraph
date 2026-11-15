@@ -8,8 +8,8 @@ for required in \
   Tex/part1/chapter03/chapter.tex Tex/part1/chapter04/chapter.tex \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
-  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex Tex/part2/chapter17/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex \
+  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex Tex/part2/chapter17/chapter.tex Tex/part2/chapter18/chapter.tex \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex Tex/standalone/chapter18.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -245,7 +245,39 @@ done
 if find "$ROOT/Tex/part2/chapter17/outline" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.tex' \) | grep -q .; then
   echo "Chapter 17 outline review must be Markdown-only; found PDF or LaTeX outline artifacts." >&2; exit 1;
 fi
-grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter18/chapter.tex" || {
-  echo "Chapter 18 must remain a placeholder until Chapters 9-17 are completed and reviewed." >&2; exit 1;
+# Chapter 18 is the approved Batch 9 synthesis and must contain prose, not a placeholder.
+chapter18_outline="$ROOT/Tex/part2/chapter18/outline/Chapter_18_Outline_v1.md"
+test -s "$chapter18_outline" || { echo "Missing Chapter 18 Markdown outline: $chapter18_outline" >&2; exit 1; }
+grep -q '^\*\*Status:\*\* Approved' "$chapter18_outline" || {
+  echo "Chapter 18 outline must record author approval." >&2; exit 1;
 }
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-17 contain drafted prose; Chapters 16-17 retain one canonical Markdown-only outline each; Chapter 17 has nine accessible Mermaid sources."
+grep -q '^\*\*Prose drafting:\*\* Authorized' "$chapter18_outline" || {
+  echo "Chapter 18 outline must record drafting authorization." >&2; exit 1;
+}
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter18/chapter.tex" || {
+  echo "Chapter 18 prose source still contains a placeholder." >&2; exit 1;
+}
+grep -q '\\chapter{How the Mechanisms Work Together}' "$ROOT/Tex/part2/chapter18/chapter.tex" || {
+  echo "Chapter 18 title is missing from the LaTeX source." >&2; exit 1;
+}
+test -s "$ROOT/Tex/standalone/chapter18.tex" || { echo "Missing Chapter 18 standalone build entry." >&2; exit 1; }
+for artifact in \
+  "$ROOT/review/Chapter_18_Source_Review_v1.md" \
+  "$ROOT/review/Chapter_18_Drafting_Review_v1.md" \
+  "$ROOT/review/Batch_09_Chapter_18_Authoring_Status_v1.md"; do
+  test -s "$artifact" || { echo "Missing Chapter 18 review artifact: $artifact" >&2; exit 1; }
+done
+if find "$ROOT/Tex/part2/chapter18/outline" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.tex' \) | grep -q .; then
+  echo "Chapter 18 outline review must be Markdown-only; found PDF or LaTeX outline artifacts." >&2; exit 1;
+fi
+for diagram in five-residuals-one-closed-case shared-state-and-authority-boundaries authority-responsibility-map cross-bundle-dependencies implementation-order-and-stage-gates bounded-synthesis-runtime productx-composed-run compositional-ablation-matrix cross-bundle-state-handoffs; do
+  source="$ROOT/Tex/diagrams/source/part2/chapter18/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 18 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part2/chapter18/chapter.tex" || { echo "Chapter 18 does not reference $diagram.png" >&2; exit 1; }
+done
+for term in compositionalcontrol crossbundledependency boundedsynthesisruntime authorityboundary outcomeattribution compositionalablation partialcomposition resourcereservation; do
+  grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 18 glossary entry: $term" >&2; exit 1; }
+done
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-18 contain drafted prose; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources."

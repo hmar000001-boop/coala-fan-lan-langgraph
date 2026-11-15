@@ -63,7 +63,8 @@ for expected in \
   'Content Competition, Workspace and Broadcast: B3' \
   'Persistent Intentions, Reconsideration and Method Authority: B4' \
   'Uncertainty, Resources, Interruption and Stopping: B6' \
-  'The Closed Candidate B5 and GraSP'; do
+  'The Closed Candidate B5 and GraSP' \
+  'How the Mechanisms Work Together'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;

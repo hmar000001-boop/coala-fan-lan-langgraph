@@ -1,4 +1,782 @@
 \chapter{How the Mechanisms Work Together}
-\begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
-\end{notebox}
+\label{ch:mechanism-composition}
+
+\begin{learningbox}
+This final chapter of Part II explains how the five residual control bundles identified by Fan and Lan can be composed around an existing skill-governance capability. You will learn to distinguish shared runtime state from shared authority, reconstruct the dependencies among B1, B2, B3, B4, B6, and GraSP, design typed boundaries between them, and evaluate the composition without assuming that connected components automatically cooperate. The proposed Java-oriented contracts and Product X trace are engineering examples, not mechanisms claimed to have been implemented or validated by the source paper.
+\end{learningbox}
+
+\section{From mechanism studies to composition}\index{mechanism composition}
+\label{sec:ch18-from-mechanisms-to-composition}
+
+Part II has moved from a broad question about cognitive architectures to a much narrower question about the control semantics of individual mechanisms. Chapter~\ref{ch:activation-latency-utility} examined memory accessibility, retrieval latency, downstream value, and maintenance cost. Chapter~\ref{ch:typed-impasses-substates-compilation} examined typed failure and bounded recovery. Chapter~\ref{ch:b3-workspace} examined competition for a bounded workspace and the consequences of broadcast. Chapter~\ref{ch:persistent-intentions-b4} examined durable commitment and authority to reconsider a method without silently replacing the goal. Chapter~\ref{ch:uncertainty-resources-b6} examined uncertainty, resource allocation, interruption, and stopping. Chapter~\ref{ch:closed-b5-grasp} examined the candidate that did not remain a residual hypothesis: GraSP already composes an important skill-governance chain.
+
+These chapters do not describe six independent plug-ins. They describe mechanisms that can change one another's inputs, expose one another's failures, constrain one another's actions, and learn from outcomes produced by the wider runtime. A memory selector may return useful evidence, but that evidence still has to compete for a bounded inference workspace. A recovery process may solve a local failure, but it must preserve the intention and parent task that gave the recovery its purpose. A skill graph may be executable, but its invocation still consumes resources and may perform actions whose authorization belongs elsewhere. An interruption may be justified by risk or budget pressure, but the runtime must preserve enough state to resume or terminate correctly.
+
+A component inventory is therefore not an architecture. A drawing that connects components is not yet a control contract. To understand a composition, we must ask which state each component owns, which transition it may authorize, which evidence crosses a boundary, what remains stable during failure, and which later policy is allowed to learn from the outcome. These are the same questions that made a mechanism more informative than a feature label in Chapter~9, now applied across mechanisms rather than within one.
+
+\subsection{Five residual bundles and one closed case}\index{residual control bundles}
+\label{subsec:ch18-five-and-one}
+
+Fan and Lan's review leaves five residual bundles after closest-baseline screening. B1 concerns activation, retrieval latency, downstream action utility, and memory maintenance cost. B2 concerns typed impasse identification, a protected recovery substate, typed resolution, and safe compilation of reusable recovery knowledge. B3 concerns competition among typed content candidates, bounded workspace admission, cycle-scoped broadcast, and outcome-dependent admission learning. B4 concerns persistent intention, explicit reconsideration, and method-switch authority that remains separate from the committed goal. B6 concerns calibrated uncertainty propagating across stages to influence resource allocation, authorization, interruption, and stopping. These are residual control hypotheses, not validated components or a universal minimum architecture.\FanLanCite{\S VI-B--VI-C; Table V; Table VI}
+
+B5 must be displayed differently. The candidate proposed a chain connecting calibrated skill selection, typed execution, verification, bounded local repair, and planner fallback. GraSP already composes that chain in the reviewed corpus. Fan and Lan therefore close B5 as an E3/D4 convergence case and retain GraSP as a baseline and implementation dependency, not as a sixth residual. This closure is conditional on the paper's frozen corpus and coding; it is not a claim that every form of skill governance is solved or that GraSP transfers universally.\FanLanCite{\S II-E; \S VI-B; \S VI-C, B5; Appendix C-O; \S VII-C}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The five residual bundles and the closed B5 capability in the synthesis.}
+\label{tab:ch18-five-and-one}
+\begin{tabularx}{\linewidth}{p{1.4cm}p{3.2cm}X}
+\toprule
+\textbf{Bundle} & \textbf{Control concern} & \textbf{Role in the composition} \\
+\midrule
+B1 & Memory accessibility, latency, downstream value, and maintenance cost & Supplies memory candidates with provenance and value/cost information. \\
+B2 & Typed failure, protected recovery, typed return, and safe compilation & Solves a bounded in-episode failure while preserving the parent task. \\
+B3 & Typed-content competition, bounded workspace, broadcast, and admission learning & Decides which heterogeneous evidence becomes available to the next inference cycle. \\
+B4 & Persistent intention, reconsideration, and method authority & Preserves the authorized goal and governs whether the current method should continue or change. \\
+B6 & Propagated uncertainty, resources, authorization, interruption, and stopping & Governs risk and resource consequences across stages. \\
+B5 / GraSP & Calibrated skill routing, typed DAG execution, verification, repair, and fallback & Supplies an existing skill-governance path and mandatory comparison baseline; it is not a residual bundle. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter18/five-residuals-one-closed-case.png}{The five residual control bundles remain research hypotheses. GraSP is represented separately as the existing capability that closes the B5 candidate and participates in the proposed composition.}{fig:ch18-five-and-one}
+
+\subsection{Connected mechanisms can still conflict}
+\label{subsec:ch18-conflicts}
+
+A system can contain all of these components and still behave incoherently. Consider five conflicts. First, memory retrieval may prioritize a highly activated record that is too costly or stale for the current task; workspace admission must still decide whether the item belongs in the next reasoning cycle. Second, a recovery generator may propose a repair that changes the parent objective; the recovery component cannot infer permission to change the intention from the fact that its subtask failed. Third, workspace broadcast can make a proposed tool call visible to the model, but visibility is not permission to execute it. Fourth, a skill graph may pass its local preconditions while its invocation violates a global deadline, risk threshold, or external-action policy. Fifth, a local subsystem may report completion while the parent intention remains unresolved.
+
+There is also a learning conflict. If a composed runtime records only that the task succeeded, it may update the memory selector, workspace admission policy, skill library, or method policy without knowing which admitted evidence or authorized action caused the result. A correct system needs evidence of the path taken, not merely a final scalar reward. The question for the remainder of the chapter is therefore not how to connect every box to every other box. It is how to preserve the necessary dependencies while limiting authority, state mutation, and learning to the boundary where each is justified.
+
+\section{A common runtime state, not a common authority}\index{shared runtime state}
+\label{sec:ch18-common-runtime-state}
+
+\subsection{The seven-field lens remains analytical}
+\label{subsec:ch18-seven-field-lens}
+
+Chapter~10 introduced Fan and Lan's seven-field representation: operative state substrate, control locus, transition trigger, persistence boundary, failure semantics, learning operator, and resource/governance policy. The representation helps us compare mechanisms. It is not a sequence of seven software stages, and it does not require that every runtime expose every field in a fully populated record. Unknown or undocumented fields must remain unknown rather than being supplied from an architecture's name.
+
+At the composition boundary, the seven fields become a checklist. A message that carries state but not the authority that produced it is incomplete for a control decision. A transition that does not identify its trigger cannot be distinguished from a model suggestion. A recovery result without a parent version cannot safely be applied after the parent has changed. An outcome without attribution cannot justify a learning update. This is the purpose of \gls{outcomeattribution}. A budget value without its scope and accounting unit cannot be compared with another subsystem's limit.
+
+\subsection{Fan and Lan's shared state representation}
+\label{subsec:ch18-shared-state-representation}
+
+The source expresses its bounded synthesis runtime using a durable state tuple:
+
+\[
+ x_t = \langle i_t, w_t, m_t, s_t, u_t, b_t, q_t \rangle,
+\]
+
+where \(i_t\) is the active intention, \(w_t\) is bounded workspace content, \(m_t\) is memory state, \(s_t\) is the compiled-skill state, \(u_t\) is uncertainty, \(b_t\) is the resource budget, and \(q_t\) is the active failure or recovery substate. The tuple identifies shared state that a synthesis runtime must make available across control decisions. It is not a production database schema, does not define a mandatory persistence technology, and does not imply that each mechanism owns or may mutate every element.\FanLanCite{\S VI-A; Fig. 9}
+
+This distinction matters. A shared reference to the active intention does not transfer goal authority to the memory selector. A workspace snapshot can contain a recovery result without owning the recovery branch. The scheduler can inspect the method selected by B4 without changing the committed goal. A skill executor can consume an authorized invocation without obtaining permission to change the principal's objective. The runtime needs common identity and version references, but each subsystem must retain its own authoritative object and decision boundary.
+
+\subsection{Proposal, authorization, transition, and learning}
+\label{subsec:ch18-proposal-authorization-transition-learning}
+
+Fan and Lan distinguish a model-generated proposal from the governor's authorized transition. Their compact description can be written as:
+
+\[
+ p_t = \operatorname{LLM}(w_t,i_t,q_t), \qquad
+ a_t = G(x_t,p_t),
+\]
+\[
+ x_{t+1}=T(x_t,a_t,o_{t+1}), \qquad
+ \theta_{t+1}=L(\theta_t,x_t,a_t,o_{t+1}).
+\]
+
+The language model proposes or interprets using the context supplied to it. An external governor evaluates the proposal against current state and authority. The runtime then commits an allowed transition using an observation. A later learning operation changes a policy only when the outcome is actually used to update a governor, admission policy, memory policy, or skill-invocation policy. Merely storing a transcript or reflection does not establish that future control has changed.\FanLanCite{\S VI-A}
+
+The source equation is a compact analytical model, not a complete API signature. In a real implementation, the proposal may be produced by a tool, a deterministic subsystem, a human operator, or the model; the relevant authority is determined by the requested transition, not by the identity of the proposer. The key invariant remains: a proposal is data; an authorization is a decision; a transition is a committed state change; and a learning update is a separate operation with its own evidence and version.
+
+\begin{warningbox}
+A composite runtime must not treat \texttt{proposal}, \texttt{selected}, \texttt{authorized}, \texttt{dispatched}, \texttt{completed}, and \texttt{learned} as synonyms. A tool call can be authorized but fail during dispatch. A skill node can execute but fail verification. A task can stop without satisfying its goal. A successful episode can be recorded without changing any future policy. Each state needs an explicit receipt.
+\end{warningbox}
+
+\subsection{A typed handoff across the seven fields}
+\label{subsec:ch18-typed-handoff}
+
+The book-level contracts developed later in this chapter use a common envelope containing a task identifier, event identifier, producer, intended consumer, schema version, causal parent, observed state version, and evidence references. The payload remains specific to the mechanism. A B1 memory candidate carries provenance, validity, activation or value estimates, predicted retrieval latency, and maintenance cost. A B3 workspace decision identifies the admitted cycle snapshot, rejected alternatives, capacity use, and recipients. A B2 failure event records a failure type, parent-state version, and recovery scope. A B2 resolution carries its result type, evidence, dependencies, postconditions, and side-effect history. A B4 decision identifies the goal and method versions, reconsideration trigger, and authority basis. A B6 resource decision contains reservations and uncertainty references. A GraSP execution receipt identifies the skill graph version, node checks, repair history, and fallback route.
+
+These examples do not come from a shared schema in Fan and Lan. They are an engineering proposal for ensuring that the seven analytical fields remain inspectable when one subsystem hands information to another. A receiver should be able to answer: what is this object, who created it, what state was it based on, what is it permitted to influence, and what evidence would make it stale?
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter18/shared-state-and-authority-boundaries.png}{A shared runtime state is exposed through stable references and snapshots, while each mechanism retains its own authoritative decision object. The model proposes; the relevant governor authorizes; the runtime commits; and a separate learning operation may update future policy.}{fig:ch18-shared-state-authority}
+
+\subsection{Why D3 and D4 do not compose automatically}\index{migration depth!D3 and D4}
+\label{subsec:ch18-d3-d4-composition}
+
+The source's E and D axes remain independent and case-specific. E describes the evidence relation between a modern mechanism and a historical mechanism. D describes implementation depth for the particular preserved mechanism edge. A D4 memory policy does not make B1 complete, because the residual is the activation--latency--downstream-action-utility coupling. A D4 learning result in one system does not give the composite runtime a D4 code. Nor does GraSP's E3/D4 result establish documented ICARUS lineage or validate the other residual bundles.
+
+At the system level, the right question is which specific edge is preserved, which remains absent, and whether the composite experiment demonstrates a new causal relationship. The book will not assign the composite runtime a single E/D label. The code of one component cannot be promoted to a system-level property merely because the component is present.\FanLanCite{\S II-D; § VI-A; Appendix B; Appendix F}
+
+\section{Responsibilities and authority boundaries}\index{authority boundaries}
+\label{sec:ch18-authority-boundaries}
+
+\subsection{Composition matrix}
+\label{subsec:ch18-composition-matrix}
+
+The following matrix is a book-level synthesis of the responsibilities described in the preceding mechanism chapters. It is deliberately conservative: each subsystem owns a narrow decision, and the runtime coordinator is not an unrestricted meta-controller.
+
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{P{1.8cm}P{2.5cm}P{3.2cm}P{4.75cm}}
+\caption{Proposed responsibilities and authority boundaries in the composite runtime.}\label{tab:ch18-authority-matrix}\\
+\toprule
+\textbf{Owner} & \textbf{Authoritative object} & \textbf{Decision it owns} & \textbf{Important non-authority} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Owner} & \textbf{Authoritative object} & \textbf{Decision it owns} & \textbf{Important non-authority} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{\small Continued on the next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+B1 & Memory record and memory-policy version & Which memory candidates are accessible or retained under the memory objective and cost model & Does not decide workspace broadcast or tool execution \\
+B2 & Failure record and recovery branch & Whether a typed failure opens a bounded child recovery process and whether its result is valid to return & Cannot change the parent goal or promote every trace into a skill \\
+B3 & Workspace cycle and admission policy & Which typed content enters the bounded inference workspace and who receives the broadcast & Does not authorize external actions or own memory persistence \\
+B4 & Intention and method version & Whether to continue, reconsider, delegate, suspend, abandon, or change the method within the authorized goal & Cannot silently amend the principal's goal or override B6 permissions \\
+B6 & Uncertainty lineage and resource/authorization ledger & Risk-sensitive budget allocation, tool authorization, verification, preemption, interruption, and stopping constraints & Does not choose the task goal or replace local mechanism semantics \\
+GraSP & Skill library, graph, and node execution records & Whether a retrieved skill graph is applicable, how nodes execute, verify, repair, and escalate & Does not own the goal, global resource budget, or principal authorization \\
+Coord. & Event identity, version checks, transaction and routing metadata & Whether a proposed transition is structurally admissible and can be committed under the owning governors' decisions & Does not replace the policy decisions of B1--B6 or GraSP \\
+\end{longtable}
+\endgroup
+
+\subsection{B1 accessibility is not B3 admission}
+\label{subsec:ch18-b1-versus-b3}
+
+B1 makes memory items accessible according to its own retrieval and memory-value logic. B3 operates later or at a different boundary: it receives heterogeneous candidates and decides which information should occupy a limited shared workspace for a particular inference cycle. The candidate types may include memories, tool observations, agent proposals, monitors, partial plans, and verified recovery results. A memory item can be accessible yet lose workspace competition. A workspace can admit an observation that is not a persistent memory. The selector for memory accessibility and the selector for shared content capacity therefore have different domains, triggers, state, and falsifiers.\FanLanCite{Table V; § VI-C, B1 and B3}
+
+\subsection{B2 recovery owns a child problem, not the parent goal}
+\label{subsec:ch18-b2-parent-boundary}
+
+B2's recovery branch is scoped by the failure and the parent state. Its job is to investigate a typed impasse and return a resolution whose assumptions and dependencies remain valid. B4 supplies the intention boundary that states what the parent task is still trying to achieve. The recovery process may recommend a different local procedure, but it cannot infer that the principal's goal should change. If the goal itself becomes impossible or irrelevant, that is an intention-level decision, not a side effect of a failed recovery attempt.
+
+\subsection{B3 broadcast is not execution permission}
+\label{subsec:ch18-b3-not-permission}
+
+Broadcast makes selected content available to downstream consumers for a bounded cycle. It does not authorize the action described by that content. A workspace may contain a proposed refund, a payment retry, or a destructive database operation because the content is relevant to reasoning. The action still needs the appropriate authorization and resource checks. This distinction prevents a shared workspace from becoming an ambient capability system.
+
+\subsection{B4 owns the goal boundary; B6 owns risk and resource constraints}
+\label{subsec:ch18-b4-b6-boundary}
+
+B4 decides whether the active intention remains valid and whether the method should continue, change, delegate, suspend, or terminate under its continuation and reconsideration conditions. B6 evaluates the uncertainty and resource consequences of proposed actions and controls permission, reservations, preemption, interruption, verification allocation, and stopping constraints. B6 may veto an action that violates a risk or resource policy, but it does not silently rewrite the goal. B4 may choose a different method, but it cannot compel an unauthorized external action or exceed a hard resource limit.
+
+This separation is important when a task is expensive but still valuable. B4 may continue to regard the goal as valid; B6 may conclude that the remaining deadline or risk budget does not permit the current route. The resulting decision can be to suspend, ask for human input, delegate, or report an unresolved state. It need not pretend that the goal has become impossible merely because one resource reservation was denied.
+
+\subsection{GraSP is a governed execution path, not a global governor}
+\label{subsec:ch18-grasp-boundary}
+
+GraSP provides skill retrieval, typed graph compilation, node-level precondition and postcondition verification, bounded local repair, and global planner or ReAct fallback. Its controls govern the skill path described in Chapter~\ref{ch:closed-b5-grasp}. In a composite runtime, B4 supplies the goal and method scope, while B6 constrains the resource and action permission envelope. B2 can contribute an eligible recovery resolution to a future skill-library candidate, but that proposal requires its own validation and promotion process. The fact that a skill is verified for its local contract does not mean it is safe for every goal, every user, every environment, or every external-action permission.
+
+\subsection{A coordinator preserves boundaries rather than replacing governors}
+\label{subsec:ch18-coordinator}
+
+A coordinator is useful for routing events, checking identifiers and versions, deduplicating messages, and committing a transaction after the relevant authorities have approved it. It should not become a single object that decides all memory, workspace, recovery, goal, method, tool, skill, and stopping policy. A coordinator can reject a stale or structurally invalid transition; it should not overrule a B4 goal decision or reinterpret a B6 risk threshold. The safest design is a small protocol coordinator surrounded by specialized governors whose decisions remain attributable.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter18/authority-responsibility-map.png}{The responsibility map assigns one narrow decision to each mechanism and shows the coordinator as a transaction and routing boundary, not as a universal policy owner.}{fig:ch18-authority-map}
+
+\section{Cross-bundle dependencies}\index{cross-bundle dependencies}
+\label{sec:ch18-cross-bundle-dependencies}
+
+Fan and Lan explicitly state that the residual bundles are not independent plug-ins. Their Figure~8 identifies dependencies among the five residuals and the migrated B5 skill governor. The synthesis must preserve those particular relationships instead of replacing them with a generic fully connected diagram.\FanLanCite{\S VI-D; Fig. 8}
+
+\subsection{B4 scopes B2 recovery}
+\label{subsec:ch18-b4-scopes-b2}
+
+When an execution step fails, B2 needs a parent objective and a stable parent-state reference. Without that boundary, the recovery process may solve a different problem from the one the principal authorized. B4 provides the commitment boundary: the goal remains stable while the local method or recovery procedure is investigated. B2 then controls how the failure is classified, how the child branch is opened, and what typed result may return.
+
+A useful test compares the same typed recovery mechanism with and without the B4 intention boundary. The expected difference is not simply more successful retries. The experiment should measure whether the recovered parent still pursues the same authorized goal, whether its state remains intact, whether the recovery resolves the diagnosed failure, and what additional latency or resource cost the intention check introduces. If B4 does not alter the recovery scope or protect the objective, the dependency may not justify its extra state.
+
+\subsection{B2 may supply verified resolutions to a GraSP-like governor}
+\label{subsec:ch18-b2-to-grasp}
+
+A resolution that solves one recovery episode is not automatically a reusable skill. Three levels must remain distinct. A local resolution completes a bounded episode. A reusable recovery rule is compiled only when the failure type, dependency conditions, result type, and postconditions define where the resolution applies. A generally invocable skill then needs the governance provided by a skill library and graph runtime, including retrieval, typed DAG validation, node verification, bounded repair, and fallback.
+
+The proposed trace-admission experiment compares three policies: admit no B2 traces; admit every apparently successful trace; or admit only typed, independently verified resolutions with explicit applicability conditions. The middle policy is intentionally unsafe as a baseline: a positive local outcome may depend on hidden parent state, transient environment conditions, or a lucky execution path. The third policy tests whether explicit recovery scope and verification improve reuse precision. The experiment is a \gls{compositionalablation} because it isolates the admission edge while leaving the local recovery procedure intact. This is an extension experiment around GraSP, not a claim that the GraSP paper itself admitted B2-derived traces.\FanLanCite{\S VI-D; Appendix D}
+
+\subsection{B1 and migrated skills supply candidates to B3}
+\label{subsec:ch18-supply-b3}
+
+B1 supplies memory candidates, and a skill library can supply candidate procedures or skill results. These are instances of \gls{crossbundledependency}, not evidence that the two selectors share one policy. B3's candidate domain is broader: it can include tool observations, monitor alerts, partial plans, agents, memory evidence, and verified recovery results. B3 decides what becomes part of the bounded shared workspace. A skill invocation is not the same as a broadcast decision, just as memory accessibility is not the same as workspace admission.
+
+The dependency is useful because the workspace sees a richer candidate set than either B1 or a skill library can govern alone. It is also risky: a candidate that is repeatedly useful may crowd out rare but decisive evidence. The B3 policy must retain candidate type, provenance, confidence, urgency, interference, and downstream use where those features are relevant to the task. The system should record both admitted and rejected candidates so that suppression can be measured.
+
+\subsection{Workspace evidence can trigger B4 reconsideration}
+\label{subsec:ch18-workspace-triggers-reconsideration}
+
+A broadcast cycle may reveal that the active method is failing, that an environmental constraint has changed, that the goal may already be satisfied, or that a previous assumption no longer holds. Such evidence can trigger reconsideration. B3 does not own the intention and does not select the replacement method. It publishes an evidence packet; B4 evaluates it under the intention's continuation and reconsideration conditions and authorizes any change in method or commitment status.
+
+This is a feedback relationship, not a one-way pipeline. A B4 method change can create new evidence requirements, which create new candidates for B3. The runtime must associate each workspace cycle with the intention and method version to which it belongs; otherwise, stale evidence can be admitted into a new plan without an explicit relevance decision.
+
+\subsection{B6 governs risk and resources across the other controls}
+\label{subsec:ch18-b6-crosscutting}
+
+B6 spans the other mechanisms because memory retrieval, workspace admission, recovery attempts, skill invocation, verification, and external tool use all have resource and risk consequences. This does not mean that every local limit should be merged into one scalar budget. A workspace has a capacity limit; B2 has a recovery-attempt or recursion bound; GraSP has a local repair budget; a tool may have a rate limit; and the whole task may have a deadline or monetary/API budget. These constraints interact, but they have different units, owners, replenishment rules, and failure semantics.
+
+A proposed runtime-wide ledger can use a \gls{resourcereservation} to reserve global resources while respecting local ceilings. It should not subtract a local attempt counter twice from the global budget unless the accounting rule explicitly says that both represent distinct consumed resources. Nor should a workspace token ceiling be interpreted as a tool-call quota. Risk is also not just another additive currency: a risk policy may impose a hard threshold, require verification, or forbid an action even when resources remain. B6 is the cross-stage control relationship among uncertainty, resources, and action authority, not a license to collapse every policy into one number.\FanLanCite{\S VI-C, B6; \S VI-D; Appendix D}
+
+\subsection{A dependency graph is not an execution sequence}
+\label{subsec:ch18-dependency-not-sequence}
+
+Figure~8 describes which controls depend on the state, authority, or evidence supplied by another control. It does not prescribe that every task must execute B1, then B3, then B4, then B2, then GraSP, and finally B6. A short task may not need persistent intention. A high-risk operation may require B6 authorization before any skill dispatch. A new observation may reopen workspace competition after a method switch. A recovery result may be considered for skill promotion after the current episode has ended, not during its execution.
+
+The system is iterative. The order in which the runtime evaluates a dependency can change with the event and the active task. What must remain fixed is the authority rule: each transition is committed by the relevant owner, using the versions and evidence that were valid when the decision was made.
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter18/cross-bundle-dependencies.png}{The dependency graph reconstructs the five relationships identified in Fan and Lan's Figure 8: intention scopes recovery, verified recovery can feed skill governance, memory and skills supply workspace candidates, workspace evidence can trigger reconsideration, and B6 governs risk and resources across the controls.}{fig:ch18-dependencies}
+
+\section{From dependencies to a safe implementation order}\index{implementation order}
+\label{sec:ch18-implementation-order}
+
+A dependency graph describes the relationships a running system must preserve. An implementation sequence describes which parts should be built first so later behavior can be observed and audited. Fan and Lan recommend externalizing intention, uncertainty, budgets, and recovery state before adding more adaptive behavior; typed failure and bounded content admission follow; adaptive memory and compiled-skill policies can then be added when outcome attribution is available. They specifically warn that automatic skill compilation before state and failure boundaries are explicit can create shortcuts whose conditions cannot be audited.\FanLanCite{\S VI-D}
+
+\subsection{First, externalize authoritative state}
+\label{subsec:ch18-externalize-state}
+
+The first milestone is not an elaborate scheduler or learning policy. It is a durable record of the state that must survive beyond one prompt or model call: active intention and goal/method versions; resource budgets and reservations; uncertainty provenance and calibration version; parent-state and recovery identifiers; action and evidence history; and versioned skill references. The purpose is to make authority and causal history observable before an adaptive policy is allowed to change future decisions.
+
+The minimum acceptance tests should include a restart between proposal and authorization, a concurrent update to the intention, a budget reservation racing with another request, and a recovery result arriving after its parent has changed. In each case the system should either commit against the expected version or reject the stale decision without corrupting the parent task.
+
+\subsection{Next, add typed failure and bounded content admission}
+\label{subsec:ch18-typed-failure-and-workspace}
+
+Once durable state and authority references exist, implement B2 typed failure and bounded recovery, then B3 workspace capacity, admission, and broadcast. These controls create observable transitions: a failure is classified and a child state opened; candidates compete; a workspace snapshot is created; and downstream consumers acknowledge what they received. A recovery substate and workspace cycle are different scopes. The first protects parent problem solving; the second governs shared inference context.
+
+Acceptance tests should verify parent-state integrity, typed resolution, bounded recursion, workspace capacity, consumer receipts, rare-evidence retention, and the behavior of late events. A workspace admission policy must not silently increase the number of external actions that a skill or tool can execute.
+
+\subsection{Then add adaptive memory and compiled-skill policies}
+\label{subsec:ch18-adaptive-memory-and-skills}
+
+B1 learning and skill-library adaptation should follow after the system can attribute outcomes to evidence, authorized actions, recovery decisions, and verification results. Otherwise, the runtime cannot tell whether a successful task was caused by a retrieved memory, a workspace admission, a recovery action, a skill invocation, or an external event. The first learned policies should therefore be narrow and reversible, with explicit provenance, versioning, evaluation windows, and rollback conditions.
+
+GraSP should be integrated as an already capable baseline. Rebuilding its chain under a new name would neither improve the composition nor test one of the remaining residuals. The experiment should begin by invoking and instrumenting the existing skill-governance path, then add only those interactions justified by the dependency graph.
+
+\subsection{Finally, integrate B6 across the lifecycle}
+\label{subsec:ch18-integrate-b6}
+
+The uncertainty and resource controller must consume evidence across stages rather than receiving one score at the final tool boundary. A candidate memory may need a cheap retrieval before expensive verification. A workspace may need to retain a rare high-risk signal despite lower relevance. A recovery branch may receive a bounded retry budget but no permission to repeat a charge. A skill graph may need a reservation for an irreversible operation and an additional verification budget. A deadline may require interruption of low-value work while preserving enough state to resume or report an unresolved result.
+
+The interruption protocol must coordinate with B2's child state, B4's intention lifecycle, and GraSP's node execution. A cancelled task must not appear as a verified skill failure if cancellation was caused by a parent-level budget decision. A resumed task must not reuse a stale authorization token or commit a result derived from an old goal or environment version.
+
+\subsection{Stage gates and dependency-aware roadmap}
+\label{subsec:ch18-stage-gates}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{A proposed implementation order derived from the source's dependencies.}
+\label{tab:ch18-stage-gates}
+\begin{tabularx}{\linewidth}{p{1.0cm}p{3.2cm}X}
+\toprule
+\textbf{Stage} & \textbf{Primary work} & \textbf{Gate before proceeding} \\
+\midrule
+1 & Externalize intention, uncertainty, budgets, recovery identity, evidence, action history, and skill versions & Restart, concurrency, stale-version, and authority-boundary tests pass \\
+2 & Add typed recovery and bounded workspace/broadcast & Parent integrity, typed return, capacity, candidate provenance, and consumer-receipt tests pass \\
+3 & Integrate existing GraSP and add eligibility rules for reusable B2 resolutions & Skill graph verification, bounded repair/fallback, safe promotion, and rollback tests pass \\
+4 & Add adaptive memory and outcome-attributed policy updates & Counterfactual and delayed-outcome tests show updates are attributed to the correct policy \\
+5 & Integrate cross-stage uncertainty, resource reservations, interruption, and stopping & Risk, budget, cancellation, resume, and correct-stop tests pass across subsystem boundaries \\
+6 & Evaluate staged and full composition & Preregistered comparisons show whether each dependency adds value over simpler baselines \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+This sequence is a proposed engineering roadmap. It elaborates Fan and Lan's ordering but is not a build plan prescribed by their paper. A project may iterate between stages; the acceptance gates are intended to prevent hidden state and unverified learning from being introduced faster than the runtime can audit them.
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter18/implementation-order-and-stage-gates.png}{The proposed implementation order externalizes authoritative state first, adds typed recovery and bounded content admission next, and introduces adaptive memory, skill policies, and cross-stage resource control only after their evidence can be attributed.}{fig:ch18-implementation-order}
+
+\section{The \gls{boundedsynthesisruntime}}\index{bounded synthesis runtime}
+\label{sec:ch18-bounded-synthesis-runtime}
+
+\subsection{Reconstructing the source model}
+\label{subsec:ch18-reconstructing-fig9}
+
+Fan and Lan's Figure~9 describes a bounded synthesis runtime in which the language model has proposal and interpretation authority while durable control state remains outside one model call. Memory and skills propose candidates. Workspace admission limits what enters the next inference context. A scheduler governs external actions. Typed failure creates a recovery state. Learning can update admission, memory, skills, and governance evidence. The source presents this as a synthesis runtime for testing the residual bundles around an existing GraSP-like skill governor; it does not claim that the full composition has been empirically validated.\FanLanCite{\S VI-E; Fig. 9}
+
+The figure should be read as a control architecture, not as a set of independent boxes wired together. The durable state carries references and constraints. Proposals flow from models and candidate-producing subsystems. Governors decide whether a transition is permitted. Execution emits observations and receipts. Learning consumes attributable outcomes and changes future selection. Solid paths in the source figure represent execution and learning; dashed paths represent control authority. That distinction is more important than the visual placement of a component.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter18/bounded-synthesis-runtime.png}{A source-faithful view of the bounded synthesis runtime: durable state remains outside model calls; memory and skills propose candidates; workspace admission bounds inference context; the scheduler governs external actions; typed failure creates recovery state; and attributed outcomes may update later policies.}{fig:ch18-bounded-runtime}
+
+\subsection{A four-plane teaching view}
+\label{subsec:ch18-four-planes}
+
+For implementation teaching, the source figure can be reorganized into four explanatory planes. This is a book-level diagramming choice, not a four-layer architecture proposed by Fan and Lan.
+
+The \textbf{durable intent and evidence plane} contains intention references, memory records, uncertainty lineage, resource reservations, recovery identity, action history, and versioned skill metadata. These objects survive individual model calls and support audit. The \textbf{candidate and workspace plane} receives memory, skill, tool, monitor, plan, and agent candidates. It performs typed competition and constructs a bounded workspace snapshot for a specific inference cycle. The \textbf{execution and recovery plane} carries out authorized skill graphs and tool actions, verifies outcomes, opens bounded recovery branches, and returns typed resolutions. The \textbf{governance plane} contains specialized decision authorities: B4 for intention and method decisions, B6 for uncertainty/resource and action permission, plus the local authorities of B1, B2, B3, and GraSP. A small coordinator handles routing, version checks, and transaction sequencing without replacing those authorities.
+
+The planes are explanatory boundaries, not mandatory deployment units. A small local runtime may deploy them in one process. A larger runtime may separate them into services or actors. The architecture is defined by the control contracts and state boundaries, not by the number of executables.
+
+\subsection{Avoid one shared mutable object}
+\label{subsec:ch18-no-shared-mutable-object}
+
+A tempting implementation is to create one large mutable `AgentState` object and let every component update whichever fields it needs. This is simple at first and difficult to reason about under concurrency. It gives every component ambient mutation authority; makes it unclear which version a proposal observed; and permits a recovery process to update the parent intention or a memory learner to alter workspace state without an explicit transition.
+
+A safer design uses one stable runtime identity and a set of independently versioned authoritative aggregates. The intention store owns the intention version. The memory store owns memory records and its policy version. The workspace manager owns the current cycle snapshot. The recovery manager owns child branch state. The skill library owns graph and skill versions. The resource ledger owns reservations and accounting. The action ledger records dispatch and outcome evidence. Components exchange references, immutable snapshots, and typed events. A commit includes the expected version of every aggregate it intends to change.
+
+This is an engineering proposal. The source calls for explicit shared state and governance; it does not prescribe a particular database, event bus, aggregate boundary, or consistency model.\FanLanCite{\S VI-A; \S VI-E}
+
+\subsection{The proposal-and-commit protocol}
+\label{subsec:ch18-proposal-commit}
+
+A cross-bundle operation should follow a recognizable protocol. A proposer emits an intent-bearing request that states what it wants to change and why. The relevant governor checks its own authority, current evidence, expected versions, constraints, and resource requirements. If several authorities are involved, each returns a scoped decision rather than one ambiguous approval. The coordinator then attempts an atomic commit of the permitted transition. Only after a committed operation is dispatched does the runtime record an external effect. An observation is attached to the action and verified against the expected postcondition. A later learning update is submitted only with the outcome and the policy version that made the decision.
+
+\begin{enumerate}
+  \item \textbf{Proposed:} a component requests a specific transition and supplies its evidence references.
+  \item \textbf{Authorized:} the owning governor accepts, denies, or defers the request within its scope.
+  \item \textbf{Committed:} the runtime updates the relevant versioned state using optimistic concurrency or a transaction.
+  \item \textbf{Dispatched:} an external operation is sent only after required permissions and reservations are current.
+  \item \textbf{Observed:} the runtime records the response, timeout, cancellation, or ambiguous outcome.
+  \item \textbf{Verified:} a verifier establishes the expected result or returns an unresolved/failed state.
+  \item \textbf{Learned:} an attributable outcome may update a policy under a separate versioned operation.
+\end{enumerate}
+
+A denial is not an exception to be silently retried. A deferred decision may request more evidence or human input. A committed authorization does not guarantee that an external service completed the action. A timeout after dispatch creates an ambiguous external outcome, not proof of failure. The runtime must preserve that distinction to prevent duplicate actions.
+
+\section{Cross-bundle contracts and a Java-oriented architecture}\index{typed event envelope}
+\label{sec:ch18-cross-bundle-contracts}
+
+The implementation bridge is intentionally about composition. The previous chapters have already described the internal contracts of memory, recovery, workspace, intention, uncertainty, and GraSP. This section defines the narrower information and authority boundaries needed for them to cooperate. Every type and interface below is a book-level engineering proposal.
+
+\subsection{Runtime identity and version references}
+\label{subsec:ch18-runtime-identity}
+
+An event envelope should identify the task, episode, intention, workspace cycle, and causal parent where applicable. It should also record the producer, target consumer, event type, schema version, correlation identifier, idempotency key, creation time, expected aggregate versions, and evidence references. The envelope should be immutable after publication. Payload types should be versioned independently so that a schema update cannot silently reinterpret older recovery or authorization events.
+
+The runtime-wide identity answers which task and causal sequence the event belongs to. Aggregate versions answer which authoritative state the event was based on. They are different. A task may stay the same while its intention changes; an intention may remain active while its method changes; a workspace cycle may advance without changing the parent goal; and a recovery branch may close while the episode continues.
+
+\subsection{Illustrative Java-like contracts}
+\label{subsec:ch18-java-contracts}
+
+The following types show how the boundaries could be represented in Java. They are not copied from Fan and Lan or from a single runtime framework. The important feature is not the exact class names. It is that every decision is typed, scoped, versioned, and attributable.
+
+\begin{lstlisting}[language=Java,caption={A common event envelope and version reference}]
+record VersionRef(String aggregateId, long version) {}
+
+record EvidenceRef(
+    String evidenceId,
+    String kind,
+    String contentHash,
+    String sourceId
+) {}
+
+record EventEnvelope<T>(
+    String taskId,
+    String episodeId,
+    String eventId,
+    String correlationId,
+    String idempotencyKey,
+    String producer,
+    String consumer,
+    int schemaVersion,
+    Instant occurredAt,
+    List<VersionRef> observedVersions,
+    List<EvidenceRef> evidence,
+    T payload
+) {}
+\end{lstlisting}
+
+A proposal should say what it wants to do; it should not be represented as an already authorized command. A scoped decision records the responsible authority, decision kind, reason, constraints, and state version. The transition receipt is emitted only after the runtime commits the state change.
+
+\begin{lstlisting}[language=Java,caption={Proposal, scoped governor decision, and committed receipt}]
+sealed interface Decision<T> permits Permit, Deny, Defer {}
+
+record Permit<T>(
+    T authorizedValue,
+    String authorityId,
+    String policyVersion,
+    Instant expiresAt,
+    List<String> conditions
+) implements Decision<T> {}
+
+record Deny<T>(String authorityId, String reason)
+    implements Decision<T> {}
+
+record Defer<T>(String authorityId, String missingEvidence)
+    implements Decision<T> {}
+
+record TransitionReceipt(
+    String transitionId,
+    String taskId,
+    String transitionType,
+    List<VersionRef> before,
+    List<VersionRef> after,
+    String authorityDecisionId,
+    String outcomeStatus
+) {}
+\end{lstlisting}
+
+The proposal may be model-generated, but the `Permit` must be created by the governor that owns the decision. The `expiresAt` field prevents a long-lived approval from being reused after its assumptions become stale. The runtime should also validate that the policy version and observed aggregate versions still match at commit time.
+
+\subsection{Separate decision ports}
+\label{subsec:ch18-separate-decision-ports}
+
+An implementation can expose a small interface for each authority rather than routing everything through one general-purpose agent controller:
+
+\begin{lstlisting}[language=Java,caption={Illustrative composition ports}]
+interface IntentionGovernor {
+    Decision<IntentionAction> evaluate(
+        IntentionSnapshot intention,
+        MethodProposal proposal,
+        EvidencePacket evidence);
+}
+
+interface RecoveryGovernor {
+    Decision<RecoveryCommand> evaluate(
+        FailureRecord failure,
+        ParentSnapshot parent,
+        RecoveryProposal proposal);
+}
+
+interface WorkspaceGovernor {
+    Decision<WorkspaceSnapshot> admit(
+        WorkspaceCycle cycle,
+        List<ContentCandidate> candidates);
+}
+
+interface ResourceGovernor {
+    Decision<ResourceReservation> reserve(
+        ResourceRequest request,
+        UncertaintySnapshot uncertainty,
+        ActionDescriptor action);
+}
+
+interface SkillGovernor {
+    Decision<SkillInvocation> prepare(
+        SkillGraphRef graph,
+        TaskContract task,
+        ResourceReservation reservation);
+}
+\end{lstlisting}
+
+The interfaces are deliberately not symmetric. The workspace governor admits content, not actions. The intention governor decides whether a goal/method transition is allowed, not whether a tool operation is safe. The resource governor authorizes a resource and action envelope, not a new goal. The skill governor verifies applicability and execution state within a task contract, not the principal's broader intention. The recovery governor controls a child branch, not the parent task objective.
+
+\subsection{Contract invariants}
+\label{subsec:ch18-contract-invariants}
+
+A compositional runtime should enforce invariants that span more than one component:
+
+\begin{enumerate}
+  \item \textbf{Goal identity:} a recovery branch and skill invocation inherit the authorized goal reference; only the intention authority can commit a goal amendment.
+  \item \textbf{Method versioning:} a workspace snapshot identifies the method version for which its evidence was assembled; a method change invalidates or re-evaluates dependent candidates.
+  \item \textbf{Parent integrity:} a B2 result can return only against the parent version and dependency conditions from which it was derived.
+  \item \textbf{Action permission:} workspace visibility, memory retrieval, and skill applicability do not substitute for B6 authorization of an external action.
+  \item \textbf{Resource reservation:} every dispatch that consumes a governed resource references an active reservation or an explicit exemption.
+  \item \textbf{Verification separation:} execution completion is not verified completion; a skill node cannot advance its downstream state edge until its required postcondition is established.
+  \item \textbf{Learning attribution:} a policy update identifies the evidence, action, outcome, and policy version it uses; unverified or confounded outcomes are not silently promoted.
+  \item \textbf{Idempotent recovery:} retries and resume operations preserve logical operation identity so that an uncertain external result is not duplicated.
+\end{enumerate}
+
+\subsection{Event sequence and transaction boundaries}
+\label{subsec:ch18-event-sequence}
+
+The event sequence should be durable enough to reconstruct the causal path. A useful high-level stream is `CandidateObserved`, `WorkspaceAdmitted`, `ProposalCreated`, `IntentionDecisionRecorded`, `ResourceReserved`, `ActionAuthorized`, `SkillNodeStarted`, `ActionDispatched`, `ActionObserved`, `PostconditionVerified`, `RecoveryOpened`, `RecoveryResolved`, `IntentionReconsidered`, `TaskStopped`, and `PolicyUpdateCommitted`. These names are illustrative. The exact event vocabulary should be derived from the application's needs and kept stable across versions.
+
+One transaction should not attempt to atomically include an entire distributed episode. Instead, each authoritative transition is committed with its own receipt and causal link. For an external side effect, use an outbox or equivalent reliable-dispatch pattern: commit the authorized intent and an outbox record together, dispatch asynchronously, then record the external observation. A timeout after dispatch remains ambiguous until reconciled. The event stream lets the runtime recover without pretending that a database transaction can roll back an external payment provider.
+
+\subsection{Persistence, idempotency, and concurrency}\index{transactional state transitions}\index{idempotency}
+\label{subsec:ch18-persistence-concurrency}
+
+Versioned aggregates and compare-and-swap checks can reject stale proposals. A method-change transaction may invalidate the current workspace snapshot; a recovery-result transaction may be rejected because the parent state changed; a resource reservation may fail because another action consumed the remaining budget. These are normal control outcomes, not exceptional infrastructure failures. The runtime must return a typed conflict or defer result so the correct governor can reconsider.
+
+An intention's events should be ordered by intention version or a comparable logical sequence. Workspace cycles should have their own sequence numbers, and recovery branches should refer to immutable parent snapshots. Resource reservations should have explicit expiry and release rules. External action dispatch should use an idempotency key when the target service supports it. Cancellation should record whether it occurred before dispatch, during dispatch, or after an ambiguous result; these states have different recovery requirements.
+
+Learning updates require a separate concurrency boundary. If two episodes attempt to update the same memory or skill policy, the runtime should preserve the observations and policy version used by each update. It may serialize updates, apply a versioned merge, or use a dedicated learning queue. It should not lose one update or apply it twice merely because an episode was resumed.
+
+\subsection{Graceful degradation and partial composition}\index{partial composition}
+\label{subsec:ch18-graceful-degradation}
+
+The source does not require every runtime to use every bundle. A composition should therefore support \gls{partialcomposition} through explicit capability profiles. A low-risk, short-lived request may use native retrieval and a simple tool call without B4 persistence or B3 broadcast. A multi-step task may enable B4 and B2 but not adaptive memory learning. A high-risk task may require B6 verification and a human approval path while leaving the B3 workspace at a simple deterministic selector. The presence of a capability does not mean it must be active for every task.
+
+Degradation must be fail-closed where authority or safety is concerned. If the resource governor is unavailable, the runtime must not interpret that absence as permission. If uncertainty metadata is stale, an action requiring calibrated risk control should be deferred or routed to a conservative policy. If B3 is unavailable, the runtime may fall back to a simpler retrieval path only if the task's risk and context constraints allow it. If B2 cannot preserve a parent version, it must not return a result as applicable. If a skill verifier cannot establish its required postcondition, the skill node remains unverified and escalates or stops according to its contract.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter18/cross-bundle-state-handoffs.png}{Versioned state references and typed events cross subsystem boundaries. Each event carries provenance, observed versions, and evidence, while the receiving subsystem retains its own decision authority.}{fig:ch18-state-handoffs}
+
+\section{Product X: one incident, several cooperating controls}\index{Product X!composed runtime}
+\label{sec:ch18-productx-composition}
+
+The Product X example has appeared throughout Part II. The incident is familiar: the payment service times out after a payment request. The composition problem is not simply to retry until the service responds. The runtime must determine whether the payment was applied, preserve the user's authorized goal, avoid a duplicate charge, and stop honestly when the evidence or budget is insufficient. The trace below is a book-created teaching example, not an empirical result or a sequence prescribed by the source paper.
+
+\subsection{The authorized goal and initial state}
+\label{subsec:ch18-productx-goal}
+
+Assume the user has authorized the agent to determine the status of a particular payment and, if appropriate, complete the intended purchase under the previously approved payment terms. The agent has not been authorized to submit a second charge merely because the first request timed out. The intention record therefore separates the desired outcome from the current method. It records the payment identity, approved amount and currency, merchant, idempotency reference, continuation condition, and the boundary that prevents a duplicate charge.
+
+The active runtime state contains the intention version, current workspace cycle, available memories, skill-library version, uncertainty lineage, global deadline and API budget, and no recovery branch yet. The language model may interpret the incident and propose next steps, but it cannot change the goal or dispatch an external payment operation on its own.
+
+\subsection{B1 retrieves candidate memories}
+\label{subsec:ch18-productx-b1}
+
+B1 retrieves relevant records: a previous incident involving delayed payment-provider callbacks, the documented status-query procedure, and a service-specific warning that a client timeout does not establish transaction failure. Each candidate carries provenance, validity, and value/cost metadata. B1 may make these items accessible to the runtime, but it does not decide that all should enter the next model context. The retrieval event and downstream-use event are recorded separately so later evaluation can distinguish a retrieved item from one that influenced a decision.
+
+\subsection{B3 forms a bounded workspace cycle}
+\label{subsec:ch18-productx-b3}
+
+The candidate set now includes the memory records, the current timeout response, a payment-provider status observation, a monitor alert about elevated latency, and the model's proposed reconciliation plan. B3 evaluates the typed candidates under the workspace capacity. It may admit the provider's ambiguous timeout observation, the idempotency warning, and the status-query procedure while excluding redundant history. The resulting workspace snapshot is tagged with the intention and method versions and broadcast to the designated inference and monitoring consumers.
+
+The broadcast makes the warning available; it does not authorize a second payment request. If later evidence shows that the status endpoint is inconsistent, a new workspace cycle can include that conflict and the relevant monitor observation.
+
+\subsection{B4 preserves the intention}
+\label{subsec:ch18-productx-b4}
+
+The model proposes to reconcile the payment status before considering another action. B4 confirms that the goal remains valid and that read-only reconciliation is an acceptable method under the committed intention. The method version advances, but the goal version does not. The decision records why the change occurred and which evidence supports it. If the user had authorized only a status report, the intention would not include permission to complete the purchase; the composition would stop at that narrower goal.
+
+\subsection{GraSP provides an existing skill path}
+\label{subsec:ch18-productx-grasp}
+
+The skill library contains a verified `ReadPaymentStatus` procedure with a typed input contract, an authenticated read-only endpoint, and a postcondition that requires a provider result linked to the same payment identity. GraSP retrieves the skill, compiles its typed graph, checks node preconditions, and prepares the invocation. The graph is applicable to the current intention, but that does not itself authorize the external call. The invocation still needs a resource reservation and B6 permission.
+
+\subsection{B6 allocates and authorizes the work}
+\label{subsec:ch18-productx-b6}
+
+The resource governor evaluates the uncertainty provenance, endpoint reliability, remaining deadline, API budget, and the risk of acting on an ambiguous payment. It reserves one read-only status request and a bounded verification allocation. It denies any proposed write operation that could submit a duplicate charge without new evidence and explicit authorization. This decision does not alter the goal. It restricts which methods may execute under the present risk and resource state.
+
+\subsection{B2 handles a typed failure}
+\label{subsec:ch18-productx-b2}
+
+Suppose the read-only status request returns a typed conflict: the provider's first endpoint cannot determine whether settlement occurred, while the event ledger has not yet received a final callback. The runtime records a typed failure and opens a bounded B2 recovery substate against the current parent version. The recovery process may query a second authorized read-only status endpoint or inspect the notification ledger, subject to its own scope and B6 resource reservation. It returns a typed result such as \texttt{STATUS\_VERIFIED}, \texttt{STATUS\_CONFLICT}, or \texttt{STATUS\_UNRESOLVED}, including evidence, dependencies, and postconditions.
+
+The parent intention remains unchanged. The recovery branch cannot submit a charge or rewrite the goal. If it returns a verified result, the result may be used for the current episode. Promotion into a reusable recovery rule or skill candidate is a separate operation requiring applicability conditions and verification; no trace is automatically compiled merely because the local episode appears successful.
+
+\subsection{New evidence triggers reconsideration}
+\label{subsec:ch18-productx-reconsideration}
+
+A verified settlement result or a persistent conflict enters a new B3 workspace cycle. B4 receives the evidence and decides whether the current method remains appropriate. If the payment is settled, the goal may be satisfied and the intention can terminate as complete. If the status remains conflicting but the deadline allows another read-only check, B4 may continue under a new method version and B6 may reserve the additional resources. If the deadline is nearly exhausted, B6 can interrupt low-value work and constrain further verification. The transitions can iterate; there is no requirement that each bundle run only once.
+
+\subsection{Stop with verified evidence or an explicit unresolved result}
+\label{subsec:ch18-productx-stop}
+
+If evidence proves that settlement occurred, the agent reports the payment as settled and stops. If evidence establishes that no charge was applied and the user-authorized intention allows a completion action, the runtime must still obtain the required authorization and resource reservation before dispatch. If the deadline expires while the status remains unknown, the agent reports that the result is unresolved and escalates. It does not infer failure from a timeout, claim that the provider caused the incident without evidence, or submit a second charge to force a definitive response.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Product X: mechanism responsibility along the incident trace.}
+\label{tab:ch18-productx-trace}
+\begin{tabularx}{\linewidth}{p{1.35cm}p{3.0cm}X}
+\toprule
+\textbf{Step} & \textbf{Mechanism} & \textbf{State or authority consequence} \\
+\midrule
+1 & B4 & Establishes the authorized payment-status goal and duplicate-charge boundary. \\
+2 & B1 & Retrieves candidate memories with provenance and value/cost evidence. \\
+3 & B3 & Admits a bounded set of heterogeneous candidates for the inference cycle. \\
+4 & B4 & Accepts read-only reconciliation as a method change without changing the goal. \\
+5 & GraSP & Retrieves and verifies the applicable read-only skill graph. \\
+6 & B6 & Reserves resources and authorizes the read-only external request. \\
+7 & B2 & Opens a bounded recovery branch for a typed status conflict and returns a verified or unresolved result. \\
+8 & B3 and B4 & Broadcast new evidence; reconsider the method if the evidence or constraints changed. \\
+9 & B6 and B4 & Stop with verified completion or an explicit unresolved result under the remaining budget. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter18/productx-composed-run.png}{The Product X trace shows memory candidates, workspace admission, intention control, a GraSP skill path, risk and resource authorization, typed recovery, reconsideration, and evidence-based stopping.}{fig:ch18-productx-composed}
+
+The trace demonstrates the proposed authority boundaries. It does not demonstrate that the full composition improves task success, that the resource policy is calibrated, or that the B2-to-GraSP admission extension is safe. Those are empirical questions for the evaluation section.
+
+\section{Failure modes created by composition}
+\label{sec:ch18-compositional-failures}
+
+A component can pass its local tests while the composition fails. Cross-bundle tests should therefore target the transitions where state, authority, or evidence crosses a boundary.
+
+\subsection{Authority collision}
+\label{subsec:ch18-authority-collision}
+
+Two governors may issue incompatible decisions based on different state versions. For example, B4 approves a method switch while B6 rejects the required tool action. The correct result is not to let the later component overwrite the earlier decision. The runtime should preserve both scoped decisions, identify the conflicting precondition, and return a typed defer or denial to the owner that can propose a different method. A coordinator should resolve ordering and stale-version conflicts, not policy disagreements outside its authority.
+
+\subsection{Goal drift through recovery or workspace content}
+\label{subsec:ch18-goal-drift}
+
+A recovery branch may propose a locally convenient objective, or a persuasive workspace candidate may redefine the task. The parent intention must remain the reference. The system should reject a recovery result that lacks the correct parent reference, and B4 should require an explicit authority event before a goal change. A workspace broadcast can trigger reconsideration but cannot amend the goal by repetition or salience.
+
+\subsection{Duplicate and competing admission policies}
+\label{subsec:ch18-admission-duplication}
+
+B1 and B3 can accidentally duplicate one another if each is treated as a generic ranking model. This can lead to double counting, repeated filtering, or a policy that rewards candidates merely because another selector admitted them. The contracts should preserve the candidate domain and decision objective of each stage. The evaluation must record whether a candidate was retrieved, admitted, broadcast, consumed, and used.
+
+\subsection{Unverified recovery becomes a reusable skill}
+\label{subsec:ch18-unsafe-skill-promotion}
+
+A B2 branch may succeed under transient conditions. If every apparent success is promoted into the skill library, the runtime may later invoke a procedure without the parent-state assumptions that made it safe. Eligibility must include a typed failure, explicit dependencies, verified postconditions, side-effect classification, and a tested applicability envelope. Skill promotion is separate from recovery completion and must support revocation or rollback.
+
+\subsection{Skill execution bypasses global risk control}
+\label{subsec:ch18-skill-bypasses-risk}
+
+A skill may be locally valid yet violate a global deadline, permission, or risk constraint. GraSP verification establishes the skill's local contract; it does not automatically authorize the external action in the wider task. The execution adapter must obtain B6 permission at the correct boundary and re-check time-sensitive authorization before dispatch.
+
+\subsection{Stale uncertainty and resource double counting}
+\label{subsec:ch18-stale-uncertainty}
+
+Uncertainty can become stale when new evidence arrives, the model or tool version changes, or the method is revised. A decision based on an old calibration version should not silently remain valid. Resource accounting can fail in the opposite way: a component may count a local limit as already deducted from the global budget, while the ledger subtracts it again. The runtime needs explicit unit, scope, reservation owner, and consumption receipts.
+
+\subsection{Interrupt and resume break an invariant}
+\label{subsec:ch18-interrupt-resume}
+
+An interruption may occur while a skill node is running, a recovery branch is open, or an external request is in flight. Resume must revalidate the intention version, parent state, resource reservation, and action idempotency. If an external outcome is ambiguous, the runtime must reconcile before repeating the operation. A cancellation cannot be recorded as a normal skill failure if it was a parent-level resource decision.
+
+\subsection{Incorrect attribution poisons learning}
+\label{subsec:ch18-learning-attribution-failure}
+
+If a task succeeds after three candidate memories, two workspace cycles, a recovery branch, and a skill invocation, the final success does not reveal which component made the decisive contribution. Updating every involved policy equally creates confounding feedback. The action ledger should identify the evidence and transitions that are causally relevant to the measured outcome. Where attribution remains uncertain, the learning update should be delayed, down-weighted, or excluded according to a preregistered rule.
+
+\subsection{Emergent loops and the monolith trap}
+\label{subsec:ch18-loops-monolith}
+
+A new workspace observation may trigger B4 reconsideration; a method change may refresh memory retrieval; new candidates may reopen workspace competition; a resource update may interrupt recovery; and the interruption may produce new evidence. Such iteration is expected, but it must be bounded. The runtime should impose cycle limits, deadlines, reconsideration thresholds, and explicit terminal outcomes. It should also avoid solving every conflict through a new global controller. A monolithic governor may hide rather than resolve authority boundaries.
+
+\begin{warningbox}
+More coordination is not automatically better. A full composition that adds latency, resource consumption, and more failure modes without reducing risk or improving verified outcomes should be rejected in favor of the simpler runtime. The five residual bundles are hypotheses to test, not a checklist that every agent must satisfy.
+\end{warningbox}
+
+\section{Compositional evaluation: test the edges, then the system}\index{compositional evaluation}
+\label{sec:ch18-compositional-evaluation}
+
+\subsection{The research question}
+\label{subsec:ch18-evaluation-question}
+
+The principal question is whether composing the residual mechanisms through their proposed dependencies improves task success, correctness, safety, or efficiency beyond the strongest individual mechanisms and simpler combinations under matched conditions. Fan and Lan do not report a fully composed five-bundle runtime or causal results for the complete composition. Their bounded synthesis runtime is an agenda for experiment, not a result.\FanLanCite{\S VI-E; \S VII-C}
+
+A test must therefore measure internal transitions as well as final outcomes. A higher task score does not show that B4 scoped recovery correctly or that B6's uncertainty signal changed a decision. Conversely, a mechanism may improve an internal invariant without changing the primary task metric in a short trial. Both kinds of result should be reported.
+
+\subsection{Source-prescribed experimental discipline}
+\label{subsec:ch18-preregistration}
+
+Fan and Lan's Appendix D requires matched comparisons and preregistration. Each study should hold the base model, prompt, tools, environment, and task budget fixed within the comparison. It should identify the task population, experimental unit, model and dependency versions, stochastic replications, minimum sample size, metric formulae, equivalence or non-inferiority margin, uncertainty intervals or statistical tests, exclusion criteria, and stopping rule. Internal-state instrumentation is required because outcome scores alone do not establish that the proposed control edge caused the difference.\FanLanCite{Appendix D; Table X}
+
+A simpler baseline counts as matching only when it is non-inferior under the preregistered primary margin while using no more resources. The exact margin and sample size are task-specific decisions for the future preregistration. They must not be invented in the chapter as if Fan and Lan had already measured them. Negative outcomes and traces should be retained; the purpose is to find out whether each dependency adds value, not to produce a diagram whose arrows all appear successful.
+
+\subsection{Three minimum ablation types}\index{compositional ablation}
+\label{subsec:ch18-three-ablation-types}
+
+For the residual interventions, the source requires at least three distinct forms of ablation: remove the new state object; remove the authoritative control edge while retaining logging; and remove the learning update while retaining the runtime transition. These ask different questions. Removing the state object tests whether explicit representation contributes. Removing the control edge tests whether the authority has an immediate behavioral consequence rather than merely recording what happened. Removing the learning update tests whether experience-dependent adaptation adds value after the runtime transition is already present. They must not be collapsed into one generic condition called \enquote{without memory} or \enquote{without the agent}.\FanLanCite{Appendix D; Table X}
+
+\subsection{Dependency experiment A: B2 with and without B4}
+\label{subsec:ch18-ablation-b2-b4}
+
+The first comparison runs typed B2 recovery without a persistent intention boundary and then with B4 scope, using the same typed failures and recovery budget. The primary observables are recovery success by failure type, parent-state integrity, goal drift, unauthorized scope expansion, verified completion, and resource overhead. The expected benefit is not merely fewer retries; it is a recovery branch that resolves the local failure while preserving the authorized parent objective. If the intention boundary does not change the relevant transitions or if a simpler parent-state guard achieves the same outcomes at lower cost, the added B4 dependency should be narrowed.
+
+\subsection{Dependency experiment B: B3 with native retrieval, B1, and B1 plus B6}
+\label{subsec:ch18-ablation-b1-b3-b6}
+
+The second comparison uses three candidate sources: native/simple retrieval; B1 memory candidates followed by B3 competition and broadcast; and B1 plus B3 with B6 uncertainty and risk/resource signals. It asks whether memory-item value, heterogeneous workspace competition, and risk-aware admission contribute separately. Measures should include relevant-evidence density, decisive-evidence recall, rare-evidence suppression, workspace cost, downstream use, task success, verification burden, and risk/resource use. A selector that increases average relevance but suppresses a rare decisive observation may be worse for the task.
+
+\subsection{Dependency experiment C: admission of B2 resolutions to GraSP}
+\label{subsec:ch18-ablation-recovery-trace-admission}
+
+The third comparison evaluates no-trace admission, admission of every apparently successful recovery trace, and admission only of typed, independently verified B2 resolutions with explicit applicability conditions. Measure repeated-failure reduction, skill invocation precision, unsafe or stale invocation, repair/fallback frequency, and regression under changed parent or environment conditions. This experiment tests whether the B2-to-GraSP dependency is useful; it does not reinterpret GraSP's original experiment or reopen B5.
+
+\subsection{Additional interaction: B4 with B6}
+\label{subsec:ch18-ablation-b4-b6}
+
+A further comparison tests whether intention-governed method switching and cross-stage risk/resource control cooperate. Measure unauthorized action rate, correct and premature stopping, method-switch quality, resource consumption, completion after interruption, and unresolved-but-honest outcomes. B6 must be able to veto or interrupt a method without taking ownership of the goal. B4 must not override B6 permission or exceed an enforced budget. This interaction is especially important because a task can remain valuable after one method becomes too risky or expensive.
+
+\subsection{Full composition and staged comparisons}
+\label{subsec:ch18-full-composition}
+
+Only after the dependency experiments should the full composition be evaluated. The configuration includes B1, B2, B3, B4, B6, and the existing GraSP skill-governance capability. Compare it with a strong simpler runtime, the strongest applicable individual baselines, and staged compositions that add one dependency at a time. Where relevant, include a fair skill baseline with the GraSP capability disabled or replaced. Do not attempt an indiscriminate full factorial over every possible toggle unless the sample size and task design justify it. Comparisons should be preregistered around concrete dependency claims.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter18/compositional-ablation-matrix.png}{The evaluation separates the source-required state, authority, and learning ablations from dependency experiments B2/B4, B1/B3/B6, B2-to-GraSP trace admission, B4/B6 interaction, and staged full-composition comparisons.}{fig:ch18-ablation-matrix}
+
+\subsection{Required internal trace}\index{outcome attribution}
+\label{subsec:ch18-required-trace}
+
+The trace should link each decision to the state and evidence that supported it. For B1, record candidate memories, provenance, activation/value/cost estimates, retrieval latency, selection, workspace inclusion, and downstream use. For B3, record candidate types, scores or selection rationale, capacity, winner, broadcast recipients, consumer receipts, and later admission updates. For B2, record failure class, parent hash and version, child-state events, returned resolution, postconditions, and compilation eligibility. For B4, record intention, goal and method versions, reconsideration trigger, diagnosis, decision, authority, and terminal outcome. For B6, record uncertainty target, provenance and calibration version, resource budgets, reservations, tool authorization, preemption/interruption, resume, and stop reason. For GraSP, record skill and graph version, route confidence, pre/postcondition receipts, repair operations, verification, and fallback. The shared trace also includes task outcome, latency, resource ledger, and the evidence used for causal attribution.
+
+\subsection{Outcomes and metrics}
+\label{subsec:ch18-outcomes-metrics}
+
+No single aggregate score should hide a safety regression or change in stopping behavior. Report task success and verified completion; correct stopping, unresolved-but-honest stopping, and premature stopping; memory recall and use precision; relevant-evidence density and rare decisive-evidence recall; recovery by failure type, parent integrity, repeated-failure rate, and safe transfer; intention drift, method-switch quality, oscillation, and authority violations; calibration, selective risk, irreversible-action errors, help precision, verification cost, and interruption latency; skill invocation precision, graph verification failures, repair/fallback frequency, and safe reuse; and resource use by dimension, including token/API cost, latency, deadline use, interruption overhead, and failure/restart cost.
+
+Metrics should be selected for the task and preregistered. Some tasks do not contain irreversible actions; some do not require persistent memory; and some have no meaningful transfer setting. The report should say when a metric is not applicable rather than filling the table with zeros.
+
+\subsection{Falsification and narrowing criteria}
+\label{subsec:ch18-falsification}
+
+Reject or narrow the integrated hypothesis if the full runtime is not non-inferior to a simpler baseline under the preregistered margin, or if it consumes more resources without a commensurate gain. Reject a dependency if removing its control edge does not change the decision it was meant to govern. Reject or redesign B4+B2 if recovery changes the goal or corrupts parent state. Narrow B1+B3 if workspace admission suppresses rare decisive evidence or fails to outperform simpler retrieval. Reject the B6 contribution if it adds verification and interruption cost without reducing risk or improving correct stopping. Reject unsafe B2-to-GraSP promotion if it increases stale or unsafe skill invocation. Reject learning claims if outcomes cannot be causally attributed. A composition that increases oscillation, deadlock, stale transitions, or external-action errors is not rescued by a higher average task score.
+
+A negative result does not invalidate the individual mechanism studies. It narrows the conditions under which the composition is useful. The experiment should also identify which simpler baseline matched the result and which additional state or authority failed to earn its cost.\FanLanCite{Appendix D; Table X; \S VII-C}
+
+\section{B5 as a closed case inside an open composition agenda}\index{B5!closed candidate}\index{GraSP}
+
+GraSP belongs in the synthesis because B2-derived resolutions may need a skill-governance path, because reusable procedures can supply candidates to B3, and because skill execution must remain subject to B4 and B6 boundaries. B5 does not belong in the residual count. Its closure is methodologically important: an apparent research gap should disappear when a sufficiently strong closest baseline already composes the required control chain.\FanLanCite{\S II-E; \S VI-B; \S VI-C, B5; Table V; Appendix C-O}
+
+Three claims must remain separate. The first is Fan and Lan's closure of B5 within their bounded and provisionally coded corpus. The second is GraSP's reported results in its own evaluated settings, which Chapter~\ref{ch:closed-b5-grasp} reviews and which originate in its primary study \cite{xia2026grasp}. The third is any future Java reconstruction or extension of the skill-governance path inside the proposed composition. None of these claims proves the other two. A local reproduction can reveal an implementation difference without disproving the source's mapping; a successful GraSP reproduction does not prove B1--B4 and B6 compose; and a successful full-composition experiment would not establish historical lineage.
+
+The residual agenda remains open because the new causal relationships have not yet been tested as a complete runtime. The correct question is whether B1, B2, B3, B4, and B6 add compositional value around the existing capability, not whether a new B5 controller should be invented. Any future B5-adjacent proposal would need a materially new control relationship that remains absent after GraSP is treated as a mandatory baseline.
+
+\section{What the synthesis establishes, and what remains unknown}\index{compositional limits}
+
+\subsection{Theoretical synthesis}
+\label{subsec:ch18-theoretical-synthesis}
+
+The historical architectures contribute precise control invariants rather than a demand to reproduce their entire internal representation. ACT-R helps articulate memory accessibility, latency, and action utility. Soar makes typed failure and scoped recovery consequential before a recovery response is generated. LIDA makes bounded competition consequential through broadcast. BDI and MIDCA distinguish persistent goal commitment from method adaptation. EPIC and Sigma expose the relationship between resource contention, timing, uncertainty, and decision control. ICARUS supplies a language for grounded skills and hierarchical execution. Fan and Lan use these mechanisms to define the five residual bundles after modern baselines are examined.\FanLanCite{\S III; \S VI-B--VI-E}
+
+Modern systems show that many individual control edges are already operational. The open agenda concerns their coupling and the preservation of authority and state across boundaries. This is why a high-depth component does not automatically close a bundle and why a closed candidate such as B5 should not be kept alive merely to make the taxonomy symmetrical.
+
+\subsection{Engineering synthesis}
+\label{subsec:ch18-engineering-synthesis}
+
+A runtime can make the relationships testable through \gls{compositionalcontrol}: externalizing authoritative state, separating decision governors, connecting them through typed and versioned events, retaining evidence references, and ensuring that learning follows attributable outcomes. It can implement only the bundles justified by its task, risk, and resource profile. It can preserve partial composition and graceful degradation rather than requiring one monolithic cognitive architecture. These are engineering proposals in this book, not implementation details prescribed by Fan and Lan.
+
+\subsection{Scientific synthesis}
+\label{subsec:ch18-scientific-synthesis}
+
+The five residual bundles should be evaluated against strong, current, and task-matched baselines. Each dependency should be instrumented and ablated. The full system should be compared with simpler compositions and rejected when its additional state, control, or resource cost does not earn a measurable benefit. The B5 case demonstrates that the research agenda itself must be revisable when a strong closest baseline closes a proposed gap.
+
+\subsection{Validity limits}
+\label{subsec:ch18-validity-limits}
+
+The conclusions remain bounded by the source paper's corpus and methods: the reviewed corpus was frozen on 26 July 2026; the review does not provide a systematic-search recall estimate; the E/D coding is provisional and was not independently recoded in the submitted manuscript; the five-bundle partition depends on the authors' analytical rules and may change with different evidence or codes; modern systems use heterogeneous tasks, models, and experimental protocols; and no experiment in the source establishes causal benefit for a fully composed five-bundle runtime. GraSP closes B5 architecturally within the reviewed corpus, but universal transfer remains an external-validity question.\FanLanCite{\S II-B--II-E; \S VII-C; Appendix C; Appendix F-C}
+
+The chapter's contracts and Product X trace do not remove these limits. They make a proposed implementation inspectable and testable. A future Java system would still require implementation, independent review of the source mapping, controlled experiments, and explicit reports of negative or inconclusive results. The composite architecture may add latency, costs, race conditions, and new failure modes. More mechanisms are not automatically a better agent.
+
+\begin{takeawaybox}[The result of Part II]
+The useful output of this part is not a universal cognitive architecture to install around every language model. It is a mechanism-level way to ask who owns state, what triggers a transition, what survives failure, which evidence is learned from, and how resources and authority are governed. The five residual bundles are falsifiable hypotheses about missing couplings; GraSP is a closed candidate that demonstrates the importance of closest-baseline screening. Whether the bundles compose beneficially remains an empirical question.
+\end{takeawaybox}
+
+\section{Chapter recap}\index{compositional limits}
+\label{sec:ch18-recap}
+
+Five conclusions close Part II:
+
+\begin{enumerate}
+  \item Mechanisms compose through state, authority, transition, persistence, failure, learning, and resource boundaries, not merely because their components can be connected.
+  \item B1 and existing skills can supply candidates to B3, but memory accessibility, skill invocation, and workspace admission remain different decisions.
+  \item B4 scopes the parent intention and recovery boundary; B2 handles typed in-episode recovery; B6 governs risk, resources, authorization, interruption, and stopping across the runtime.
+  \item GraSP closes B5 and can participate as an existing skill-governance dependency, but its closure does not validate the remaining composition.
+  \item Only controlled compositional experiments can establish whether the combined runtime is worth its additional state, control, learning, and resource costs.
+\end{enumerate}
+
+\section{Review questions and practical exercise}
+\label{sec:ch18-review-questions}
+
+\begin{reviewquestions}{Review questions}
+\begin{enumerate}
+  \item Why is a graph of connected components insufficient evidence that a runtime has coherent control semantics?
+  \item What does each element of Fan and Lan's shared runtime state tuple represent, and why is it not a production schema?
+  \item Why must a proposal, authorization, committed transition, observation, verification result, and learning update be recorded separately?
+  \item How does B4 scope B2 recovery without taking over the local failure procedure?
+  \item Under what conditions may a B2 resolution become a candidate for GraSP-like skill governance?
+  \item Why are B1 memory accessibility and B3 workspace admission different decisions?
+  \item Why does B3 broadcast not imply permission to execute a tool or skill?
+  \item How does B6 constrain B4 and GraSP without owning the goal or the skill semantics?
+  \item Why is GraSP included in the synthesis while B5 is excluded from the residual count?
+  \item What does E3/D4 say about the GraSP mapping, and what does it not say?
+  \item Which experiment tests whether B4 prevents recovery-induced goal drift?
+  \item How do native retrieval, B1 candidates, and B1 plus B6 signals isolate different B3 contributions?
+  \item Why should apparently successful B2 traces not automatically be compiled into reusable skills?
+  \item What evidence is necessary before an outcome can update a future policy?
+  \item Give an example in which the full composition should be rejected in favor of a simpler runtime.
+\end{enumerate}
+\end{reviewquestions}
+
+\paragraph{Practical exercise.} Using the Product X timeout trace, draw the state and authority boundary for each mechanism. Label every proposal, decision, authorization, transition, verification result, and learning update. Then remove one dependency at a time and predict which invariant or outcome should change. Identify the strongest simpler baseline and state a result that would falsify the proposed composition.
+
+\section*{Source and example note}
+The theoretical synthesis in this chapter is grounded in Fan and Lan's 2026 review, especially §§ VI-A--VI-E and Appendix D. The Product X sequence, Java-like contracts, four-plane teaching view, coordinator protocol, persistence model, and implementation roadmap are book-level engineering proposals and teaching examples. The source paper does not claim that this exact runtime has been built or experimentally validated. The prior chapters remain the detailed treatments of B1, B2, B3, B4, B6, and the closed B5/GraSP case.
+
+\section*{Looking ahead}
+Part II is complete. Part III turns the mechanism-level insights into engineering case studies. Those implementations must preserve the distinctions developed here: state is not authority, visibility is not permission, recovery is not goal replacement, a verified skill is not a universal guarantee, and learning must be tied to attributable outcomes.

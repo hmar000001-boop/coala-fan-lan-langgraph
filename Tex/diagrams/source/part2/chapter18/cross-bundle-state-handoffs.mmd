@@ -1,0 +1,18 @@
+flowchart LR
+  accTitle: Versioned cross-bundle state handoffs
+  accDescr: Producers emit immutable typed events carrying task identity, expected aggregate versions, provenance, and evidence references. The receiving governor evaluates the request within its authority. The coordinator checks versions and commits an allowed transition. Observed outcomes may later support a separate attributable learning update.
+  P[Producer and proposal]
+  E[Immutable typed event]
+  G[Receiving governor]
+  V[Version and invariant checks]
+  C[Commit transition receipt]
+  O[Observed and verified outcome]
+  L[Attributable policy update]
+  P --> E --> G --> V --> C --> O --> L
+  L -. future policy version .-> P
+  classDef proposal fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  classDef control fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.4px
+  classDef durable fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.4px
+  class P,E proposal
+  class G,V control
+  class C,O,L durable

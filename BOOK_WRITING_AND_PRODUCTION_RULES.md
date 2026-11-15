@@ -141,3 +141,20 @@ Before delivering a chapter or batch:
 - Chapter 10 — The Seven Fields of a Mechanism: outline v1.0 prepared from Fan & Lan §II-C, §§II-A and II-D–II-E, §III, Appendix A Tables VII–VIII, Appendix B, and §VII-C. It teaches K = <S,C,T,P,F,L,R> without adding, reordering, or renaming fields; uses the paper's ACT-R ledger entry as a worked example; and keeps E/D coding as separate axes for Chapter 11.
 - Both outline PDFs and editable LaTeX sources are stored in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`. Both outlines were approved by the author on 14 November 2026 and their approval records are synchronized. The scaffold check enforces the outline pair and completed chapter source.
 - The chapter drafts use temporary local font substitutions only in disposable layout tests when TeX Gyre OpenType faces are unavailable; the repository preamble remains unchanged and is used by GitHub Actions.
+
+
+## 11. Author-approved Part II batch plan and completion state (15 November 2026)
+
+Part II uses the author's dynamic nine-batch plan, not a fixed two-chapter cadence:
+
+1. Batch 1 — Chapters 9–10: analytical foundation (feature labels and the seven-field mechanism representation).
+2. Batch 2 — Chapter 11: historical-to-modern architecture and mechanism mapping.
+3. Batch 3 — Chapter 12: B1, activation, retrieval latency, utility, and maintenance cost.
+4. Batch 4 — Chapter 13: B2, typed impasses, substates, and compilation.
+5. Batch 5 — Chapter 14: B3, content competition, workspace, and broadcast.
+6. Batch 6 — Chapter 15: B4, persistent intentions, reconsideration, and method authority.
+7. Batch 7 — Chapter 16: B6, uncertainty, resources, interruption, and stopping.
+8. Batch 8 — Chapter 17: B5/GraSP as the closed-candidate methodological case, not a sixth residual hypothesis.
+9. Batch 9 — Chapter 18: synthesis of the mechanisms after Chapters 9–17 are complete and reviewed.
+
+The author explicitly selected this grouping on 15 November 2026. Do not change the approved Part II table of contents, force unrelated chapters into pairs, or start Chapter 18 before Chapters 9–17 are completed and reviewed. Chapter 18 is now drafted and integrated; it closes Part II without claiming that the composed runtime has been empirically validated. Chapters 16–18 follow the Markdown-only outline review convention in §1; their authored chapter sources remain LaTeX.

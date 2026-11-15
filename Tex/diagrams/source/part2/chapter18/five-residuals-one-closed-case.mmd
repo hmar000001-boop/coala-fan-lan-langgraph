@@ -1,0 +1,25 @@
+flowchart LR
+  accTitle: Five residual bundles and one closed case
+  accDescr: Five residual bundles remain open as research hypotheses: B1 memory value and latency, B2 typed recovery, B3 workspace competition and broadcast, B4 persistent intention and method authority, and B6 uncertainty and resource control. B5 is separated because GraSP already composes the mapped skill-governance chain in the reviewed corpus.
+  subgraph OPEN[Five residual hypotheses]
+    direction TB
+    B1[B1 Memory value and latency]
+    B2[B2 Typed recovery]
+    B3[B3 Workspace competition]
+    B4[B4 Intention and method authority]
+    B6[B6 Uncertainty and resources]
+  end
+  subgraph CLOSED[Closed candidate]
+    direction TB
+    B5[B5 Skill governance]
+    G[GraSP existing chain]
+    B5 --> G
+  end
+  OPEN --> Q[Composition remains to be tested]
+  G --> BASE[Mandatory skill-governance baseline]
+  classDef residual fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px
+  classDef closed fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  class B1,B2,B3,B4,B6 residual
+  class B5,G,BASE closed
+  class Q process

@@ -1,0 +1,17 @@
+flowchart LR
+  accTitle: Cross-bundle dependencies in the synthesis
+  accDescr: B4 provides the goal and parent-state boundary for B2 recovery. Verified B2 resolutions may become candidates for a GraSP-like skill governor. B1 and migrated skills supply candidates to B3. Workspace evidence can trigger B4 reconsideration. B6 governs risk, resources, authorization, interruption, and stopping across the controls.
+  B4[B4 Intention scope] -->|scopes parent objective| B2[B2 Typed recovery]
+  B2 -->|verified resolution candidate| G[GraSP-like skill governor]
+  B1[B1 Memory candidates] --> B3[B3 Bounded workspace]
+  G -->|skill candidates and outputs| B3
+  B3 -->|broadcast evidence| B4
+  B6[B6 Risk and resource control] -.->|cross-stage governance| B1
+  B6 -.-> B2
+  B6 -.-> B3
+  B6 -.-> B4
+  B6 -.-> G
+  classDef bundle fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px
+  classDef existing fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E,stroke-width:1.5px
+  class B1,B2,B3,B4,B6 bundle
+  class G existing

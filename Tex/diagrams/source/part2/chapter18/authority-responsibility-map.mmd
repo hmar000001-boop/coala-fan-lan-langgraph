@@ -1,0 +1,20 @@
+flowchart TB
+  accTitle: Responsibility and authority map for the composed runtime
+  accDescr: B1 owns memory accessibility, B2 owns bounded typed recovery, B3 owns workspace admission and broadcast, B4 owns intention and method decisions, B6 owns cross-stage risk and resource authorization, and GraSP owns skill-graph execution. A coordinator checks event identity and versions but does not replace these governors.
+  C[Protocol coordinator]
+  B1[B1 Memory policy]
+  B2[B2 Recovery governor]
+  B3[B3 Workspace governor]
+  B4[B4 Intention governor]
+  B6[B6 Resource governor]
+  G[GraSP Skill governor]
+  C -. event routing and version checks .-> B1
+  C -. event routing and version checks .-> B2
+  C -. event routing and version checks .-> B3
+  C -. event routing and version checks .-> B4
+  C -. event routing and version checks .-> B6
+  C -. event routing and version checks .-> G
+  classDef authority fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E,stroke-width:1.5px
+  classDef coordinator fill:#F4F4F4,stroke:#888888,color:#1C1C1E,stroke-width:1.2px
+  class C coordinator
+  class B1,B2,B3,B4,B6,G authority
