@@ -1,0 +1,23 @@
+flowchart LR
+  accTitle: Evidence chain from stored memory to assessed outcome
+  accDescr: A stable memory record can produce an access event. Only some retrieved memories are included in a prompt. Actual model use requires separate evidence, and causal contribution to an outcome requires attribution or controlled evaluation. These are not interchangeable events.
+  M[(MemoryRecord)] --> A[MemoryAccessEvent]
+  A -->|candidate retrieved| P[PromptInclusionEvent]
+  A -->|miss, threshold fail, or rejected| R[Rejected candidate record]
+  P -->|included| C[Prompt with memory version and position]
+  P -->|not included| N[Inclusion rejection reason]
+  C --> U{Evidence of actual use?}
+  U -->|not observed| UN[Use unknown]
+  U -->|observed| UE[Use evidence and trace]
+  UE --> O[MemoryOutcomeEvent]
+  UN --> O
+  O --> AT[OutcomeMemoryAttribution]
+  AT --> EV[Estimate contribution with uncertainty]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class M source
+  class A,P,C,O,AT process
+  class UE,EV output
+  class R,N,U,UN caution

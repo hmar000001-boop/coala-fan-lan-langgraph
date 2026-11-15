@@ -60,7 +60,12 @@ test -s "$outline.pdf" || { echo "Missing Chapter 11 outline PDF: $outline.pdf" 
 }
 # Every authored chapter in Part II has a standalone build entry.
 for n in 09 10 11 12; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
-# Chapter 12 uses a revised Markdown outline; no outline PDF or TeX is required.
-test -s "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_v2.md" || { echo "Missing Chapter 12 Markdown outline." >&2; exit 1; }
+# Chapter 12 retains its Markdown outline and has a chapter-local editable LaTeX outline and review PDF.
+for artifact in \
+  "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_v3.md" \
+  "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_Review_v3.tex" \
+  "$ROOT/Tex/part2/chapter12/outline/Chapter_12_Outline_Review_v3.pdf"; do
+  test -s "$artifact" || { echo "Missing Chapter 12 outline artifact: $artifact" >&2; exit 1; }
+done
 ! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter12/chapter.tex" || { echo "Chapter 12 still contains a prose placeholder." >&2; exit 1; }
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-12 contain prose; Chapter 12 uses its revised Markdown outline."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-12 contain prose; Chapter 12 has Markdown, LaTeX, and PDF outline artifacts."

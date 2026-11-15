@@ -12,4 +12,8 @@ for pair in \
   latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode \
     -output-directory="$out" "$source"
 done
-printf 'Chapter-local outline PDFs for Chapters 3–11 were built in their matching chapter folders.\n'
+source=Tex/part2/chapter12/outline/Chapter_12_Outline_Review_v3.tex
+out=Tex/part2/chapter12/outline
+test -s "$source" || { echo "Missing chapter-local outline source: $source" >&2; exit 1; }
+latexmk -xelatex -halt-on-error -file-line-error -interaction=nonstopmode -output-directory="$out" "$source"
+printf 'Chapter-local outline PDFs for Chapters 3–12 were built in their matching chapter folders.\n'

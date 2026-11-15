@@ -1,0 +1,31 @@
+flowchart TB
+  accTitle: Three distinct memory lifecycle decisions
+  accDescr: New observations may be admitted into persistent memory. Existing memories may be updated or forgotten. A task query separately triggers retrieval and context assembly. Outcomes from actual use can inform later policy estimates.
+  subgraph A[Admission and encoding]
+    O[New observation] --> V[Validate provenance and confidence]
+    V -->|admit or merge| P[(Persistent memory)]
+    V -->|reject or review| X[No persistent write]
+  end
+  subgraph R[Retention and maintenance]
+    P --> M[Check validity, contradiction, freshness, and capacity]
+    M -->|retain or update| P
+    M -->|archive, invalidate, or evict| E[Lifecycle transition]
+  end
+  subgraph C[Retrieval and context assembly]
+    Q[Task or query] --> F[Retrieve eligible candidates]
+    P --> F
+    F --> G[Filter, score, select, and order]
+    G --> W[Working context]
+  end
+  W --> U[Agent uses or ignores evidence]
+  U --> N[Observe outcome and attribution evidence]
+  N -. policy feedback .-> M
+  N -. accessibility and value feedback .-> G
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class O,Q source
+  class V,M,F,G,N process
+  class P,W output
+  class X,E caution

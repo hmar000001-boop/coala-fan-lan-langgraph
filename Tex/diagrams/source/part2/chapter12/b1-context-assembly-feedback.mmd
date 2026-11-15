@@ -1,0 +1,33 @@
+flowchart TB
+  accTitle: B1 context assembly and adaptive feedback
+  accDescr: Context assembly retrieves candidates, applies non-negotiable eligibility gates, estimates accessibility, task-conditioned set value, and incremental costs, then selects a feasible set under token and elapsed-time budgets. Actual use and task outcomes update later estimates. ACT-R predicted latency and infrastructure wall-clock latency remain separate.
+  Q[Query, task, and candidate action] --> R[Candidate retrieval]
+  R --> H{Hard eligibility gates}
+  H -->|invalid, unsupported, or unauthorized| Z[Reject or quarantine]
+  H -->|eligible| F[Build query-time feature snapshot]
+  F --> A[Activation and accessibility]
+  F --> V[Task-conditioned marginal set value]
+  F --> C[Incremental retrieval and context cost]
+  F --> L[Latency estimates]
+  L --> L1[ACT-R cognitive prediction]
+  L --> L2[Measured infrastructure wall-clock]
+  A --> S[Set selection and prompt ordering]
+  V --> S
+  C --> S
+  L1 --> S
+  L2 --> S
+  S --> B{Token and deadline budgets met?}
+  B -->|no| T[Reduce set or abstain]
+  B -->|yes| W[Insert selected memories into context]
+  W --> U[Agent response or action]
+  U --> O[Outcome and use evidence]
+  O --> UP[Update supported accessibility and value estimates]
+  UP -. future query .-> Q
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class Q,R source
+  class F,A,V,C,L,L1,L2,S,UP process
+  class W,O output
+  class H,B,Z,T caution

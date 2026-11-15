@@ -20,6 +20,11 @@ The chapter separates three kinds of statement:
 
 The chapter uses §VI-C (B1), Table V, Appendix C-A (R1), and Appendix B as the source map. B1 is presented as a proposed integration question involving memory activation/accessibility, predicted retrieval latency, downstream value, and maintenance cost at context assembly, followed by outcome-sensitive updates. The paper does not provide a single experimentally validated, universal control law that resolves this full coupling. B1 is kept distinct from B3 workspace competition and capacity.
 
+
+### B1 adaptive-memory baseline set (Fan & Lan classification)
+
+Fan and Lan's §VI-C, Table V/VI, Appendix B, and Appendix C-A identify AgeMem, Memory-R1, MemCon, DeltaMem, A-MAC, and CURATOR as executable adaptive-memory comparators for the B1 discussion, while DAM is treated as a conceptual comparator. Their review describes CURATOR as fitting helpfulness online and using retrieval propensity, value, harm, and byte cost to govern keep/share/trust decisions. Chapter 12 reproduces that classification and bounded mechanism summary; it does not claim to independently reconstruct every comparator's implementation or supply equations that the review does not document. CURATOR is described as the closest value--cost comparator, while the residual B1 question remains the coupled treatment of accessibility/activation, predicted retrieval latency, downstream action utility, and maintenance cost at context assembly.
+
 ## 3. ACT-R foundation
 
 **Bothell, Dan.** *ACT-R 7.30+ Reference Manual*. ACT-R Research Group, Carnegie Mellon University. <https://act-r.psy.cmu.edu/actr7.x/reference-manual.pdf>
@@ -80,7 +85,7 @@ The ACT-R equations and semantics were checked against this official manual, inc
 - ACT-R-predicted cognitive retrieval time is distinguished from infrastructure wall-clock latency.
 - ACT-R activation and its derived predicted latency are not independently rewarded without a double-counting analysis.
 - ACT-R production utility is not stored as memory-item value.
-- Admission, retention/forgetting, and query-time context assembly are separate policy decisions.
+- Admission, retention/forgetting, and query-time context assembly are separate policy decisions. Persistent-memory admission (new records entering durable storage) is distinct from B1 context admission (already-stored candidates entering the active context).
 - Persistent storage/indexing costs are not charged repeatedly as prompt-time marginal costs unless explicitly amortized.
 - Serial and parallel retrieval have different end-to-end latency behavior; mixed execution uses a critical path or measured latency.
 - Memory-set value can include redundancy and complementarity; an additive per-memory score is treated as an approximation.

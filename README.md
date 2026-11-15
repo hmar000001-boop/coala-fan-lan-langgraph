@@ -13,8 +13,8 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 - **Chapter 7 — Evaluation and Selection.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,377 words). The approved outline PDF and editable source remain in `Tex/part1/chapter07/outline/`.
 - **Chapter 8 — Interleaving, Iteration and the Complete CoALA Decision Process.** Outline v1.0 approved on 14 November 2026 and chapter drafted/integrated (approximately 3,493 words). The approved outline PDF and editable source remain in `Tex/part1/chapter08/outline/`.
 - Chapters 9–10 have approved outline v1.0 PDFs and editable LaTeX sources stored inside their matching chapter folders. Both chapters are drafted and integrated (approximately 4,259 and 3,921 words). Their source and drafting reviews are recorded under `review/`.
-- **Chapter 12 — Understanding Activation, Retrieval Latency, and Utility: B1.** The outline was revised in Markdown and the full chapter draft was written on 14 November 2026 from the author-provided review report and a source audit. Its standalone XeLaTeX build entry, source review, and bibliography updates are integrated. The outline is intentionally Markdown-only; no outline PDF or LaTeX is required.
-- Chapters 1–12 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapter 12 has no new diagrams and its standalone build can be compiled directly.
+- **Chapter 12 — Understanding Activation, Retrieval Latency, and Utility: B1.** Substantive chapter redraft prepared from the author's review report and the Fan & Lan source audit. Active outline v3 is retained as Markdown and has matching chapter-local LaTeX and review-PDF artifacts; v2 remains preserved as a checkpoint. The chapter includes the B1 baseline set, three Mermaid source diagrams, footnote-style citations, shared glossary/index entries, a source/example note, and an expanded standalone build.
+- Chapters 1–12 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapter 12 adds three Mermaid figures and therefore follows the same render-before-compile requirement as the rest of the book.
 
 ## Author-supplied preamble
 
@@ -42,15 +42,15 @@ bash scripts/check-diagrams.sh
 bash scripts/build-book.sh
 ```
 
-The authoritative workflow renders all 45 Mermaid sources for Chapters 1–11 to PNG before LaTeX compilation. Chapter 11 now has six chapter-specific Mermaid sources and uses the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; this local environment could not resolve `registry.npmjs.org`.
+The authoritative workflow renders all 48 Mermaid sources for Chapters 1–12 to PNG before LaTeX compilation. Chapter 11 has six and Chapter 12 has three chapter-specific Mermaid sources and uses the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; a local Mermaid CLI install attempt during the Chapter 12 revision timed out, so no generated PNG is represented as validated in this package.
 
-To regenerate the Chapter 3–11 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
+To regenerate the Chapter 3–12 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
 
 ```bash
 bash scripts/build-outlines.sh
 ```
 
-The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–11 have editable LaTeX outline sources and review PDFs. Chapters 9–11 have approved outlines and completed source drafts.
+The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–12 have editable LaTeX outline sources and review PDFs. Chapter 12 retains its Markdown plan as well. Chapters 9–12 have author-directed outline revisions and completed source drafts.
 
 To build Chapters 1–12 separately:
 
@@ -81,7 +81,7 @@ The author approved both outlines on 14 November 2026 after a final review for m
 
 ## Outline location convention
 
-All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and review PDFs in `Tex/part1/chapterNN/outline/`. Chapters 9–11 use the same convention in `Tex/part2/chapterNN/outline/`. The scaffold check enforces the presence of the outline PDF/source pair and verifies that prose exists only after outline approval.
+All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and review PDFs in `Tex/part1/chapterNN/outline/`. Chapters 9–12 use the same convention in `Tex/part2/chapterNN/outline/`; Chapter 12 additionally preserves its Markdown outline. The scaffold check enforces the presence of the outline PDF/source pair and verifies that prose exists only after outline approval.
 
 
 ## Current batch status: Chapters 9–10 drafted
@@ -99,14 +99,14 @@ All outline artifacts are stored within their matching chapter directory. Chapte
 Both chapters were drafted after individual outline approval and received a final source-fidelity review. Their standalone layout tests passed (22 pages for Chapter 9 and 20 pages for Chapter 10) using temporary PNG placeholders and temporary local font substitutions only. Those outputs are not final illustrated chapter PDFs. The original author-supplied preamble was restored and its SHA-256 verified against the base repository. The actual Mermaid CLI installation failed locally because `registry.npmjs.org` could not be resolved (`EAI_AGAIN`); real PNG generation and printed-size figure inspection remain mandatory in GitHub Actions.
 
 
-## Current batch status: Chapter 12 drafted
+## Current batch status: Chapter 12 revised for Part II production compliance
 
-- Chapter 12 — *Understanding Activation, Retrieval Latency, and Utility: B1* was revised and drafted on 14 November 2026. Its revised supporting outline is `Tex/part2/chapter12/outline/Chapter_12_Outline_v2.md`. Per the author’s instruction, the outline is Markdown-only; there is no outline PDF or LaTeX source.
-- The theoretical anchor is Fan & Lan's B1 mechanism gap; ACT-R 7.30+ is used as the cognitive activation foundation. Other papers and product documentation are comparative prior art, not additional formal foundations. The text labels original mechanisms, comparative claims, and book-level engineering synthesis separately.
-- It explains ACT-R activation and retrieval latency, production utility versus memory value, modern memory admission/retention/retrieval mechanisms, a bounded B1 integration, production event schemas, and evaluation. The draft separates source equations from book-level design synthesis and distinguishes cognitive retrieval latency from infrastructure latency.
-- Chapter 12 introduces no Mermaid figures; its visual structure is carried by equations, compact comparison tables, teaching boxes, and the production event-schema table. The established Mermaid renderer and validator remain scoped to Chapters 1–11.
-- `review/Chapter_12_Source_Review.md` records the primary-source map, metadata corrections, and evidence boundaries. The standalone entry point is `Tex/standalone/chapter12.tex`; the bibliography was updated with the comparative sources cited in the chapter.
-- The standalone Chapter 12 PDF was compiled locally and its text and rendered pages were inspected. This container did not have the TeX Gyre OpenType font package installed, so a temporary local font substitute was used for the compile; the shared `Tex/preamble.tex` was restored unchanged. The repository CI workflow installs the intended TeX Gyre fonts, so its final typography remains the authoritative build.
+- Chapter 12 — *Understanding Activation, Retrieval Latency, and Utility: B1* has been redrafted under the author's instruction of 14 November 2026. The active outline is v3 and remains available as Markdown, with a matching chapter-local LaTeX outline source and review PDF; v2 is preserved as an earlier checkpoint.
+- The revised source adds the full B1 comparison set named by Fan & Lan: AgeMem, Memory-R1, MemCon, DeltaMem, A-MAC, CURATOR, and DAM. It carefully distinguishes executable adaptive baselines from the conceptual comparator and identifies CURATOR as the closest value--cost comparator. The novelty boundary remains the coupling of activation/accessibility, predicted retrieval latency, downstream action utility, and maintenance cost at context assembly.
+- Three accessible Mermaid source diagrams now cover the distinct memory lifecycle decisions, B1 context assembly and feedback, and the event-evidence chain. They use `accTitle` and `accDescr`, the shared Mermaid theme, and the `\\BookDiagram` placement macro. The generated PNGs are CI build artifacts and are not represented as locally rendered or validated because the local pinned-CLI installation attempt timed out.
+- Comparative citations use the shared footnote-style citation route. The chapter now includes Fan & Lan source trace notes, shared glossary entries and first-use references, index entries, and glossary/index output in the standalone build.
+- The source-level chapter and diagram pipeline are prepared for the GitHub Actions render/build. The only local Chapter 12 PDF in this package is explicitly named `Chapter_12_LAYOUT_PREVIEW_NOT_FINAL.pdf`; it contains visible layout placeholders, not Mermaid figures, and uses temporary font substitutions. No file is presented as the final illustrated Chapter 12 PDF. The authoritative PDF must be rebuilt after the real Mermaid CI render and all three diagrams must be inspected at print size.
+- The next authorized writing batch is Chapter 13 (B2), but it must not begin until this revised Chapter 12 passes the actual CI render, compile, and visual-review gates.
 
 
 ### Chapter 11 standalone layout validation
