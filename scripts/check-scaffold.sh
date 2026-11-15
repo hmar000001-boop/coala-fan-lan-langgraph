@@ -171,4 +171,17 @@ done
 for term in belief desire intention commitmentpolicy reconsiderationschedule metacontrol methodauthority goaldrift continuationcondition delegationcontract; do
   grep -Fq "\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 15 glossary entry: $term" >&2; exit 1; }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-15 contain drafted prose; Chapter 15 has an approved outline and seven accessible Mermaid sources."
+# Chapter 16 is the single active Markdown-only outline review. It is not yet approved,
+# so chapter16/chapter.tex must remain a placeholder and no outline PDF/TeX is generated.
+chapter16_outline="$ROOT/Tex/part2/chapter16/outline/Chapter_16_Outline_v1.md"
+test -s "$chapter16_outline" || { echo "Missing Chapter 16 Markdown outline: $chapter16_outline" >&2; exit 1; }
+grep -q '^\*\*Drafting status:\*\* Not authorized' "$chapter16_outline" || {
+  echo "Chapter 16 outline must remain pending approval." >&2; exit 1;
+}
+grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter16/chapter.tex" || {
+  echo "Chapter 16 prose was drafted before outline approval." >&2; exit 1;
+}
+if find "$ROOT/Tex/part2/chapter16/outline" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.tex' \) | grep -q .; then
+  echo "Chapter 16 outline review must be Markdown-only; found PDF or LaTeX outline artifacts." >&2; exit 1;
+fi
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-15 contain drafted prose; Chapter 15 has seven accessible Mermaid sources; Chapter 16 has one pending Markdown outline."

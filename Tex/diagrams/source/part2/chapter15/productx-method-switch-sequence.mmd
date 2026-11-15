@@ -10,11 +10,11 @@ sequenceDiagram
   U->>I: Authorize status goal and no-duplicate invariant
   I->>M1: Execute method version 1 with idempotency key
   M1->>P: Submit original attempt
-  P--xM1: Response timeout; status unknown
+  P--xM1: Response timeout, status unknown
   M1->>G: Timeout event bound to goal and method version
   G->>I: Load current intention and verify version
-  G->>G: Diagnose: goal remains valid; write retry unsafe
-  G->>I: Commit method switch; preserve goal version
+  G->>G: Diagnose: goal remains valid, write retry unsafe
+  G->>I: Commit method switch while preserving goal version
   I->>M2: Dispatch read-only reconciliation
   M2->>P: Query original attempt status
   P-->>M2: Authoritative status and attempt identifier

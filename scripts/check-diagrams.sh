@@ -41,6 +41,21 @@ for rel, source in source_rel.items():
     if not re.search(r'^\s*accDescr\s*:', source_text, re.MULTILINE):
         errors.append(f'Mermaid source needs accDescr: {source}')
 
+    # Mermaid sequence diagrams use semicolons as statement separators.
+    # A semicolon inside a message/note can terminate that statement and
+    # make the remaining text parse as a new, invalid statement. Newlines
+    # already separate statements, so require ordinary punctuation instead.
+    if re.search(r'^\s*sequenceDiagram\b', source_text, re.MULTILINE):
+        for line_number, line in enumerate(source_text.splitlines(), start=1):
+            stripped = line.lstrip()
+            if stripped.startswith(('accTitle:', 'accDescr:')):
+                continue
+            if ';' in line:
+                errors.append(
+                    f'{source}:{line_number}: semicolon in sequence diagram; '
+                    'use a comma or other punctuation in message text'
+                )
+
     output = out_root / (rel + '.png')
     if not output.is_file() or output.stat().st_size == 0:
         errors.append(f'missing or empty PNG for {source}: expected {output}')
