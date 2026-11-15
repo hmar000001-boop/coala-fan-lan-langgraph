@@ -1,0 +1,22 @@
+flowchart TB
+  accTitle: BDI intention cycle
+  accDescr: Beliefs describe what the agent takes to be true and desires describe wanted outcomes. Deliberation selects an intention. The intention constrains plan execution until observations and the applicable commitment policy justify continuation, reconsideration, or release.
+  B[Beliefs: current world model] --> D[Desires: wanted outcomes]
+  D --> F[Filter and deliberate]
+  B --> F
+  F --> I[Selected intention]
+  I --> P[Plan and act]
+  P --> O[Observe environment]
+  O --> B
+  O --> R{Commitment condition?}
+  R -->|retain| I
+  R -->|reconsider| F
+  R -->|release| X[End this intention]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class B,D source
+  class F,P process
+  class I,O output
+  class R,X caution

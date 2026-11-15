@@ -1,0 +1,40 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{2.2cm}
+{\Huge\bfseries Chapter 15 Outline}\par
+\vspace{0.7cm}
+{\LARGE Persistent Intentions, Reconsideration and Method Authority: B4}\par
+\vspace{0.8cm}
+{\Large Part II --- From Cognitive Architectures to Mechanism-Level Understanding}\par
+\vspace{1.2cm}
+{\large Outline v1.0; theory-to-implementation bridge specified}\par
+\vfill
+\begin{minipage}{0.82\linewidth}
+\begin{quote}
+\textbf{Review status.} Proposed outline v1.0, awaiting individual author approval. No Chapter 15 prose has been drafted. The implementation bridge has been explicitly assessed and specified because B4 concerns persistent state and live authority over method reconsideration.
+\end{quote}
+\end{minipage}
+\vfill
+{\large Source anchor: Fan \& Lan (2026), B4; historical BDI commitment and MIDCA meta-control.}\par
+\vspace{1cm}
+\end{center}
+\clearpage
+\tableofcontents
+\clearpage
+\markboth{Chapter 15 Outline v1.0}{Chapter 15 Outline v1.0}
+\setcounter{chapter}{14}
+\setcounter{secnumdepth}{0}
+\textbf{Outline version:} 1.0\\
+\textbf{Status:} Proposed; awaiting individual author approval.\\
+\textbf{Primary source:} Haodi Fan and Zucong Lan, \emph{From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps} (2026), especially the BDI/MIDCA reconstruction, B4 residual, Table VI, Figure 8, R5a--R5c/R6, Appendix D, and Appendix F.\\
+\textbf{Historical sources:} Rao and Georgeff (1991, 1995); Kinny and Georgeff (1991); Cox et al. (2016).\\
+\textbf{Modern comparison set:} Hybrid and self-aware BDI--LLM, Devil's Advocate, CCA, goal-drift and premature-commitment diagnostics, ADAS, AFlow, and MetaReflection.\\
+\textbf{Implementation bridge:} Persistent intention contracts, method authority, typed reconsideration events, lifecycle transitions, concurrency/persistence, delegation, safety boundaries, Java-like interfaces, Product X walkthrough, implementation sequence, and executable evaluation.\\
+\input{Tex/part2/chapter15/outline/Chapter_15_Outline_v1_body.tex}
+\backmatter
+\nocite{fanlan2026mechanisms,rao1991modelingbdi,rao1995bdi,kinny1991commitment,cox2016midca,owayyed2025controlled,lawton2026selfawarebdi,wang2024devilsadvocate,liang2025cca,arike2025goaldrift,mehta2026premature,hu2024adas,zhang2024aflow,gupta2024metareflection}
+\printbibliography[heading=bibintoc,title={References}]
+\end{document}

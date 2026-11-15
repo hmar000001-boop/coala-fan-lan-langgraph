@@ -1,0 +1,25 @@
+flowchart TB
+  accTitle: MIDCA object-level and meta-level cycles
+  accDescr: The object-level cycle pursues the current task and produces actions and observations. The meta-level inspects the object-level trace, notes anomalies, assesses possible causes, and guides a change to the planner, strategy, or other method. The meta-level may return control to the object cycle with a revised method.
+  subgraph O[Object-level cycle]
+    direction LR
+    O1[Interpret state] --> O2[Select or pursue goal]
+    O2 --> O3[Plan and execute]
+    O3 --> O4[Observe outcome]
+    O4 --> O1
+  end
+  subgraph M[Meta-level cycle]
+    direction LR
+    M1[Note anomaly] --> M2[Assess cause]
+    M2 --> M3[Guide method]
+  end
+  O4 -->|trace and discrepancy| M1
+  M3 -->|change planner or strategy| O2
+  M3 -->|retain current method| O1
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class O1,O2,O3,O4 source
+  class M1,M2 process
+  class M3 output

@@ -16,7 +16,8 @@ A source-disciplined technical book about CoALA, the mechanism-level analysis by
 - **Chapter 12 — Understanding Activation, Retrieval Latency, and Utility: B1.** Substantive chapter redraft prepared from the author's review report and the Fan & Lan source audit. Active outline v3 is retained as Markdown with matching chapter-local LaTeX and review-PDF artifacts; v2 remains preserved as a checkpoint. The chapter includes the B1 baseline set, three Mermaid source diagrams, footnote-style citations, shared glossary/index entries, a source/example note, and an expanded standalone build.
 - **Chapter 13 — Understanding Typed Impasses, Substates and Compilation: B2.** Drafted against revised outline v2.0 after an explicit theory-to-implementation bridge audit; includes typed recovery contracts, a protected recovery state machine, dependency-aware compilation governance, and a Product X walkthrough.
 - **Chapter 14 — Content Competition, Workspace and Broadcast: B3.** Drafted after the author's approval of outline v1.0; includes the LIDA/GWA/DyLAN/graph-pruning comparison and a substantial implementation proposal for typed content admission, bounded workspace, broadcast, consumer receipts, outcome attribution and policy learning. Eight accessible Mermaid source diagrams are included.
-- Chapters 1–14 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapters 12–14 use the same render-before-compile requirement as the rest of the book.
+- **Chapter 15 — Persistent Intentions, Reconsideration and Method Authority: B4.** Outline v1.0 was approved on 15 November 2026 after one source-fidelity/minor-issue review pass. The chapter is now drafted and integrated. It distinguishes BDI commitment-termination policies from reconsideration schedules; explains MIDCA meta-control separately from BDI commitment; compares the reviewed modern baselines; and proposes typed intention/method contracts, goal-versus-method authority, a lifecycle state machine, durable concurrency-safe transitions, bounded delegation, anti-oscillation controls, a Product X method switch, and the Appendix D evaluation protocol. Seven accessible Mermaid sources are included. The real diagram render and production-font PDF gate remain CI-dependent.
+- Chapters 1–15 each have an independent LaTeX entry point under `Tex/standalone/` and can be compiled as separate review PDFs after Mermaid rendering. Chapters 12–15 use the same render-before-compile requirement as the rest of the book.
 
 ## Author-supplied preamble
 
@@ -28,7 +29,7 @@ Book-wide citation macros, glossary setup, bibliography integration, additional 
 
 The authoritative entry point is `Tex/main.tex`. The repository uses the author's known-working GitHub Actions route: `xu-cheng/texlive-action@v2`, `scheme: full`, XeLaTeX through `latexmk`, and a PDF artifact. Pushes and pull requests build the full book; pushes of `v*` tags also publish the compiled PDF to GitHub Releases.
 
-The workflow compiles the combined book PDF. Individual Chapter 1–14 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
+The workflow compiles the combined book PDF. Individual Chapter 1–15 review PDFs can be built with `scripts/build-chapters.sh`; part entry points are available at `Tex/part0/main.tex` through `Tex/part3/main.tex`.
 
 Required tools are XeLaTeX, latexmk, Biber, makeglossaries, makeindex, Node.js 22.13 or later, npm, Chromium/Puppeteer dependencies, and the TeX packages referenced by the preamble and shared macros. The GitHub workflow installs Node 24, the TeX Gyre browser fonts, the pinned Mermaid CLI, and the full TeX Live scheme.
 
@@ -44,21 +45,29 @@ bash scripts/check-diagrams.sh
 bash scripts/build-book.sh
 ```
 
-The authoritative workflow renders all Mermaid sources referenced by Chapters 1–14 to PNG before LaTeX compilation. Chapter 11 has six, Chapter 12 has three, and Chapter 13 has five and Chapter 14 has eight chapter-specific Mermaid sources; all use the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate; a local Mermaid CLI install attempt during the Chapter 12 revision timed out, so no generated PNG is represented as validated in this package.
+The authoritative workflow renders all Mermaid sources referenced by Chapters 1–15 to PNG before LaTeX compilation. Chapter 11 has six, Chapter 12 has three, Chapter 13 has five, Chapter 14 has eight, and Chapter 15 has seven chapter-specific Mermaid sources; all use the shared renderer and figure macro. Committed `.mmd` files are editable sources; generated PNGs are build artifacts and are not committed. The real CLI render and visual figure inspection remain a required first-CI-run gate. Local pinned-CLI installation attempts during Chapters 12 and 15 timed out, so no generated PNG is represented as validated in this package.
 
-To regenerate the Chapter 3–14 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
+To regenerate the Chapter 3–15 outline review PDFs from their chapter-local LaTeX sources (run from the repository root):
 
 ```bash
 bash scripts/build-outlines.sh
 ```
 
-The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–14 have editable LaTeX outline sources and review PDFs. Chapter 12 retains its Markdown plan as well. Chapters 9–14 have author-directed outline revisions and completed source drafts.
+The outline sources deliberately load the shared production preamble; every outline artifact is stored in its corresponding chapter folder. Chapters 1–2 retain their legacy approved outline formats; Chapters 3–15 have editable LaTeX outline sources and review PDFs. Chapter 12 retains its Markdown plan as well. Chapters 9–15 have author-directed outline revisions/approvals and completed source drafts. Chapter 15's original outline PDF remains the frozen v1.0 review snapshot; its separate approval record documents the author's approval on 15 November 2026.
 
-To build Chapters 1–14 separately:
+To build Chapters 1–15 separately:
 
 ```bash
 bash scripts/build-chapters.sh
 ```
+
+## Current batch status: Batch 6 — Chapter 15 (B4) drafted
+
+The author approved Chapter 15 Outline v1.0 on 15 November 2026 and instructed one minor-issue review pass followed immediately by drafting. The complete source repository was recovered from the Library archive and verified before modification; its original repository root is preserved in the updated delivery archive. The substantive Chapter 15 draft is integrated at `Tex/part2/chapter15/chapter.tex`, with an independent build entry at `Tex/standalone/chapter15.tex`. Approval, source-fidelity, drafting, and batch checkpoint records are stored under `Tex/part2/chapter15/outline/` and `review/`.
+
+The chapter preserves the distinctions between commitment policy and reconsideration schedule, BDI commitment and MIDCA meta-control, and goal authority, method authority, and model proposal authority. The practical bridge covers typed contracts, intention lifecycle, reconsideration events, persistence/concurrency, external side-effect safety, delegation/suspension, anti-oscillation, implementation sequencing, tests, and source-required evaluation/ablations. The Product X example switches from a write-oriented payment flow to read-only reconciliation without changing the authorized goal.
+
+Seven original Mermaid sources with `accTitle` and `accDescr` are included and referenced in the chapter. The pinned Mermaid CLI 12.2.0 could not be installed in the local environment because the npm installation timed out. No fabricated PNGs are committed. A separate 61-page layout preview was compiled with temporary Noto substitutes and clearly labelled layout-only cards at all seven figure positions; its full-page contact sheet and representative tables, code listings, glossary and index pages were visually inspected. It is not a final illustrated chapter PDF. Real high-resolution Mermaid rendering, PNG integrity checks, printed-size figure inspection, and the full production-font PDF remain CI release gates. The author-supplied `Tex/preamble.tex` has been restored byte-for-byte.
 
 ## Source discipline
 
@@ -83,7 +92,7 @@ The author approved both outlines on 14 November 2026 after a final review for m
 
 ## Outline location convention
 
-All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and review PDFs in `Tex/part1/chapterNN/outline/`. Chapters 9–12 use the same convention in `Tex/part2/chapterNN/outline/`; Chapter 12 additionally preserves its Markdown outline. The scaffold check enforces the presence of the outline PDF/source pair and verifies that prose exists only after outline approval.
+All outline artifacts are stored within their matching chapter directory. Chapters 1 and 2 retain their original approved legacy artifacts (Chapter 1 Markdown outline; Chapter 2 review PDF). Chapters 3–8 retain editable LaTeX outline sources and review PDFs in `Tex/part1/chapterNN/outline/`. Chapters 9–15 use the same convention in `Tex/part2/chapterNN/outline/`; Chapters 12 and 15 additionally preserve their Markdown outlines. The scaffold check enforces the presence of the outline PDF/source pair and verifies that prose exists only after outline approval.
 
 
 ## Earlier batch checkpoints: Chapters 9–10 drafted
@@ -91,7 +100,7 @@ All outline artifacts are stored within their matching chapter directory. Chapte
 - Both outlines were approved by the author on 14 November 2026 after a final minor-issue review. The `.tex` sources and approval-record PDFs remain in `Tex/part2/chapter09/outline/` and `Tex/part2/chapter10/outline/`.
 - Chapter 9 — *Why Feature-Level Descriptions Are Not Enough* is drafted in `Tex/part2/chapter09/chapter.tex`. It introduces the documented mechanism as the unit of analysis, feature labels versus operational mechanisms, the independence of evidence relation and migration depth, the node--edge--invariant claim test, and the review's bounded validity claims.
 - Chapter 10 — *The Seven Fields of a Mechanism* is drafted in `Tex/part2/chapter10/chapter.tex`. It teaches the exact tuple `K = <S,C,T,P,F,L,R>` and applies it to the ACT-R record in Fan & Lan's Appendix A without filling undocumented fields.
-- Eight Mermaid sources were added (four per chapter). At that earlier Chapter 9–10 checkpoint, the repository contained 45 Mermaid sources across Chapters 1–11. The current repository contains 61 Mermaid sources referenced by Chapters 1–14; the scaffold and chapter-specific checks now include Chapter 14.
+- Eight Mermaid sources were added (four per chapter). At that earlier Chapter 9–10 checkpoint, the repository contained 45 Mermaid sources across Chapters 1–11. The current repository contains 68 Mermaid sources, all referenced by Chapters 1–15; the scaffold and chapter-specific checks include Chapter 15.
 - The Chapter 11 source and attribution record is in `review/Chapter_11_Source_Review.md`; drafting and quality notes are in `review/Batch_11_Drafting_Review.md`.
 - The local npm registry could not be resolved during this batch, so real Mermaid PNG rendering and final figure inspection remain a first-GitHub-Actions-run gate. Disposable placeholder-image LaTeX tests are not represented as real Mermaid renders.
 
@@ -132,6 +141,6 @@ A standalone XeLaTeX smoke build produced a 43-page, 7 × 10 inch PDF with bibli
 - The theory-to-practice bridge is substantial because B3 is a runtime-control hypothesis. The chapter specifies typed candidates and coalitions, a competition governor, a bounded cycle workspace, immutable broadcast snapshots, consumer receipts, outcome attribution, admission-policy versioning, state transitions, concurrency/persistence, safety boundaries, Product X walkthrough, vertical-slice implementation plan, tests, baselines, metrics, ablations and falsification.
 - Source boundaries remain explicit: LIDA's competitors are codelet coalitions; B3's proposed candidates are typed content coalitions. GWA is the bounded-workspace/broadcast structural baseline (E2/D3), while DyLAN and adaptive graph pruning demonstrate learned agent/team or communication-edge admission (E3/D4), not typed-content workspace admission. E and D remain separate axes. Engineering schemas and policies are labelled as book proposals, not as mechanisms already implemented by LIDA or Fan & Lan.
 - Chapter 14 prose is drafted in `Tex/part2/chapter14/chapter.tex` and has a standalone build entry at `Tex/standalone/chapter14.tex`. Eight accessible Mermaid sources are included under `Tex/diagrams/source/part2/chapter14/`; each source has a chapter figure placement and `accTitle`/`accDescr` metadata.
-- The Chapter 13 diagram CI issue was fixed at its source: `b2-reference-implementation.mmd` is now included through the shared `\BookDiagram` macro, which the validator recognizes. `scripts/check-diagrams.sh` validates Chapters 1–14, and the chapter build loop includes Chapter 14. The check was not weakened.
+- The Chapter 13 diagram CI issue was fixed at its source: `b2-reference-implementation.mmd` is included through the shared `\BookDiagram` macro, which the validator recognizes. `scripts/check-diagrams.sh` validates Chapters 1–15, and the chapter build loop includes Chapter 15. The check was not weakened.
 - Local Mermaid rendering remains blocked because the pinned Mermaid CLI is not installed and the npm registry cannot currently be resolved in this environment. Generated PNGs are intentionally not fabricated or committed. GitHub Actions must render the eight Chapter 14 diagrams (and all prior sources) before the full diagram and PDF build can pass. The local chapter PDF, where included, is explicitly a layout preview with labelled placeholders, not the final illustrated PDF.
 - The shared preamble is unchanged. Temporary Nimbus OpenType substitutions may be used only for a local layout proof; the repository's CI is authoritative for TeX Gyre fonts and actual Mermaid rendering.

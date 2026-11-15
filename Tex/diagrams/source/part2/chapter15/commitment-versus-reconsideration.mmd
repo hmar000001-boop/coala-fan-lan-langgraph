@@ -1,0 +1,30 @@
+flowchart TB
+  accTitle: Commitment policy and reconsideration schedule are separate axes
+  accDescr: The left axis defines when the intention is released: blind, single-minded, or open-minded. The right axis defines when the current course is reviewed: bold, cautious, intermediate, or event-sensitive. A system selects one policy and one schedule rather than choosing one value from a combined list.
+  subgraph A[Axis 1: release condition]
+    direction TB
+    A1[Blind: retain until believed achieved]
+    A2[Single-minded: achieved or believed impossible]
+    A3[Open-minded: achieved or no longer desired]
+  end
+  subgraph B[Axis 2: review cadence]
+    direction TB
+    B1[Bold: after current plan]
+    B2[Cautious: after each step]
+    B3[Intermediate: bounded step interval]
+    B4[Event-sensitive: relevant validated event]
+  end
+  A1 --- C[Choose independently]
+  A2 --- C
+  A3 --- C
+  C --- B1
+  C --- B2
+  C --- B3
+  C --- B4
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class A1,A2,A3 source
+  class B1,B2,B3,B4 output
+  class C process

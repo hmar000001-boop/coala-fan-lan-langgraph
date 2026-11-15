@@ -8,8 +8,8 @@ for required in \
   Tex/part1/chapter03/chapter.tex Tex/part1/chapter04/chapter.tex \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
-  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex \
+  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -89,7 +89,7 @@ for diagram in soar-impasse-substate-cycle b2-four-invariants b2-modern-baseline
   grep -q "$diagram.png" "$ROOT/Tex/part2/chapter13/chapter.tex" || { echo "Chapter 13 does not reference $diagram.png" >&2; exit 1; }
 done
 # Every authored chapter in Part II has a standalone build entry.
-for n in 09 10 11 12 13 14; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
+for n in 09 10 11 12 13 14 15; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
 for term in globalworkspace broadcast; do
   grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 14 glossary entry: $term" >&2; exit 1; }
 done
@@ -133,8 +133,42 @@ for diagram in lida-competition-broadcast-cycle modern-baseline-object-map what-
   grep -q "$diagram.png" "$ROOT/Tex/part2/chapter14/chapter.tex" || { echo "Chapter 14 does not reference $diagram.png" >&2; exit 1; }
 done
 # Every authored chapter in Part II has a standalone build entry.
-for n in 09 10 11 12 13 14; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
+for n in 09 10 11 12 13 14 15; do test -s "$ROOT/Tex/standalone/chapter$n.tex" || { echo "Missing standalone build entry for Chapter $n." >&2; exit 1; }; done
 for term in globalworkspace broadcast; do
   grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 14 glossary entry: $term" >&2; exit 1; }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-14 contain drafted prose; Chapter 13 has five and Chapter 14 has eight accessible Mermaid sources; Chapter 14 has an approved Markdown/LaTeX/PDF outline and standalone build entry."
+# Chapter 15 has an approved outline, drafted prose, and a standalone build.
+for artifact in \
+  "$ROOT/Tex/part2/chapter15/outline/Chapter_15_Outline_v1.md" \
+  "$ROOT/Tex/part2/chapter15/outline/Chapter_15_Outline_Review_v1.tex" \
+  "$ROOT/Tex/part2/chapter15/outline/Chapter_15_Outline_v1_body.tex" \
+  "$ROOT/Tex/part2/chapter15/outline/Chapter_15_Outline_Review_v1.pdf" \
+  "$ROOT/Tex/standalone/chapter15.tex" \
+  "$ROOT/Tex/part2/chapter15/outline/Chapter_15_Approval_Record_v1.md" \
+  "$ROOT/review/Chapter_15_Source_Review_v2.md" \
+  "$ROOT/review/Chapter_15_Drafting_Review_v1.md" \
+  "$ROOT/review/Batch_06_Chapter_15_Approval_and_Drafting_Status_v1.md"; do
+  test -s "$artifact" || { echo "Missing Chapter 15 approval/draft artifact: $artifact" >&2; exit 1; }
+done
+for key in fanlan2026mechanisms rao1991modelingbdi rao1995bdi kinny1991commitment cox2016midca owayyed2025controlled lawton2026selfawarebdi wang2024devilsadvocate liang2025cca arike2025goaldrift mehta2026premature hu2024adas zhang2024aflow gupta2024metareflection; do
+  grep -q "{$key," "$ROOT/Tex/bibliography/references.bib" || {
+    echo "Missing Chapter 15 bibliography entry: $key" >&2; exit 1;
+  }
+done
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter15/chapter.tex" || {
+  echo "Chapter 15 prose source still contains a placeholder." >&2; exit 1;
+}
+grep -q '\\chapter{Persistent Intentions, Reconsideration and Method Authority: B4}' "$ROOT/Tex/part2/chapter15/chapter.tex" || {
+  echo "Chapter 15 title is missing from the LaTeX source." >&2; exit 1;
+}
+for diagram in bdi-intention-cycle commitment-versus-reconsideration midca-dual-cycle b4-authority-architecture b4-intention-lifecycle productx-method-switch-sequence b4-outcome-evaluation; do
+  source="$ROOT/Tex/diagrams/source/part2/chapter15/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 15 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part2/chapter15/chapter.tex" || { echo "Chapter 15 does not reference $diagram.png" >&2; exit 1; }
+done
+for term in belief desire intention commitmentpolicy reconsiderationschedule metacontrol methodauthority goaldrift continuationcondition delegationcontract; do
+  grep -Fq "\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 15 glossary entry: $term" >&2; exit 1; }
+done
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-15 contain drafted prose; Chapter 15 has an approved outline and seven accessible Mermaid sources."

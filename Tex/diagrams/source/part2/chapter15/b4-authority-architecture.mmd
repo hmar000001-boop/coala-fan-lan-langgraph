@@ -1,0 +1,30 @@
+flowchart TB
+  accTitle: B4 authority and method-governance architecture
+  accDescr: The principal establishes the goal and invariants. A goal store and intention registry preserve versions and rationale. Monitors emit evidence-bound events; diagnosis supports a governor decision. The governor can continue, switch method, delegate, suspend, or abandon within policy. A separate authorization gate controls dispatch. Model proposals and delegated results are inputs, not authority sources.
+  P[Principal / authorized policy] --> G[Goal authority adapter]
+  G --> GS[Versioned goal store]
+  GS --> IR[Persistent intention registry]
+  IR --> X[Execution monitor]
+  X --> EV[Validated reconsideration event]
+  EV --> D[Diagnosis and evidence]
+  MP[Model method proposal] --> D
+  DR[Delegated result] --> D
+  D --> GOV[Method governor]
+  GOV -->|continue or switch| IR
+  GOV -->|delegate| DL[Scoped child task]
+  GOV -->|suspend or abandon| IR
+  GOV --> AG[Authorization gate]
+  MR[Method registry] --> AG
+  AG --> EX[Executor and outbox]
+  EX --> X
+  GOV --> AL[Audit and outcome ledger]
+  IR --> AL
+  EX --> AL
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class P,GS,IR source
+  class G,X,EV,D,GOV,AG,EX process
+  class DL,AL output
+  class MP,DR,MR caution

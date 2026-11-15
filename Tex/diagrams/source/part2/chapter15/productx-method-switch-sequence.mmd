@@ -1,0 +1,23 @@
+sequenceDiagram
+  accTitle: Product X payment-status method switch
+  accDescr: The initial submit-and-poll method times out. The event does not prove payment failure. The governor verifies that the goal and no-duplicate-charge invariant remain valid, authorizes a read-only reconciliation method, and records the method change without changing the goal. An authoritative result then permits satisfaction or continued suspension.
+  participant U as User / principal
+  participant I as Intention registry
+  participant M1 as Submit and poll
+  participant G as Method governor
+  participant M2 as Read-only reconciliation
+  participant P as Payment provider
+  U->>I: Authorize status goal and no-duplicate invariant
+  I->>M1: Execute method version 1 with idempotency key
+  M1->>P: Submit original attempt
+  P--xM1: Response timeout; status unknown
+  M1->>G: Timeout event bound to goal and method version
+  G->>I: Load current intention and verify version
+  G->>G: Diagnose: goal remains valid; write retry unsafe
+  G->>I: Commit method switch; preserve goal version
+  I->>M2: Dispatch read-only reconciliation
+  M2->>P: Query original attempt status
+  P-->>M2: Authoritative status and attempt identifier
+  M2->>I: Return evidence with provenance
+  I->>G: Evaluate goal verification condition
+  G->>I: Mark satisfied only when verified

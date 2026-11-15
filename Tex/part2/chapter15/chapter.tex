@@ -1,4 +1,1022 @@
 \chapter{Persistent Intentions, Reconsideration and Method Authority: B4}
+\label{ch:persistent-intentions-b4}
+
+\begin{learningbox}
+By the end of this chapter, you will be able to explain why a long-running agent needs more than a task string or an execution log to preserve a commitment; distinguish BDI commitment policies from reconsideration schedules; explain how a meta-level controller can change an operating method; and design a persistent intention subsystem that makes goal authority, method authority, and model proposals explicit. You will also be able to evaluate whether such a subsystem improves long-horizon behavior rather than merely adding state and deliberation.
+\end{learningbox}
+
+\section{The agent that remembers the task but forgets why it is committed}
+\label{sec:ch15-opening}
+
+Imagine that a software agent has been asked to investigate a payment incident affecting Product X. The authorized objective is not simply to issue another payment request. It is to establish the authoritative status of the existing payment attempt, preserve the rule that the customer must not be charged twice, and report what happened. The agent chooses a method: submit a payment request with a provider-supported idempotency key, then poll for a result.
+
+The submission call times out. The agent has not received a response, but the payment provider may have processed the request. The agent now faces two different questions:
+
+\begin{enumerate}
+  \item \textbf{Does the original objective remain valid?} Yes. The payment status is still unknown, and the no-duplicate-charge constraint still applies.
+  \item \textbf{Is the original method still the right way to pursue it?} Not necessarily. Repeating the same request may be unsafe or uninformative. A read-only status lookup or reconciliation procedure may be better.
+\end{enumerate}
+
+A fragile agent can confuse these questions. It may treat the timeout as proof that the goal failed, abandon the task, or retry the payment with a new identifier. Another agent may retain the words of the task in its prompt but lose the rationale and safety invariant that made the task important. A third may produce a thoughtful reflection recommending a safer method, yet have no authorized component capable of applying that change to the running process.
+
+These are not merely memory failures. They concern the persistence of a commitment and the authority to reconsider how that commitment is pursued. A task label says what the agent is doing now. An execution log says what it has attempted. Neither, by itself, establishes which goal remains authorized, what would count as success, under which conditions the commitment should continue, who may change it, or how a method change is recorded.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+\textbf{The central distinction.} A system can remain committed to an authorized end while changing the means used to pursue it. Conversely, a method change must not silently become a change in the end. The first is a reconsideration of method; the second is a change to the goal and therefore requires the authority that owns that goal.
 \end{notebox}
+
+This chapter studies that distinction through B4, the fourth residual mechanism bundle in Fan and Lan's review. It first explains the historical ideas that make the problem intelligible, then examines the modern correspondences and omissions identified by the review, and finally develops a concrete reference design. The design is a book-level engineering proposal. It is not a claim that BDI, MIDCA, or the reviewed language-agent systems already provide the complete subsystem described here.
+
+\section{B4 in the mechanism-level review}
+\label{sec:ch15-b4-review}
+
+Fan and Lan describe B4 as a persistent intention and reconsideration mechanism with authority over the method used to pursue a goal. Their proposed intention record retains the committed goal, its rationale, the current plan, the conditions under which the commitment should continue, reconsideration triggers, authority, and termination status. A governor can then decide whether to continue, delegate, suspend, abandon, or change the method. The review identifies stale commitment, oscillation, premature stopping, and method changes without diagnostic value as failure conditions.\FanLanCite{\S VI-C, B4; Table VI; Appendix D, Table X}
+
+That description is deliberately more specific than a generic instruction to "remember the goal" or "reflect before acting." It connects a durable state object to a control operation. The intention record supplies the state against which a new observation is interpreted. A trigger makes reconsideration eligible. Diagnosis asks what the evidence means for the current goal and method. The governor then exercises a bounded authority to select a response. If it only writes a reflection to a log, the decision has not controlled the active process.
+
+\subsection{What must persist}
+
+The record must preserve enough information to distinguish the end from the means and to reconstruct why the current commitment is still in force. Its \gls{continuationcondition} states which evidence keeps the intention eligible to proceed.\index{continuation condition} In Fan and Lan's formulation, the relevant fields include:
+
+\begin{itemize}
+  \item the committed goal;
+  \item the rationale for pursuing it;
+  \item the current plan;
+  \item the continuation condition;
+  \item the triggers that may prompt reconsideration;
+  \item the authority under which the commitment is maintained and modified; and
+  \item the termination status.
+\end{itemize}
+
+These are mechanism-level fields, not a prescribed database schema. A production implementation still has to decide how goals are versioned, how evidence is referenced, whether the plan is represented as a graph or a sequence, how an authority proof is encoded, and how concurrent updates are serialized. Those details are engineering decisions developed later in the chapter.
+
+\subsection{The governor's decision set}
+
+The governor's decision is not limited to a binary continue-or-stop choice. Fan and Lan explicitly include continuing, delegating, suspending, abandoning, and changing the method. These operations have different semantics. Continuing leaves the current method assignment in force. Changing method replaces or materially alters the means while preserving the authorized goal. Delegation creates a bounded child responsibility. Suspension pauses execution while retaining the parent commitment. Abandonment terminates the commitment under the applicable authority.\FanLanCite{\S VI-C, B4; Table VI}
+
+The word \emph{governor} is useful because it emphasizes that the decision is a control operation, not merely a recommendation. The review does not prescribe a universal implementation of that governor, nor does it assert that every system must use the same state machine. This chapter's records, transitions, concurrency rules, and interfaces are proposals for making the mechanism testable and auditable.
+
+\subsection{What B4 is not}
+
+B4 is not simply BDI renamed. BDI supplies a historical account of beliefs, desires, intentions, and commitment. Fan and Lan use BDI as a relevant lineage for the persistence problem, but their residual claim is concerned with what is absent or incomplete in contemporary language-agent systems: an explicit, durable intention record connected to live reconsideration and method authority.
+
+B4 is not simply reflection. A reflection can identify an inconsistency or propose another plan. Unless a controller can evaluate that proposal against the preserved goal, check authority, and update the active execution state, reflection has not become method control.
+
+B4 is not simply an intent graph or an action-trajectory guard. A graph can represent intended tasks, and a guard can detect a deviation. Those mechanisms may contribute useful state or detection. They do not automatically provide a domain-general commitment lifecycle with a reasoned decision about whether to continue, delegate, suspend, abandon, or change method.
+
+\subsection{Evidence relation and migration depth are separate}
+
+Fan and Lan use two independent dimensions to describe a historical-to-modern mapping. The evidence relation records how the modern mechanism relates to a historical one; migration depth records how far the mechanism has been implemented. The axes must not be collapsed into one ranking. A system can provide strong evidence of historical lineage while implementing only part of the mechanism. Another can converge functionally on a similar control problem without evidence of direct transfer. The codes describe a particular mapped mechanism, not the overall quality, intelligence, or safety of an entire product.\FanLanCite{\S II-D; Table IV; Appendix C}
+
+\BookDiagram[0.57\textheight]{Tex/diagrams/generated/part2/chapter15/b4-authority-architecture.png}{Proposed B4 authority architecture: the principal owns the goal, the intention registry preserves the commitment, the monitor and diagnosis path produce reconsideration evidence, and the governor controls method changes within the authorized boundary.}{fig:ch15-authority-architecture}
+
+\section{Historical foundation I: intention in BDI}
+\label{sec:ch15-bdi}
+
+The letters BDI stand for \emph{beliefs}, \emph{desires}, and \emph{intentions}. They describe different kinds of mental attitudes in an agent model; they are not three interchangeable labels for prompt content. \glspl{belief} represent what the agent takes to be true about the world. \Glspl{desire} represent states of affairs the agent would like to bring about. \Glspl{intention} are commitments selected from among the agent's possibilities and carried into practical reasoning and action.\index{belief}\index{desire}\index{intention} Rao and Georgeff formalized BDI agents and later described a practical architecture in which beliefs, goals, plans, and commitment interact.\autocite{rao1991modelingbdi,rao1995bdi}
+
+\subsection{Beliefs: what the agent currently takes to be true}
+
+A \gls{belief} can be correct or incorrect.\index{belief} It is the agent's current representation of the world, not a guarantee about reality. In Product X, examples include: "the payment request was submitted," "the provider response timed out," "the payment status is unknown," and "the provider's read-only status endpoint reports settlement." These statements have different evidential strength. A timeout is evidence about the communication attempt; it is not evidence that the payment failed.
+
+A practical system should attach provenance, observation time, validity, and confidence or verification status to important beliefs. That is an engineering elaboration rather than a requirement of every classical BDI formulation. Its purpose is to prevent the intention controller from treating stale or unverified information as a decisive fact.
+
+\subsection{Desires: what outcomes are wanted}
+
+A \gls{desire} represents a desirable state of affairs.\index{desire} An agent may have several: resolve an incident quickly, avoid duplicate charges, preserve an audit trail, or minimize disruption. Some desires may conflict. A production agent must not assume that every desire is authorized as a goal, or that the most recent sentence in a conversation automatically overrides earlier constraints.
+
+The principal or other authorized source determines which desired outcome becomes a goal for the agent to pursue. A goal is therefore not simply whichever objective the language model finds most salient. In this chapter, \emph{goal authority} means the authority to establish, amend, or revoke that authorized objective.
+
+\subsection{Intentions: selected commitments}
+
+An \gls{intention} is more than a \gls{desire} that happens to appear in the current context. It is a commitment that constrains later deliberation.\index{intention} Once an agent has selected an intention, it does not normally reconsider every possible goal and method after every small observation. It continues with the commitment until the applicable conditions for reconsideration or release are met. This persistence helps explain coherent multi-step action, but it also creates the possibility of stubbornly pursuing a goal or plan after circumstances have changed.\autocite{rao1991modelingbdi,rao1995bdi}
+
+The following diagram is a teaching reconstruction of the practical relationship. It is not a reproduction of one particular implementation or a universal scheduling algorithm.
+
+\BookDiagram[0.53\textheight]{Tex/diagrams/generated/part2/chapter15/bdi-intention-cycle.png}{Historical teaching reconstruction of the BDI intention cycle: beliefs and desires inform deliberation; selected intentions guide plan execution; observations update beliefs and may satisfy the conditions for reconsideration or release.}{fig:ch15-bdi-cycle}
+
+\subsection{Why commitment matters}
+
+Without commitment, a system can become trapped in endless reconsideration. Suppose the Product X agent has chosen to reconcile a payment. A new but weakly relevant suggestion arrives: inspect the browser, search an unrelated service log, or restart the payment workflow. If every suggestion causes the agent to reopen the entire goal and method space, it spends resources deliberating instead of completing the authorized task.
+
+Commitment narrows the active decision problem. The agent can continue to execute the selected method while monitoring for evidence that genuinely changes the situation. The benefit is not that the selected method is guaranteed to be correct. It is that the system avoids treating every new possibility as an equally urgent reason to restart deliberation.
+
+Commitment therefore introduces a tension:
+
+\begin{itemize}
+  \item Too little commitment can cause thrashing, inconsistent execution, duplicated work, and excessive planning cost.
+  \item Too much commitment can cause stale behavior, missed environmental changes, or persistence toward an impossible or no-longer-authorized goal.
+\end{itemize}
+
+A well-designed system needs both persistence and a principled way to reconsider.
+
+\subsection{An intention is not the same thing as one plan}
+
+The end and the means must remain distinguishable. A plan is one way of pursuing a goal. A different plan may preserve the same goal. For Product X, the goal is to determine the authoritative payment status without creating a duplicate charge. The initial method may be submit-then-poll. After a timeout, a read-only reconciliation method may be safer. The goal remains stable even though the current means change.
+
+This distinction is easy to state and surprisingly easy to violate in software. If the only persistent object is a plan, replacing the plan can erase the objective and its constraints. If the only persistent object is a goal string, the system may not know which plan was active, why it was chosen, or what evidence should cause it to be reconsidered. The implementation needs separate but linked representations of goal, intention, and method assignment.
+
+\section{Historical foundation II: commitment policies and reconsideration schedules}
+\label{sec:ch15-commitment-schedules}
+
+A critical distinction in the BDI literature is often lost when commitment is discussed informally. There are two questions:
+
+\begin{enumerate}
+  \item \textbf{When should the agent release an intention?} This is a commitment policy.
+  \item \textbf{When should the agent stop and reconsider its current course?} This is a reconsideration schedule.
+\end{enumerate}
+
+These questions are related, but they are not the same. The first defines conditions under which the commitment is no longer retained. The second controls how often the agent checks whether the commitment or current strategy should be reconsidered. Kinny and Georgeff study the relationship between commitment and reconsideration, including bold and cautious strategies and intermediate schedules.\autocite{kinny1991commitment}
+
+\subsection{Three commitment termination policies}
+
+The classical labels \emph{blind}, \emph{single-minded}, and \emph{open-minded} describe different conditions for dropping an intention under a \gls{commitmentpolicy}\index{commitment policy}. The exact formulation is about the agent's beliefs and desires, not a universal production rule that should be copied without domain analysis.\autocite{rao1995bdi,kinny1991commitment}
+
+\begin{description}
+  \item[Blind commitment.] Retain the intention until the agent believes that the goal has been achieved. In simplified notation, release when \(B(G)\) becomes true. This policy does not release the intention merely because the goal has become undesirable or appears impossible.
+  \item[Single-minded commitment.] Retain the intention until the agent believes the goal has been achieved or believes that achieving it is no longer possible. It can therefore release when \(B(G)\) or \(B(\neg\Diamond G)\) holds, using \(\Diamond G\) informally for the possibility of eventually achieving the goal.
+  \item[Open-minded commitment.] Retain the intention until the agent believes the goal has been achieved or no longer desires that goal. Release is tied to success or a change in desire, rather than only to a belief that achievement is impossible.
+\end{description}
+
+The distinctions matter in cases where the goal remains desired but appears impossible, or remains possible but is no longer desired. Single-minded and open-minded commitment can therefore disagree. Blind commitment is more resistant to both types of change. These are conceptual commitment conditions; a real system must define how belief, possibility, and desire are established and who has authority to change them.
+
+\subsection{Bold, cautious, and intermediate reconsideration}
+
+Bold and cautious describe a \gls{reconsiderationschedule}\index{reconsideration schedule}: how frequently the agent reconsiders its current course, not the conditions for terminating an intention.
+
+A \emph{bold} schedule postpones reconsideration until the current plan has been executed. It reduces planning overhead and allows a selected plan to run without constant interruption. Its risk is that an important environmental change may occur while the agent continues executing a now-poor plan.
+
+A \emph{cautious} schedule reconsiders after every step. It is more responsive to new information, but it may spend substantial time and computation revisiting decisions whose context has not meaningfully changed. It can also amplify noise: small fluctuations repeatedly interrupt a useful plan.
+
+Intermediate schedules reconsider after a selected number of steps or at specific points in the plan. The appropriate schedule depends on the cost of deliberation, the rate at which the environment changes, the consequences of delayed reaction, and the reliability of observations. The literature does not imply that one schedule is universally optimal.\autocite{kinny1991commitment}
+
+\begin{table}[tbp]
+\centering
+\caption{Two independent questions: when to release an intention and when to reconsider a course of action.}
+\label{tab:ch15-two-axes}
+\begin{tabularx}{\textwidth}{>{\RaggedRight\arraybackslash}p{0.25\textwidth}>{\RaggedRight\arraybackslash}X>{\RaggedRight\arraybackslash}X}
+\toprule
+\textbf{Axis} & \textbf{Representative choices} & \textbf{Question answered} \\
+\midrule
+Commitment policy & Blind; single-minded; open-minded & Under what belief/desire conditions is the intention released? \\
+Reconsideration schedule & Bold; cautious; intermediate; event-sensitive & When does the agent inspect whether its intention or current course should be reconsidered? \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\BookDiagram[0.50\textheight]{Tex/diagrams/generated/part2/chapter15/commitment-versus-reconsideration.png}{The two-axis distinction: commitment policies define intention-release conditions, while reconsideration schedules define how frequently or under what events the current course is reviewed.}{fig:ch15-two-axes}
+
+\subsection{Event-sensitive reconsideration}
+
+A fixed schedule is not the only possibility. A system can monitor for events that are materially relevant to the current commitment: an authoritative success result, a provider status transition, revoked authorization, a method precondition becoming false, a deadline, an external dependency becoming unavailable, or evidence that the goal itself has changed.
+
+Kinny and Georgeff also examine reaction strategies that filter environmental changes—for example, reacting to a target disappearing rather than reacting to every new option. This is evidence that reconsideration can be sensitive to event relevance, not a reason to merge event filtering with the intention-release policy.\autocite{kinny1991commitment}
+
+Event-sensitive reconsideration does not mean that every event causes a method switch. An event makes a review eligible; diagnosis still has to establish what it means. A timeout, for example, is a reason to inspect the payment status. It is not sufficient evidence to conclude that the payment failed or that another payment should be submitted.
+
+The book's reference design combines a baseline schedule with event triggers. This is a proposed engineering design, not a new commitment category in the historical taxonomy. A system might reconsider after a bounded number of steps and also immediately after a safety-relevant event. The event path should not be suppressed by a cooldown designed to prevent harmless oscillation.
+
+\subsection{The practical lesson}
+
+Do not encode blind, single-minded, open-minded, bold, and cautious as five values in one enum. Doing so makes the model ambiguous: it mixes release semantics with review frequency. A clearer design has one policy describing the conditions for retaining the intention and another schedule describing when those conditions and the current method are evaluated. The two values can be selected independently and tested independently.
+
+\section{Historical foundation III: MIDCA and method-level control}
+\label{sec:ch15-midca}
+
+BDI helps explain what an intention is and why it persists. A different historical idea helps explain how an agent can reflect on and change the method it is using: the metacognitive, integrated dual-cycle architecture known as MIDCA. MIDCA separates object-level cognitive activity from a meta-level cycle that observes and guides that activity. The meta-level includes a Note--Assess--Guide pattern: note a discrepancy or anomaly, assess what may have caused it, and guide the system's response.\autocite{cox2016midca}
+
+\subsection{Two coupled cycles}
+
+The object-level cycle performs the task. It interprets the current situation, selects a goal or action, plans, executes, and receives observations. The meta-level cycle inspects the behavior or trace of that object-level process and may guide how it continues.
+
+The important point is not the existence of a second log or a second LLM call. The meta-level has a role in \gls{metacontrol}\index{meta-control} of object-level behavior. MIDCA's ability to alter goal-handling processes is not a license for a production method governor to rewrite a principal-authorized goal: the B4 reference design keeps that power in a separate goal-authority path. A monitoring component that notices failure but cannot change the planner, strategy, or active execution policy is not performing the full kind of method adaptation at issue here.
+
+\BookDiagram[0.55\textheight]{Tex/diagrams/generated/part2/chapter15/midca-dual-cycle.png}{Historical teaching reconstruction of MIDCA's coupled object-level and meta-level cycles, including Note, Assess, and Guide as the meta-level control sequence.}{fig:ch15-midca-dual-cycle}
+
+\subsection{What the meta-controller may change}
+
+In the MIDCA account discussed by Fan and Lan, the meta-level may change a planner, a strategy, goal handling, or another method used by the object-level system. A mismatch between expected and observed behavior can become the input to diagnosis and method adaptation. The meta-level is therefore more than a retrospective evaluator: it can guide the system while execution is ongoing.\FanLanCite{\S III-C, MIDCA; \S VI-C, B4}
+
+This provides a useful historical model for method authority, but it is not identical to BDI. BDI gives a commitment structure. MIDCA provides a model of meta-level observation and adaptation. B4's residual question is how a modern language agent preserves an authorized intention while the active method is reconsidered under explicit authority.
+
+\subsection{Goal authority and method authority}
+
+Three authorities must be separated. The second is the \gls{methodauthority}\index{method authority} needed for bounded in-run adaptation.\index{goal authority}\index{proposal authority}:
+
+\begin{description}
+  \item[Goal authority.] The principal or authorized policy source establishes, amends, or revokes the goal and its non-negotiable constraints.
+  \item[Method authority.] A bounded governor chooses whether to continue, change method, delegate, or suspend execution in pursuit of that goal, subject to the authority policy.
+  \item[Proposal authority.] A model, planner, tool, or delegated worker can suggest a method or report evidence. A proposal is not authorization and does not become durable state merely because the model expressed it confidently.
+\end{description}
+
+A method governor should not be able to redefine the principal's objective just because another objective appears easier. Conversely, goal authority need not approve every low-risk method adjustment if it has explicitly delegated that bounded decision to the governor. The delegation must identify its scope, constraints, and revocation rules.
+
+\subsection{Monitoring is not method authority}
+
+Consider a system that records: "The current method has failed three times. A read-only lookup would be safer." This is valuable diagnostic information. But if the runtime has no control edge from that diagnosis to the active method assignment, nothing has changed. The agent may continue executing the same failing method.
+
+To make method reconsideration real, the system needs a guarded transition. The transition must establish that the event belongs to the active intention version, that the diagnostic evidence is sufficient, that the proposed method is within the allowed capability and risk boundary, and that the new assignment can be committed without changing the authorized goal. It must also prevent an old asynchronous response from overwriting a newer decision.
+
+\section{Modern evidence and its boundaries}
+\label{sec:ch15-modern-evidence}
+
+Fan and Lan compare B4 with several modern systems and research directions. The value of the comparison is not that each example is a partial implementation of one complete BDI architecture. Rather, each demonstrates a relevant structure or function while leaving one or more B4 requirements unresolved.
+
+\subsection{Hybrid BDI--LLM systems}
+
+A hybrid BDI--LLM conversational agent combines a BDI-style control structure with language-model capabilities for selected functions such as intent recognition and response generation. Fan and Lan use the work as a relevant lineage case. It shows that BDI-style intention and control can coexist with an LLM, but the reviewed mapping does not establish a portable, domain-general intention lifecycle covering all of the fields and governor decisions in B4.\autocite{owayyed2025controlled}\FanLanCite{\S VI-C, B4; Appendix C-D}
+
+A separate self-aware BDI-LLM technical report describes a core deliberation loop and evaluation harness. It is a technical report with preliminary evaluation, not a peer-reviewed journal article or a production certification. Fan and Lan's E1/D3 mapping identifies a lineage relationship and a substantial active-control structure, while preserving the remaining gap around a complete general-purpose reconsideration lifecycle.\autocite{lawton2026selfawarebdi}\FanLanCite{\S VI-C, B4; Appendix C-D}
+
+\subsection{Devil's Advocate}
+
+\emph{Devil's Advocate} studies anticipatory reflection and plan revision around possible failure. Its interventions include reflecting before action, checking post-action alignment with subtask objectives and backtracking or remedying when appropriate, and reviewing the overall plan after execution. These operations make it a useful comparison for diagnosis and plan revision. They do not, by themselves, establish a durable authoritative intention registry with explicit continuation conditions, reconsideration triggers, method permissions, and a complete lifecycle. Fan and Lan classify this as functional evidence for a related control problem, not as a full B4 implementation.\autocite{wang2024devilsadvocate}\FanLanCite{\S VI-C, B4; Appendix C-D}
+
+\subsection{Cognitive Control Architecture}
+
+The Cognitive Control Architecture (CCA) uses an intent graph and a tiered adjudication mechanism to respond to deviations from an expected action trajectory. This is relevant because a deviation can trigger further control rather than being treated as an ordinary observation. Its focus, however, is security-oriented trajectory integrity, including defense against indirect prompt-injection behavior. A security-specific deviation adjudicator should not be equated with a general-purpose intention lifecycle that governs all task persistence, method changes, delegation, suspension, and termination. The cited work remains an arXiv preprint in the review corpus.\autocite{liang2025cca}\FanLanCite{\S VI-C, B4; Appendix C-D}
+
+\subsection{Goal drift and premature commitment}
+
+Empirical \gls{goaldrift}\index{goal drift} work examines whether agents move away from initially specified objectives under competing pressures. It is diagnostic evidence that preserving an objective through a long interaction is not automatic; it is not itself a persistent intention controller.\autocite{arike2025goaldrift}
+
+The premature-commitment study examines whether an agent settles too early on a trajectory. Its reported signal can indicate trajectory consistency, but convergence or consistency does not establish that the selected trajectory is correct. It should therefore be used as a diagnostic comparison, not as proof that a stable internal state constitutes a correct commitment. The cited work is a preprint, and the chapter does not elevate it to an established production standard.\autocite{mehta2026premature}
+
+\subsection{Design-time and cross-trial adaptation}
+
+ADAS, AFlow, and MetaReflection are useful comparisons for systems that generate, evaluate, or improve agent designs and instructions across candidate workflows or prior trials. Their adaptation is not the same as a live in-run governor that holds an individual task's authorized goal constant while switching its method in response to current execution evidence. A system can learn a better workflow between runs without possessing authority to change the method of an already-running intention.\autocite{hu2024adas,zhang2024aflow,gupta2024metareflection}\FanLanCite{\S VI-C, B4; Appendix C-D}
+
+\begin{table}[tbp]
+\centering
+\caption{What the reviewed modern comparisons contribute to B4. The classifications attach to the mapped mechanism, not to the quality of the complete system.}
+\label{tab:ch15-modern-comparison}
+\small
+\begin{tabularx}{\textwidth}{>{\RaggedRight\arraybackslash}p{0.20\textwidth}>{\RaggedRight\arraybackslash}p{0.13\textwidth}>{\RaggedRight\arraybackslash}X>{\RaggedRight\arraybackslash}X}
+\toprule
+\textbf{Case} & \textbf{Review mapping} & \textbf{Relevant contribution} & \textbf{Boundary for B4} \\
+\midrule
+Hybrid BDI--LLM & E1/D3 & BDI-style control combined with LLM functions & Does not establish the complete portable intention lifecycle \\
+Self-aware BDI--LLM & E1/D3 & Explicit deliberation loop and BDI-oriented control & Technical report and preliminary evaluation; lifecycle gap remains \\
+Devil's Advocate & E3/D3 & Anticipatory reflection, alignment checks, and plan revision & No full durable intention record and method-authority lifecycle \\
+CCA & E2/D3 & Intent graph and deviation-triggered adjudication & Security-specific trajectory control, not a general intention governor \\
+ADAS, AFlow, MetaReflection & E3/D4 (mapped adaptation) & Design-time or cross-trial improvement & Not live authority over an active intention's method \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The table does not claim that the cases are interchangeable, that every version has the same status, or that the E/D classifications are a global system ranking. It records the narrower distinctions in Fan and Lan's mechanism map. The correct conclusion is that modern work provides useful fragments—commitment structure, deviation detection, reflection, plan revision, and cross-trial adaptation—but the B4 question is whether a persistent authorized intention is connected to a live and bounded method governor. The R5a–R6 labels are those assigned to the reviewed records in the paper; they are not a ranking of entire systems.\FanLanCite{\S II-D; \S VI-C, B4; Table VI; Appendix C-D; Appendix F, R5a--R6}
+
+\section{B4 through the seven mechanism fields}
+\label{sec:ch15-seven-fields}
+
+Chapter 10 introduced the seven-field analysis as a way to describe a mechanism rather than merely name a feature. We can apply it to B4 without assuming that Fan and Lan prescribe a single software design. The tuple is written as
+\[
+K = \langle S,C,T,P,F,L,R\rangle,
+\]
+where the letters stand for state, control, transition, persistence, failure, learning, and resources/governance. The following table separates the review's residual claim from the implementation choices developed in this chapter.
+
+\begin{table}[tbp]
+\centering
+\caption{B4 expressed through the seven mechanism fields.}
+\label{tab:ch15-seven-fields}
+\small
+\begin{tabularx}{\textwidth}{>{\RaggedRight\arraybackslash}p{0.18\textwidth}>{\RaggedRight\arraybackslash}p{0.30\textwidth}>{\RaggedRight\arraybackslash}X}
+\toprule
+\textbf{Field} & \textbf{B4 question} & \textbf{Reference-design interpretation} \\
+\midrule
+\textbf{S} State & What intention and method information remains available? & Versioned goal, rationale, plan, continuation condition, triggers, authority policy, method assignment, status, and evidence references \\
+\textbf{C} Control & Who may decide what happens next? & An intention governor with bounded method authority; principal retains goal authority; model output remains a proposal \\
+\textbf{T} Transition & What makes reconsideration happen? & Validated events and scheduled review activate diagnosis and a guarded governor decision \\
+\textbf{P} Persistence & What survives steps, failures, and process restarts? & Durable intention aggregate, versioned method assignment, event history, and recoverable work/delegation records \\
+\textbf{F} Failure & What can go wrong? & Stale commitment, goal substitution, oscillation, premature stopping, stale events, and unauthorized side effects \\
+\textbf{L} Learning & What can improve future behavior? & Evaluated method outcomes, trigger precision, and policy revisions; no unvalidated online mutation of active authority \\
+\textbf{R} Resources/governance & What limits or authorizes the mechanism? & Planning cost, deadlines, capability/risk policy, escalation, authorization scope, and human review \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{State}
+
+The active state is not just the text of a task. It includes a stable goal identity and version, the rationale and invariants attached to it, an intention lifecycle state, the current plan, the method descriptor and assignment, the conditions for continuation, the reconsideration policy, the authority policy, and references to evidence that supports the current decision. A separate event history records what changed and why.
+
+\subsection{Control}
+
+The control locus is the governor. The language model can interpret events, diagnose a cause, and propose an alternative. Those outputs become inputs to the governor, not direct writes to the authoritative intention record. The principal controls goal amendments. The governor acts within a delegated method boundary. A safety or authorization gate can reject an otherwise valid method decision when the proposed operation exceeds its permissions.
+
+\subsection{Transition}
+
+A transition begins with a trigger, but the trigger is not the decision. The system validates its scope, freshness, identity, and relevance; diagnosis evaluates what has changed; then the governor chooses an action. A verified success result can satisfy the goal. A changed environment can make a method infeasible while leaving the goal intact. A principal's amended instruction can change the goal, but it must enter through the goal-authority path.
+
+\subsection{Persistence}
+
+The intention must survive more than one model call. It should remain coherent across application restarts, retries, delegated work, and concurrent observations. That requires a durable record, versioning, transaction rules, and a way to reconstruct the latest accepted state. A conversation transcript can be retained as supporting evidence, but it must not be the only authority-bearing source.
+
+\subsection{Failure}
+
+A persistent intention can fail by being too rigid or too easy to rewrite. Stale commitment is persistence after the rationale or feasibility has changed. Goal drift is silent substitution of the authorized end. Oscillation is repeated movement among methods without meaningful evidence. Premature stopping is termination before the goal is verified. A further software-level failure is a stale event that overwrites a newer decision or causes an external side effect twice.
+
+\subsection{Learning}
+
+The runtime can learn which triggers were informative, which methods were reliable under which conditions, and which diagnoses were later confirmed. The safe boundary is important: learning may improve future recommendations or a policy version, but it must not silently mutate the authority of an active intention. A production system should version policy updates, evaluate them offline or in shadow mode, and preserve the policy version used for each governor decision.
+
+\subsection{Resources and governance}
+
+Reconsideration consumes time and computation. Waiting too long can also be costly. The system must account for deadlines, tool availability, method risk, side-effect reversibility, delegation limits, and the cost of human escalation. The detailed cross-stage treatment of uncertainty and resource governance belongs to B6; this chapter defines only the boundary that B4 needs in order to preserve an authorized commitment.
+
+\section{Product X: preserve the goal and change the method}
+\label{sec:ch15-productx}
+
+We can now follow one intention from authorization to completion. The example assumes that the payment provider supports an idempotency key and an authoritative read-only status lookup. These are assumptions for the teaching scenario, not claims about every payment API.
+
+\subsection{The authorized goal and invariants}
+
+The principal authorizes the following goal:
+
+\begin{quote}
+Determine the authoritative status of the existing Product X payment attempt and report the result, without causing a duplicate charge.
+\end{quote}
+
+The goal has constraints: use the provider's authoritative record; do not create a second payment attempt merely because a response timed out; preserve the identifier of the original attempt; and report uncertainty when the provider cannot establish a terminal status. These constraints are part of the authorized goal. They are not optional preferences that a model may remove to simplify the task.
+
+\subsection{Initial intention and method}
+
+The intention record stores the goal, its rationale, the continuation conditions, and the selected method assignment. Method M1 is a submit-then-poll sequence. It submits a request using a stable idempotency key, retains the provider's attempt identifier, and polls for status according to the provider's documented contract. The agent's plan is to submit once, observe the response, poll if appropriate, and verify the terminal status.
+
+\subsection{A timeout is not a terminal result}
+
+The submission times out. The event is recorded with its timestamp, request correlation identifier, method version, and original idempotency key. The intention moves to a reconsideration-pending state. The agent must not infer that no payment occurred. It also must not issue a fresh payment request with a new key. Both actions would exceed what the evidence justifies and could violate the invariant against duplicate charges.
+
+\subsection{Trigger and diagnosis}
+
+The governor receives a method-timeout event. It checks that the event belongs to the active intention and method assignment and that no later response has already resolved the attempt. Diagnosis concludes:
+
+\begin{itemize}
+  \item the authorized goal remains valid;
+  \item the no-duplicate-charge invariant remains binding;
+  \item the original method did not produce an authoritative terminal result within its expected window;
+  \item retrying the write operation is not justified by the observed timeout; and
+  \item a read-only provider lookup is an eligible next method under the current capability policy.
+\end{itemize}
+
+This diagnosis is evidence about the current method, not evidence that the goal should be abandoned.
+
+\subsection{Switch method, not goal}
+
+The governor compares the current and proposed methods.\index{method switch} It checks that M2, a read-only reconciliation lookup, can answer the relevant status question; that the method's preconditions hold; that it does not introduce a write side effect; that its capability is allowed; and that the current goal version is unchanged. It then commits the transition from M1 to M2 with a reason and evidence references.
+
+\BookDiagram[0.55\textheight]{Tex/diagrams/generated/part2/chapter15/productx-method-switch-sequence.png}{Product X sequence: an uncertain payment timeout triggers diagnosis and a guarded switch from submit-and-poll to read-only reconciliation, while the authorized goal and no-duplicate-charge invariant remain unchanged.}{fig:ch15-productx-sequence}
+
+\subsection{Delegation without transferring the goal}
+
+The governor may delegate a narrow read-only investigation—for example, checking a provider status record or correlating an existing transaction identifier. The child task receives only the capabilities and data needed for that investigation. It cannot create a new payment, alter the parent's goal, remove the no-duplicate-charge invariant, or authorize another child. Its output is a result with provenance, not an instruction to mutate the parent intention.
+
+\subsection{Completion and audit}
+
+Suppose the provider lookup returns a verified settled status for the original attempt. The agent validates that the result refers to the same provider and attempt identifier, records the evidence, and marks the intention satisfied. The user receives the verified status and a concise audit trail explaining why the method changed.
+
+If the status is pending, the agent can continue within the provider's supported policy or suspend until a defined event. If the provider reports rejection, the system can report that outcome and ask for any new authorization required for a fresh attempt. If the provider cannot establish the status, the intention remains unresolved or is escalated; the system must not invent certainty.
+
+\subsection{Counterexamples}
+
+The method switch would be invalid if it silently replaced the goal with "make a payment succeed at any cost," removed the no-duplicate-charge constraint, or used a write operation outside the governor's authority. It would also be invalid to mark the intention satisfied because a model generated a plausible explanation, because a delegated worker returned an unverified statement, or because the timeout window expired. Satisfaction requires the goal's actual success condition to be verified.
+
+\section{A reference subsystem for intention and method governance}
+\label{sec:ch15-reference-design}
+
+The remainder of the chapter turns the mechanism into an implementable design. This design is intentionally explicit about what the source says and what the book proposes. Fan and Lan identify the state and control problem. The typed records, interfaces, database constraints, events, transaction model, anti-oscillation policy, and implementation sequence below are engineering proposals intended to make that problem testable.
+
+\subsection{Reference architecture}
+
+A practical subsystem can be divided into ten responsibilities:
+
+\begin{enumerate}
+  \item \textbf{Goal authority adapter} accepts authenticated creation, amendment, or revocation from the principal or an explicitly authorized policy source.
+  \item \textbf{Goal store} maintains immutable goal versions, invariants, ownership, and amendment history.
+  \item \textbf{Intention registry} maintains the active commitment, continuation condition, reconsideration policy, lifecycle status, and version.
+  \item \textbf{Method registry} contains reviewed method descriptors, preconditions, capabilities, risk classifications, and effect declarations.
+  \item \textbf{Execution monitor} observes step outcomes, deadlines, environmental changes, and tool results.
+  \item \textbf{Event validator} correlates events with the current intention and method versions, checks freshness, and removes duplicates.
+  \item \textbf{Diagnosis service} builds an evidence-backed interpretation of why the current course should or should not be reconsidered.
+  \item \textbf{Method governor} chooses among continue, switch, delegate, suspend, or abandon within an explicit policy.
+  \item \textbf{Authorization gate and executor} verify capability and side-effect permissions before dispatching a method.
+  \item \textbf{Audit and outcome ledger} records accepted transitions, evidence, execution outcomes, and later evaluation signals.
+\end{enumerate}
+
+The model is used by diagnosis and proposal generation, but it is not a direct writer to the intention registry. This separation is a key control boundary. The registry accepts only validated, authorized transitions from the governor or goal-authority path.
+
+\subsection{Typed data contracts}
+
+The following Java-like contracts are reference shapes, not a claim that the papers prescribe these types. A real system should use validated identifiers, immutable values, explicit serialization rules, schema versions, and an allowlist for deserialization.
+
+\begin{lstlisting}[language=Java,caption={Core identifiers and goal contract},label={lst:ch15-goal-contract}]
+record GoalId(UUID value) {}
+record IntentionId(UUID value) {}
+record MethodId(String value) {}
+record PrincipalId(String value) {}
+record EvidenceId(String value) {}
+
+record GoalSpec(
+    GoalId id,
+    long version,
+    String description,
+    List<Constraint> invariants,
+    PrincipalId owner,
+    String authorizationReference,
+    Instant authorizedAt
+) {}
+
+record Constraint(
+    String id,
+    String expression,
+    ConstraintKind kind,
+    VerificationRule verification
+) {}
+
+enum ConstraintKind {
+    REQUIRED_OUTCOME,
+    SAFETY_INVARIANT,
+    PROHIBITED_ACTION,
+    REPORTING_REQUIREMENT
+}
+\end{lstlisting}
+
+The goal has an identity that survives method changes and a version that changes only through the goal-authority path. It also has a set of constraints. Some constraints specify the required outcome; others prohibit particular actions or define how success must be verified. This prevents a method replacement from accidentally discarding the constraints that make the goal safe.
+
+\begin{lstlisting}[language=Java,caption={Intention, method, and policy records},label={lst:ch15-intention-contract}]
+enum IntentionState {
+    PROPOSED, AUTHORIZED, ACTIVE,
+    RECONSIDERATION_PENDING, SUSPENDED,
+    DELEGATED, SATISFIED, IMPOSSIBLE, ABANDONED
+}
+
+enum CommitmentPolicy {
+    BLIND, SINGLE_MINDED, OPEN_MINDED
+}
+
+enum ReconsiderationSchedule {
+    BOLD, CAUTIOUS, INTERMEDIATE, EVENT_SENSITIVE
+}
+
+record ContinuationCondition(
+    String description,
+    List<EvidenceRule> rules
+) {}
+
+record ReconsiderationPolicy(
+    CommitmentPolicy commitmentPolicy,
+    ReconsiderationSchedule schedule,
+    int maxStepsBetweenReviews,
+    Set<TriggerKind> eligibleTriggers,
+    Duration maximumUnreviewedAge
+) {}
+
+record IntentionRecord(
+    IntentionId id,
+    GoalId goalId,
+    long goalVersion,
+    String rationale,
+    String currentPlan,
+    ContinuationCondition continuation,
+    ReconsiderationPolicy reconsideration,
+    AuthorityPolicy authority,
+    MethodAssignment method,
+    IntentionState state,
+    long recordVersion,
+    Instant createdAt,
+    Instant updatedAt
+) {}
+
+record MethodDescriptor(
+    MethodId id,
+    long version,
+    String purpose,
+    List<Precondition> preconditions,
+    List<DeclaredEffect> effects,
+    Set<Capability> requiredCapabilities,
+    RiskClass risk,
+    Reversibility reversibility
+) {}
+
+record MethodAssignment(
+    MethodId methodId,
+    long methodVersion,
+    Map<String, String> parameters,
+    String executionCorrelationId
+) {}
+\end{lstlisting}
+
+The intention record references the goal version and the method version instead of copying mutable descriptions into an unstructured text field. The rationale and plan remain available for explanation, but the goal store is authoritative for the actual authorized objective. The method registry is authoritative for the operation's declared preconditions, effects, capabilities, and risk classification.
+
+The two policy types intentionally remain separate. The commitment policy describes the conditions under which the intention is released. The reconsideration schedule describes when the current course is inspected. \texttt{EVENT\_SENSITIVE} is a proposed runtime scheduling option; it is not presented as a fourth classical BDI commitment policy.
+
+\subsection{Reconsideration events and decisions}
+
+A reconsideration event should identify what happened and the exact active state to which it belongs. A minimal shape might be:
+
+\begin{lstlisting}[language=Java,caption={Version-bound reconsideration event and governor decision},label={lst:ch15-decision-contract}]
+record ReconsiderationEvent(
+    String eventId,
+    IntentionId intentionId,
+    long expectedRecordVersion,
+    long goalVersion,
+    long methodVersion,
+    TriggerKind trigger,
+    List<EvidenceId> evidence,
+    Instant observedAt,
+    String correlationId
+) {}
+
+enum GovernorAction {
+    CONTINUE, SWITCH_METHOD, DELEGATE,
+    SUSPEND, ABANDON
+}
+
+record GovernorDecision(
+    GovernorAction action,
+    IntentionId intentionId,
+    long expectedRecordVersion,
+    long goalVersion,
+    MethodAssignment previousMethod,
+    MethodAssignment nextMethod,
+    String reason,
+    List<EvidenceId> evidence,
+    String authorityProof,
+    Instant decidedAt
+) {}
+\end{lstlisting}
+
+The event's version fields prevent stale observations from being applied to a newer intention. The decision records the goal version it preserves, the method transition (if any), the evidence and reason, and the authority used. A \texttt{SWITCH\_METHOD} decision is invalid when the goal version has changed unexpectedly or when the new method violates an invariant.
+
+\subsection{Separate goal, method, and proposal authorities}
+
+Authority must be a checked contract, not an implication inferred from model output. The following rules define the proposed boundary:
+
+\begin{itemize}
+  \item Only the principal or a specifically authorized goal-administration process can create, amend, or revoke a goal version.
+  \item The governor can choose among method actions only within the scope delegated by the principal and policy.
+  \item The model can propose methods, explain diagnoses, and identify relevant evidence. It cannot directly mutate the goal or intention record.
+  \item A delegated worker can complete only its declared child task and cannot amend the parent goal or widen its capabilities.
+  \item The authorization gate can reject a method even after the governor selects it, if the required capability, user consent, risk approval, or side-effect permission is absent.
+\end{itemize}
+
+For high-impact or irreversible actions, explicit approval remains necessary unless a narrowly scoped permission has been granted in advance. A method governor does not create permission merely by deciding that an action would be useful. This keeps the intention lifecycle separate from the authorization mechanism that controls external actions.
+
+\subsection{Intention lifecycle and guarded transitions}
+
+The proposed lifecycle is shown below. The labels describe states of the intention record, not separate agents. \texttt{SATISFIED}, \texttt{IMPOSSIBLE}, and \texttt{ABANDONED} are terminal outcomes for a particular intention version. A new authorized goal or a newly authorized attempt should receive a new version or identity rather than silently reopening a terminal record.
+
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter15/b4-intention-lifecycle.png}{Proposed intention lifecycle with guarded authorization, active execution, reconsideration, suspension, delegation, and terminal outcomes.}{fig:ch15-intention-lifecycle}
+
+The main transitions are:
+
+\begin{description}
+  \item[] \textbf{Proposed to authorized.} The principal or delegated authority approves the goal, constraints, and bounded method policy.
+  \item[] \textbf{Authorized to active.} The initial method passes precondition, capability, and side-effect checks and is accepted for execution.
+  \item[] \textbf{Active to reconsideration pending.} A validated trigger or scheduled review establishes that the current course must be examined.
+  \item[] \textbf{Reconsideration pending to active.} The governor chooses \texttt{CONTINUE} after reviewing the evidence and confirms that the current method remains allowed.
+  \item[] \textbf{Reconsideration pending to active with a new method assignment.} The governor chooses \texttt{SWITCH\_METHOD}; the same goal identity, goal version, and invariants are preserved, while the method assignment receives a new version.
+  \item[] \textbf{Active or reconsideration pending to delegated.} The governor creates a bounded child task and records its scope, capabilities, deadline, and return contract. The parent intention remains authoritative.
+  \item[] \textbf{Active or delegated to suspended.} The governor or applicable policy pauses execution while retaining the intention and a defined resume condition.
+  \item[] \textbf{Active or reconsideration pending to satisfied.} The goal's verification rule is met by authoritative evidence.
+  \item[] \textbf{Active or reconsideration pending to impossible.} Evidence and policy establish that the goal cannot be achieved under the current authorized constraints. The conclusion must be reviewable and may require escalation.
+  \item[] \textbf{Active, reconsideration pending, or suspended to abandoned.} The authority policy permits abandonment and the decision records who or what authorized it and why.
+\end{description}
+
+A method change is not a terminal goal event. It is a transition within the active intention. Conversely, a new goal version is not just another method assignment. A principal's amendment must be represented as a goal-authority operation with its own audit trail.
+
+\subsection{Trigger taxonomy and diagnosis}
+
+A trigger identifies why a review should occur. It should not be confused with the decision itself. Useful categories include:
+
+\begin{description}
+  \item[Outcome trigger.] A step succeeds, fails, returns an unexpected result, or remains unresolved beyond its allowed window.
+  \item[Feasibility trigger.] A required dependency becomes unavailable, a precondition becomes false, or a method's capability is revoked.
+  \item[Environment trigger.] An external event changes the state in a way that may affect goal relevance or method suitability.
+  \item[Authority trigger.] A permission expires, a principal revokes a capability, or an approval condition is no longer valid.
+  \item[Constraint trigger.] New evidence indicates a conflict with a safety invariant, legal constraint, or prohibited-action rule.
+  \item[Progress trigger.] A bounded number of steps or a maximum time without review is reached.
+  \item[Goal trigger.] An authorized source reports that the goal has been achieved, is no longer desired, or has been amended.
+\end{description}
+
+Diagnosis then asks: Is the event reliable and current? Does it concern the same intention and method version? Does it challenge the goal, the method, or only one plan step? Does a constraint prohibit the apparent response? Is the new method actually more suitable, or does it merely sound plausible? What evidence would distinguish the alternatives?
+
+The governor should be able to choose \texttt{CONTINUE} when the trigger is benign or irrelevant. Not every reconsideration should cause a method switch. This is important for both efficiency and resistance to noisy observations.
+
+\subsection{Plan revision versus method switch}
+
+A plan can change without changing the method. Reordering two read-only queries, retrying a local computation, or selecting a different valid item within the same approved workflow may be a plan revision. A method switch replaces a meaningful part of the mechanism: for example, replacing a write-then-poll process with a read-only reconciliation strategy, replacing one tool family with another, or moving from local execution to a bounded delegated investigation.
+
+The distinction should be based on registered method descriptors, not only on natural-language similarity. A model may describe two plans in different words even though they use the same method. Conversely, two plans may look similar while one introduces a new external side effect or capability. The method registry gives the governor something structured to compare.
+
+\subsection{Persistence, transactions, and concurrency}
+
+The authoritative intention state should be stored durably. A minimal implementation may use a relational row for the current aggregate plus an append-only event table. More elaborate systems may use an event-sourced aggregate, provided they preserve the same invariants. The important properties are atomicity, versioning, idempotency, auditability, and recovery after a crash.
+
+A method switch should be committed as one logical transaction: confirm the expected intention version; verify the goal version and authority proof; validate the target method and invariants; update the method assignment and lifecycle state; append the decision event; and write any dispatch instruction to an outbox. The transaction should fail as a whole if the expected version is stale. The executor reads the outbox and performs the external dispatch separately.
+
+\begin{lstlisting}[language=SQL,caption={Illustrative persistence tables for an intention aggregate},label={lst:ch15-schema}]
+CREATE TABLE intention (
+    intention_id       VARCHAR(64) PRIMARY KEY,
+    goal_id            VARCHAR(64) NOT NULL,
+    goal_version       BIGINT NOT NULL,
+    state              VARCHAR(32) NOT NULL,
+    method_id          VARCHAR(128),
+    method_version     BIGINT,
+    record_version     BIGINT NOT NULL,
+    payload_json       TEXT NOT NULL,
+    updated_at         TIMESTAMP NOT NULL
+);
+
+CREATE TABLE intention_event (
+    event_id           VARCHAR(128) PRIMARY KEY,
+    intention_id       VARCHAR(64) NOT NULL,
+    expected_version   BIGINT NOT NULL,
+    resulting_version  BIGINT NOT NULL,
+    event_type         VARCHAR(64) NOT NULL,
+    evidence_json      TEXT NOT NULL,
+    decision_json      TEXT NOT NULL,
+    created_at         TIMESTAMP NOT NULL
+);
+
+CREATE TABLE dispatch_outbox (
+    dispatch_id        VARCHAR(128) PRIMARY KEY,
+    intention_id       VARCHAR(64) NOT NULL,
+    intention_version  BIGINT NOT NULL,
+    method_id          VARCHAR(128) NOT NULL,
+    method_version     BIGINT NOT NULL,
+    status             VARCHAR(24) NOT NULL,
+    created_at         TIMESTAMP NOT NULL
+);
+\end{lstlisting}
+
+This schema is illustrative. Production implementations should normalize fields that need constraints or queries, use database-native types where appropriate, encrypt sensitive values, restrict access, define retention, and validate serialized payload versions. A JSON payload is not a substitute for database constraints on identity, version, and state.
+
+The compare-and-swap rule is simple: update only where \texttt{record\_\allowbreak version} equals the version observed by the governor, then increment it. If zero rows are updated, the decision is stale and must be recomputed against current state. An event with an already-accepted \texttt{event\_id} is a duplicate and should not produce another transition.
+
+Do not hold a database transaction open while waiting for an external tool or model. Commit the state transition and outbox entry first. A separate dispatcher claims the outbox item, checks its idempotency key, and calls the executor. The result is correlated back to the exact intention and method versions. This avoids long-running transactions and gives crash recovery a deterministic record of what was authorized for dispatch.
+
+\subsection{Method switches and external side effects}
+
+A relational transaction can atomically update local state. It cannot roll back a payment provider, send back an email, reverse a published message, or undo another external system merely because the local process crashed. The design must therefore separate local method authority from external side-effect authorization.
+
+Before dispatch, check the method's declared effects and capabilities against the policy. Use idempotency keys where the external contract supports them. Keep a record of the external operation identifier and its status. If an operation may have succeeded but the response was lost, reconcile its status before issuing another write. If a side effect has occurred and cannot be reversed, compensation is a new authorized operation with its own semantics, not a database rollback.
+
+\begin{warningbox}
+A governor's permission to change method does not automatically authorize a new external side effect. A read-only method can often be substituted within a narrow delegated boundary. A method that charges, purchases, publishes, deletes, shares, or irreversibly changes external state must pass the applicable approval and capability checks independently.
+\end{warningbox}
+
+\subsection{Delegation and suspension}
+
+Delegation creates a child task under the parent intention. The \gls{delegationcontract} should specify:
+
+\begin{itemize}
+  \item the parent intention ID and version;
+  \item the narrow objective and allowed evidence sources;
+  \item permitted capabilities and prohibited effects;
+  \item the deadline, resource budget, and cancellation signal;
+  \item the output schema and evidence/provenance requirements; and
+  \item the rule that the child cannot amend the parent's goal or enlarge its own authority.
+\end{itemize}
+
+The parent remains responsible for integrating the result. A child result is evidence or a proposal; it does not automatically satisfy the parent goal. If the parent version changes while the child is running, the result must be revalidated against the latest state before it is used.
+
+Suspension is different. A suspended intention remains active as a commitment but is not currently executing its method. The record should identify why it was paused, what event or approval allows resumption, whether delegated work should be cancelled, and which resources should be released. A timeout with an uncertain external outcome may justify suspension while waiting for a provider record. It should not be reclassified as success or failure just to clear an active queue.
+
+\subsection{Anti-oscillation safeguards}
+
+A governor that can change methods can also change them too often. A model may alternate between two plausible plans as new but weak evidence arrives. A practical design should reduce this behavior without blocking a genuinely urgent safety response.
+
+Possible safeguards include:
+
+\begin{itemize}
+  \item \textbf{Hysteresis.} Require a material improvement margin before switching away from a currently acceptable method.
+  \item \textbf{Evidence-sensitive cooldown.} Discourage switching back without new evidence, but do not suppress an immediate safety or authority trigger.
+  \item \textbf{Switch budget.} Bound the number of method changes within a defined interval and escalate when the budget is exhausted.
+  \item \textbf{Tried-method ledger.} Record which methods were attempted, under which conditions, and why they were rejected.
+  \item \textbf{Diagnosis requirement.} Every switch must identify the evidence that makes the current method unsuitable and the reason the replacement is expected to be better.
+  \item \textbf{Escalation path.} If the governor cannot distinguish alternatives or repeated switches fail, suspend or ask an authorized human rather than continue cycling.
+\end{itemize}
+
+Thresholds and switch budgets are not universal constants. They should be chosen for a domain, calibrated on controlled tasks, and evaluated for both missed reconsiderations and unnecessary switches. Cooldowns must never override revocation, safety, or other high-priority policy triggers.
+
+\subsection{Java-like interfaces and orchestration}
+
+The following interfaces illustrate the control separation. Implementations may use a workflow engine or a graph runtime, but neither framework should be allowed to bypass the domain-level contracts.
+
+\begin{lstlisting}[language=Java,caption={Proposed service boundaries for intention governance},label={lst:ch15-interfaces}]
+interface GoalAuthority {
+    GoalSpec requireCurrentGoal(GoalId id);
+    GoalSpec amendGoal(AuthorizedGoalAmendment amendment);
+}
+
+interface IntentionRepository {
+    Optional<IntentionRecord> find(IntentionId id);
+    TransitionResult apply(
+        long expectedVersion,
+        GovernorDecision decision
+    );
+}
+
+interface MethodRegistry {
+    MethodDescriptor require(MethodId id, long version);
+    MethodCompatibility assess(
+        GoalSpec goal,
+        MethodDescriptor method
+    );
+}
+
+interface ReconsiderationDiagnoser {
+    Diagnosis diagnose(
+        IntentionRecord intention,
+        ReconsiderationEvent event,
+        List<EvidenceRecord> evidence
+    );
+}
+
+interface MethodGovernor {
+    GovernorDecision decide(
+        IntentionRecord intention,
+        Diagnosis diagnosis,
+        AuthorityPolicy policy
+    );
+}
+
+interface AuthorizationGate {
+    AuthorizationResult authorize(
+        GoalSpec goal,
+        MethodDescriptor method,
+        GovernorDecision decision
+    );
+}
+
+interface MethodExecutor {
+    ExecutionReceipt dispatch(AuthorizedDispatch dispatch);
+}
+\end{lstlisting}
+
+A simplified orchestration path is:
+
+\begin{lstlisting}[language=Java,caption={Guarded reconsideration and method transition},label={lst:ch15-orchestration}]
+void reconsider(ReconsiderationEvent event) {
+    IntentionRecord current = repository
+        .find(event.intentionId())
+        .orElseThrow();
+
+    requireMatchingVersions(current, event);
+    if (eventAlreadyApplied(event.eventId())) return;
+
+    GoalSpec goal = goalAuthority
+        .requireCurrentGoal(current.goalId());
+    EvidenceBundle evidence = evidenceStore
+        .loadAndValidate(event.evidence());
+    Diagnosis diagnosis = diagnoser
+        .diagnose(current, event, evidence.records());
+
+    GovernorDecision decision = governor.decide(
+        current, diagnosis, current.authority());
+
+    MethodDescriptor next = null;
+    if (decision.action() == SWITCH_METHOD) {
+        next = methodRegistry.require(
+            decision.nextMethod().methodId(),
+            decision.nextMethod().methodVersion());
+        requireSameGoalVersion(goal, current);
+        requireGoalInvariants(goal, next);
+        authorizationGate.authorize(goal, next, decision)
+            .requireAllowed();
+    }
+
+    TransitionResult result = repository.apply(
+        current.recordVersion(), decision);
+    if (!result.applied()) {
+        throw new StaleDecisionException(result.currentVersion());
+    }
+    // The repository writes a durable outbox entry in the same
+    // transaction as the accepted intention transition.
+}
+\end{lstlisting}
+
+The pseudo-code omits transport, retry, observability, and transaction details. In a production implementation, the repository's \texttt{apply} method must enforce the invariants again; it should not trust that an upstream caller performed every check. It should verify the current state, expected record version, goal version, transition legality, and unique event ID in one transaction. The dispatcher then handles the outbox idempotently.
+
+\subsection{Incremental implementation sequence}
+
+A practical vertical slice can be delivered in the following order:
+
+\begin{enumerate}
+  \item \textbf{Define the goal and intention contracts.} Add immutable goal versions, explicit invariants, the intention record, and the method descriptor. Validate serialization and schema compatibility.
+  \item \textbf{Implement the lifecycle without an LLM governor.} Use deterministic decisions and test all legal/illegal transitions. This isolates state correctness from model quality.
+  \item \textbf{Add durable persistence and optimistic concurrency.} Implement compare-and-swap, duplicate event rejection, atomic event writes, and restart recovery.
+  \item \textbf{Add event correlation and diagnosis.} Introduce typed triggers, evidence IDs, freshness rules, and version binding. Begin with deterministic diagnosis rules.
+  \item \textbf{Add method registry and authorization checks.} Model preconditions, capabilities, risks, effects, and reversibility. Reject incompatible methods before execution.
+  \item \textbf{Introduce proposal generation.} Allow a model to recommend alternatives, but keep the same validation and governor path for every proposal.
+  \item \textbf{Add delegation and suspension.} Make parent-child scope, cancellation, deadlines, and return contracts durable.
+  \item \textbf{Add outcome attribution and policy learning.} Version updates, evaluate them offline or in shadow mode, and do not allow learned changes to rewrite an active goal.
+  \item \textbf{Run controlled evaluation and adversarial tests.} Compare against simpler baselines, measure unnecessary switches and goal drift, and retain falsification conditions.
+\end{enumerate}
+
+This order is deliberate. A model should not be placed in charge of a lifecycle whose invariants have not yet been proven by deterministic tests. The control edge and authority boundary must work before model proposals can influence them.
+
+\subsection{Executable test scenarios}
+
+At minimum, the test suite should include:
+
+\begin{itemize}
+  \item A method timeout arrives, but a later valid success event has already been applied. The stale timeout must not change the method or reopen the intention.
+  \item Two reconsideration events arrive concurrently with the same expected version. Only one transition may be accepted; the other must be rejected or recomputed.
+  \item The model proposes a new goal in place of the authorized one. The goal-version check must reject it.
+  \item A method proposal preserves the goal but violates a no-write invariant. The authorization gate must reject it.
+  \item A child task returns an answer after the parent goal has been amended. The parent must revalidate the result before use.
+  \item A process crashes after the intention update but before external dispatch. The outbox must allow safe recovery without creating a duplicate operation.
+  \item A process crashes after an external operation succeeds but before recording the response. Reconciliation must occur before a retry.
+  \item A method oscillates between two alternatives. Hysteresis or the switch budget should trigger suspension or escalation without blocking a high-priority safety event.
+  \item An intention appears complete in a model-generated summary but lacks authoritative success evidence. It must not enter \texttt{SATISFIED}.
+\end{itemize}
+
+\BookDiagram[0.56\textheight]{Tex/diagrams/generated/part2/chapter15/b4-outcome-evaluation.png}{B4 evaluation trace: capture intention and reconsideration state, diagnosis, method switch and termination, then compare outcomes and ablations under controlled baselines.}{fig:ch15-evaluation}
+
+\section{Failure modes and operational boundaries}
+\label{sec:ch15-failures}
+
+\subsection{Stale commitment}
+
+The system continues pursuing a goal or method after its continuation conditions are no longer valid. The correction is not to discard persistence; it is to make the conditions explicit, monitor for relevant triggers, and require a diagnosis when the environment changes.
+
+\subsection{Goal drift and silent substitution}
+
+The active objective changes while the system continues to act as though it were pursuing the originally authorized one. This can occur when a model paraphrases the goal, optimizes an easier proxy, or treats a method's intermediate result as the final objective. Preserve a stable goal ID and version; compare every accepted method decision against that authority-bearing record; and route genuine goal amendments through the principal.
+
+\subsection{Method oscillation}
+
+The governor repeatedly switches between alternatives without new evidence or measurable improvement. Track the method history and reasons for each switch.\index{method oscillation} Use evidence-based hysteresis and escalation. A switch counter without diagnostic context only detects frequency; it does not explain whether the changes were justified.
+
+\subsection{Premature stopping}
+
+The agent marks the intention complete because the plan ended, a tool returned a success-shaped response, or a language model generated a confident summary. The completion rule must be tied to the goal's verification condition. A completed method is not necessarily a satisfied goal.
+
+\subsection{Premature commitment to a wrong interpretation}
+
+The agent may commit confidently to an incorrect interpretation of the task or the environment. A stable commitment is useful only when its foundation is adequately supported. Before commitment, record the source of goal authorization and the evidence supporting task interpretation. After commitment, retain a path for new authoritative evidence to trigger reconsideration. The diagnostic study of premature commitment cautions that internal convergence is not evidence of correctness by itself.\autocite{mehta2026premature}
+
+\subsection{Reflection without control}
+
+The system produces high-quality explanations of what should change but continues executing its previous method. The architecture must connect accepted decisions to the intention registry and executor through an auditable control path. A log entry, memory update, or reflection summary does not constitute a method switch.
+
+\subsection{Authority confusion}
+
+The most serious design error is allowing method authority to become goal authority. A model-generated proposal must not amend the goal, remove invariants, or widen permissions. Delegated work must not inherit authority that the parent does not possess. The goal store, governor, proposal generator, and authorization gate need separate contracts and separate audit events.
+
+\subsection{External side-effect confusion}
+
+A local state update cannot undo an external operation. Tool authorization, idempotency, reconciliation, and compensation must be designed as separate concerns. The intention lifecycle can decide to change method, but the external side-effect gate decides whether a specific operation is allowed.
+
+\subsection{Over-monitoring}
+
+A cautious review after every trivial event can consume more resources than it saves. A trigger taxonomy should focus attention on events with a plausible connection to goal satisfaction, goal validity, method feasibility, authority, or constraints. Measure both missed events and false alarms. Event-sensitive does not mean event-reactive without diagnosis.
+
+\subsection{Cross-bundle boundaries}
+
+B4 depends on and cooperates with other mechanisms, but it does not replace them:
+
+\begin{itemize}
+  \item \textbf{B1} can supply retrieved evidence relevant to the intention's diagnosis. Memory retrieval is not itself the authority to change the method or goal.
+  \item \textbf{B2} can recover from an execution impasse or typed failure. A recovery result can trigger B4 reconsideration, but the recovery substate does not own the parent commitment.
+  \item \textbf{B3} can admit and broadcast evidence or candidate content. Workspace admission does not authorize the intention's method.
+  \item \textbf{B5} can provide verified skills and fallback methods. The existence of a skill does not authorize its use; B4 and the relevant policy determine whether it is suitable for the current intention.
+  \item \textbf{B6} supplies cross-stage uncertainty, resource, interruption, tool-authorization, and stopping governance. B4 must expose the relevant state and authority boundary without duplicating B6's complete governor.
+\end{itemize}
+
+Fan and Lan's dependency analysis places B4 as the commitment boundary around which other recovery, evidence, and execution mechanisms can operate. Chapter 18 will address the full cross-bundle composition.\FanLanCite{\S VI-D; Figure 8; Appendix D}
+
+\section{Evaluation: does B4 improve long-horizon behavior?}
+\label{sec:ch15-evaluation}
+
+An implementation is not validated because it has an intention table, a governor class, or a convincing Product X demonstration. It must show that persistent authorized commitments and live method authority improve behavior under controlled conditions. Fan and Lan's Appendix D specifies the necessary internal trace, primary outcomes, safety and efficiency measures, baselines, ablations, and falsification logic. The experiment must preserve those requirements.\FanLanCite{Appendix D, Table X; \S VI-C, B4}
+
+\subsection{Required internal trace}
+
+For each task, record:
+
+\begin{itemize}
+  \item the intention record and every accepted version;
+  \item the triggering event and its source;
+  \item evidence used in diagnosis;
+  \item the diagnosis and its confidence or support basis;
+  \item the governor decision and authority proof;
+  \item the previous and new method assignments;
+  \item delegation, suspension, resumption, and termination events; and
+  \item the final goal outcome and the evidence used to verify it.
+\end{itemize}
+
+The trace must make it possible to distinguish monitoring from control. It must show not only that the system detected a problem, but that a method transition was authorized and accepted, and that the accepted method was actually used. It must also show when no change was made and why.
+
+\subsection{Primary outcomes}
+
+The primary outcomes include goal drift, task completion, and correct stopping. Goal drift measures whether the agent preserved the authorized objective and its constraints through the run. Completion measures whether the goal was achieved according to its verification rule, not whether the plan ended. Correct stopping measures whether the agent terminated or escalated at the right time, including cases where success was not possible or could not be verified.
+
+\subsection{Safety and efficiency outcomes}
+
+Measure method oscillation, unnecessary replans, trigger precision, escalation precision, execution cost, deliberation cost, latency, and the number and severity of unauthorized or duplicate side effects. Report the cost of maintaining and querying intention state. A mechanism that reduces drift but adds disproportionate latency or causes harmful switches may not be a useful improvement.
+
+\subsection{Baselines}
+
+At minimum, compare:
+
+\begin{enumerate}
+  \item a prompt-only baseline without explicit persistent intention state;
+  \item persistence without an authoritative method governor;
+  \item event-driven method switching with the same goal constraints; and
+  \item simple periodic reconsideration schedules, including bold and cautious variants where appropriate.
+\end{enumerate}
+
+The reviewed modern systems can be included where reproducible implementations and comparable task definitions are available. Do not compare a complete B4 implementation against a weaker baseline that lacks the same model, prompts, tools, execution budget, or environmental information.
+
+\subsection{Three required ablations}
+
+Keep the three source-specified ablations separate:
+
+\begin{enumerate}
+  \item \textbf{Remove the persistent intention state object.} This tests whether the explicit representation contributes beyond the information already present in the prompt, transcript, or execution log.
+  \item \textbf{Remove the authoritative control edge but retain monitoring and logging.} This tests whether the governor's ability to change the active method contributes beyond detecting and recording the problem.
+  \item \textbf{Remove the learning update but retain the runtime transition.} This tests whether feedback that changes later behavior adds value beyond the immediate reconsideration and method-switch mechanism.
+\end{enumerate}
+
+These ablations isolate state, control, and learning. They must not be collapsed into one generic "remove memory" condition.\FanLanCite{Appendix D, Table X}
+
+\subsection{Controlled tasks and preregistration}
+
+Vary environmental dynamism, method reliability, planning cost, deadline pressure, goal feasibility, goal relevance, distractor pressure, and delegated work. Include paired tasks in which the goal remains valid but the original method becomes invalid, and tasks in which the goal itself becomes impossible or is explicitly amended. Use matched seeds or deterministic event injection where possible. Fix the base model, prompt, tools, environment, and task budget when comparing a control change, and preregister the experimental unit, sample size, metric formulas, exclusions, uncertainty intervals, and stopping rule.\FanLanCite{Appendix D, Table X}
+
+\subsection{Falsification criteria}
+
+Reject or narrow the B4 design if any of the following is observed:
+
+\begin{itemize}
+  \item explicit intention state does not reduce goal drift compared with a strong simpler baseline;
+  \item method authority does not improve outcomes beyond monitoring and logging;
+  \item method changes lack diagnostic value or do not improve completion or correct stopping;
+  \item reconsideration causes persistent oscillation or materially increases harmful side effects;
+  \item the system stops prematurely or fails to stop when success is verified or achievement is impossible;
+  \item benefits disappear when model, prompt, tools, environment, and budget are controlled; or
+  \item the mechanism adds cost without a measurable benefit large enough to justify its complexity.
+\end{itemize}
+
+These are falsification conditions, not benchmark results. This chapter reports no experiment claiming that the proposed reference design has passed them. The point is to make the residual hypothesis testable and to allow the possibility that a simpler architecture performs just as well.\FanLanCite{Table VI; Appendix D, Table X}
+
+\section{Chapter recap}
+\label{sec:ch15-recap}
+
+A persistent \gls{intention} is not a task string copied into every prompt. It is an authorized commitment that retains the goal, rationale, continuation conditions, reconsideration triggers, authority, current plan, and termination status across steps and restarts. Persistence supports coherent behavior, but without reconsideration it can become stale.
+
+BDI distinguishes beliefs, desires, and intentions and explains why commitment constrains deliberation. Blind, single-minded, and open-minded policies describe when an intention is released. Bold, cautious, and intermediate schedules describe when the agent reconsiders its current course. These are separate axes. MIDCA provides a historical model of meta-level observation and method adaptation through Note, Assess, and Guide. It does not replace BDI's account of commitment.
+
+B4 combines these concerns into a residual mechanism hypothesis: a persistent intention record must be connected to a live governor that can continue, change method, delegate, suspend, or abandon within an explicit authority boundary. Goal authority belongs to the principal or authorized policy source. Method authority may be delegated to a bounded governor. A model can propose alternatives, but it cannot authorize or persist them by itself.
+
+The reference design in this chapter proposes typed records, versioned goals and methods, guarded lifecycle transitions, evidence-bound reconsideration events, transactional persistence, optimistic concurrency, outbox-based dispatch, delegated child contracts, anti-oscillation safeguards, and executable tests. The Product X example illustrates the central rule: an uncertain timeout can justify changing the method from a write-oriented sequence to read-only reconciliation without changing the goal or dropping the no-duplicate-charge invariant.
+
+Finally, B4 must be evaluated as a control mechanism, not as a collection of classes. The experiment needs an internal trace, matched baselines, primary outcomes for goal drift, completion, and correct stopping, separate safety and efficiency measures, the three source-required ablations, and clear falsification criteria. A system that logs a problem but cannot change the active method has not yet demonstrated method authority.
+
+\begin{takeawaybox}
+\textbf{The design principle.} Preserve the authorized end; reconsider the means when evidence justifies it; and make the authority for each change explicit, durable, and testable.
+\end{takeawaybox}
+
+\begin{reviewquestions}{Review questions}
+\begin{enumerate}
+  \item Why is a task description or conversation transcript insufficient as the only representation of a persistent intention?
+  \item How do beliefs, desires, and intentions differ in the BDI account?
+  \item Give an example in which single-minded and open-minded commitment would release an intention at different times.
+  \item Why are blind, single-minded, and open-minded commitment policies separate from bold and cautious reconsideration schedules?
+  \item What does MIDCA's meta-level add beyond an execution log or retrospective reflection?
+  \item Explain the difference between goal authority, method authority, and proposal authority.
+  \item Why does a method switch need to preserve a goal identity and version?
+  \item What information in a reconsideration event prevents a delayed tool response from overwriting a newer decision?
+  \item Why should an outbox be used when a method change causes an external operation?
+  \item What does each of the three B4 ablations isolate?
+  \item Which evidence would justify rejecting the B4 design in favor of a simpler baseline?
+\end{enumerate}
+\end{reviewquestions}
+
+\begin{reviewquestions}{Practical exercises}
+\begin{enumerate}
+  \item Design an intention record for a travel-booking request. Separate the authorized destination and constraints from the current booking method. Show which fields remain unchanged after a method switch.
+  \item Write a transition table for method change, delegation, suspension, satisfaction, impossibility, abandonment, and goal amendment. For each transition, state the required authority and evidence.
+  \item Implement a compare-and-swap method-switch operation. Test duplicate events, concurrent decisions, stale versions, and crash recovery between local commit and external dispatch.
+  \item Create a controlled task in which an event-sensitive governor is better than a bold schedule, and another in which a cautious schedule wastes resources. State the expected observations before running the experiment.
+  \item Design an oscillation test with two plausible methods. Specify a hysteresis rule, a safety-trigger exception, and an escalation condition.
+  \item Evaluate a model-generated proposal that weakens a goal constraint. Identify the authority check that must reject it and the audit record that should remain.
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+
+The B4 residual claim, intention-record fields, governor decision set, modern comparison boundaries, E/D mappings, failure conditions, cross-bundle dependencies, and Appendix D evaluation requirements are attributed to Fan and Lan. The BDI account and commitment-policy distinctions are grounded in Rao and Georgeff and in Kinny and Georgeff. MIDCA's dual-cycle and Note--Assess--Guide description is cross-checked against Cox and colleagues. Modern cases are identified by their actual publication status: the hybrid BDI--LLM work and Devil's Advocate are published conference papers; the self-aware BDI work is a technical report; CCA and the premature-commitment study are preprints in the cited corpus. Goal-drift evidence is cited as a published AIES paper.
+
+Product X is a book-created teaching scenario. The intention and method contracts, seven-field implementation mapping, authority model, state machine, SQL schema, interfaces, orchestration, transaction/outbox rules, anti-oscillation safeguards, and vertical-slice sequence are engineering proposals made in this chapter. They are not presented as implemented mechanisms prescribed by BDI, MIDCA, or Fan and Lan. The payment example assumes a provider with idempotent submission and an authoritative read-only status lookup; implementations must verify those capabilities against the actual provider contract.
+
+\FanLanCite{\S II-D; \S III-C; \S VI-C, B4; Table VI; Figure 8; Appendices C-D}
+\autocite{rao1991modelingbdi,rao1995bdi,kinny1991commitment,cox2016midca,owayyed2025controlled,lawton2026selfawarebdi,wang2024devilsadvocate,liang2025cca,arike2025goaldrift,mehta2026premature,hu2024adas,zhang2024aflow,gupta2024metareflection}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 16 turns to B6: how uncertainty, resources, interruption, tool authorization, and stopping should be governed across the execution process. B4 supplies a durable commitment and a bounded method-governance boundary. B6 addresses the broader cross-stage signals and constraints that such a governor must respect. The two mechanisms cooperate, but neither should silently absorb the other's responsibility.

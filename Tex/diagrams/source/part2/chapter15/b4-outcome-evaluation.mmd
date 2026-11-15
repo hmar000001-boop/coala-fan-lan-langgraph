@@ -1,0 +1,28 @@
+flowchart TB
+  accTitle: B4 evaluation trace, baselines, and falsification
+  accDescr: Each run records the intention, trigger, diagnosis, authority decision, method switch, and terminal outcome. The design is compared with prompt-only, persistence-only, and periodic reconsideration baselines. Three ablations separately remove the intention state object, the authoritative control edge while retaining logs, and the learning update while retaining runtime transitions. The bundle is rejected when the control adds no diagnostic value or worsens drift, stopping, safety, or cost.
+  T[Task and authorized goal] --> S[Versioned intention state]
+  S --> E[Trigger and evidence]
+  E --> D[Diagnosis]
+  D --> C[Governor decision and authority]
+  C --> M[Method assignment and execution]
+  M --> O[Completion and correct stopping]
+  O --> L[Outcome and later learning]
+  L --> H[Held-out evaluation]
+  B1[Prompt-only baseline] --> H
+  B2[Persistence without governor] --> H
+  B3[Periodic bold and cautious] --> H
+  A1[Remove intention state object] -. ablation .-> H
+  A2[Remove control edge; keep logging] -. ablation .-> H
+  A3[Remove learning update; keep runtime switch] -. ablation .-> H
+  H --> F{Improves goal drift and completion without safety or cost regression?}
+  F -->|no| R[Reject or narrow B4]
+  F -->|yes| V[Replicate and verify limits]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class T,S source
+  class E,D,C,M,O,H process
+  class L,V output
+  class B1,B2,B3,A1,A2,A3,F,R caution

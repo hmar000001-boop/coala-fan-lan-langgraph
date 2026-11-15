@@ -1,0 +1,28 @@
+flowchart TB
+  accTitle: Proposed B4 intention lifecycle
+  accDescr: A proposed intention moves from proposed to authorized and active. A validated trigger moves it to reconsideration pending, where the governor may continue, switch method, delegate, suspend, or abandon. Satisfaction and impossibility require evidence and are terminal for this intention version.
+  P[PROPOSED] -->|goal authority approves| A[AUTHORIZED]
+  A -->|initial method passes checks| X[ACTIVE]
+  X -->|validated trigger or scheduled review| R[RECONSIDERATION PENDING]
+  R -->|continue| X
+  R -->|switch method; preserve goal version| X
+  R -->|delegate bounded child| D[DELEGATED]
+  D -->|child result revalidated| R
+  X -->|pause with resume condition| S[SUSPENDED]
+  R -->|pause with resume condition| S
+  S -->|resume condition satisfied| X
+  X -->|verified goal success| SAT[SATISFIED]
+  R -->|verified goal success| SAT
+  X -->|evidence proves impossible| IMP[IMPOSSIBLE]
+  R -->|evidence proves impossible| IMP
+  X -->|authorized abandonment| AB[ABANDONED]
+  R -->|authorized abandonment| AB
+  S -->|authorized abandonment| AB
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class P,A,X source
+  class R,D,S process
+  class SAT output
+  class IMP,AB caution
