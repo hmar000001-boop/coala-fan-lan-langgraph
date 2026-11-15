@@ -1,0 +1,18 @@
+flowchart TB
+  accTitle: GraSP evidence from comparison, component study, and appendix ablations
+  accDescr: The evaluation evidence has three distinct layers. The main benchmark comparison evaluates GraSP against ReAct, Reflexion, ExpeL, and flat-skill baselines across four environments and eight model backbones. The main component table presents selected progressive and component variants. Appendix C.2 specifies five separate ablation conditions. Results must be interpreted together with the paper's scope and limitations.
+  B[Four benchmarks and eight model backbones] --> M[Main baseline comparison]
+  M --> R[Reward, success, and environment steps]
+  C[Main component table] --> P[Selected component variants]
+  A[Appendix C.2] --> F[Five specified ablation conditions]
+  R --> L[Interpret with stated limitations]
+  P --> L
+  F --> L
+  L --> O[Bounded empirical conclusions]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class B,C,A source
+  class M,R,P,F,L process
+  class O output

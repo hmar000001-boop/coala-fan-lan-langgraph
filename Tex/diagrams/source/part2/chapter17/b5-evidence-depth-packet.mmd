@@ -1,0 +1,17 @@
+flowchart LR
+  accTitle: Independent evidence-relation and migration-depth codes
+  accDescr: Fan and Lan's coding keeps evidence relation and migration depth separate. E3 means a functionally convergent mechanism without a documented inheritance claim. D4 means outcome-dependent adaptation of future control. The GraSP B5 mapping is E3/D4. Neither axis implies the other, and neither code alone proves complete historical migration or universal correctness.
+  M[GraSP mechanism mapping] --> E[E3: functional convergence]
+  M --> D[D4: experience-adaptive future control]
+  E --> N[No documented lineage inferred]
+  D --> F[No complete migration inferred]
+  N --> B[Read as two independent axes]
+  F --> B
+  B --> C[Bounded E3 / D4 claim]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class M source
+  class E,D,N,F,B process
+  class C output

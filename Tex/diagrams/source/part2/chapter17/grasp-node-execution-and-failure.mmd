@@ -1,0 +1,20 @@
+flowchart TB
+  accTitle: Verified execution of one graph node
+  accDescr: The executor selects a topologically ready node, checks its preconditions against the current state, invokes the bound skill, and evaluates its postcondition verifier. A successful check marks the node verified and enables eligible descendants. A failed precondition, execution, postcondition, or timeout creates a typed failure event for local repair.
+  R[Ready node selected] --> P[Precondition verification]
+  P -->|Pass| E[Execute bound skill]
+  P -->|Fail| F[Typed failure event]
+  E --> V[Postcondition verifier]
+  V -->|Pass| S[Mark node verified]
+  V -->|Fail| F
+  E -->|Timeout or exception| F
+  S --> N[Enable eligible descendants]
+  F --> L[Local repair controller]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class R source
+  class P,E,V,L process
+  class S,N output
+  class F caution

@@ -1,0 +1,14 @@
+flowchart LR
+  accTitle: Typed dependencies in a GraSP skill graph
+  accDescr: A source node leads to skill invocations and a sink. A state edge is a hard dependency because one skill effect satisfies another precondition. A data edge is hard because one output binds a later input. An order edge is a soft precedence constraint and may be reconsidered during repair. The diagram separates the three edge semantics rather than treating every arrow as equivalent.
+  S((Source)) --> A[Skill A]
+  A -->|state: effect satisfies precondition| B[Skill B]
+  A -->|data: output binds input| C[Skill C]
+  B -->|order: soft precedence| C
+  C --> Z((Sink))
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class S,Z output
+  class A,B,C process

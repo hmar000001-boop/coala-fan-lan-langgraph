@@ -148,4 +148,15 @@
 \newglossaryentry{selectiverisk}{name={selective risk},description={The error rate measured over the subset of cases for which a system elects to act rather than abstain or request assistance}}
 \newglossaryentry{abstention}{name={abstention},description={A deliberate decision not to provide or execute a proposed result because evidence, authority, or risk constraints are not satisfied}}
 \newglossaryentry{verificationcost}{name={verification cost},description={The resources consumed by checks intended to reduce uncertainty or detect errors before a consequential action or completion claim}}
-
+% GraSP and closed-candidate vocabulary introduced in Chapter 17.
+\newglossaryentry{skill}{name={skill},description={A reusable procedure or capability that can be selected and invoked to contribute to a task}}
+\newglossaryentry{skilllibrary}{name={skill library},description={A versioned collection of available skill schemas, implementations, and invocation metadata}}
+\newglossaryentry{skillgraph}{name={skill graph},description={A directed graph whose nodes represent skill invocations and whose typed edges encode state, data, or precedence relationships}}
+\newglossaryentry{skillnode}{name={skill node},description={A graph node representing one instantiated skill invocation with bound arguments, conditions, verifier, status, confidence, and repair budget}}
+\newglossaryentry{skillverifier}{name={skill verifier},description={A check associated with a skill invocation that evaluates whether its expected postcondition or result has been established}}
+\newglossaryentry{stateedge}{name={state edge},description={A hard graph dependency in which one skill effect satisfies a precondition of a downstream skill}}
+\newglossaryentry{dataedge}{name={data edge},description={A hard graph dependency in which an output from one skill supplies a bound input to another skill}}
+\newglossaryentry{orderedge}{name={order edge},description={A soft precedence relationship between skill nodes that does not itself assert a state or data dependency}}
+\newglossaryentry{repairoperator}{name={repair operator},description={A typed transformation that changes a bounded portion of a skill graph in response to a diagnosed execution failure}}
+\newglossaryentry{retrievalconfidence}{name={retrieval confidence},description={An estimate derived from semantic retrieval, episodic agreement, ranking margin, and goal coverage that informs the choice of execution route}}
+\newglossaryentry{graphcompilation}{name={graph compilation},description={The process of turning retrieved candidate skills into a validated executable graph with explicit typed dependencies}}

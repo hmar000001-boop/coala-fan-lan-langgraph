@@ -1,0 +1,20 @@
+flowchart TB
+  accTitle: Skill retrieval and confidence features
+  accDescr: Direct task-state semantic retrieval is combined with a memory-induced skill distribution from similar successful trajectories. Four reported features—mean memory similarity, distribution agreement, top-skill margin, and goal coverage—feed a learned confidence estimate mixed with historical success for the confidence bin. Low confidence routes to ReAct, intermediate confidence increases repair caution, and high confidence permits normal DAG execution.
+  Q[Task and state] --> D[Direct semantic distribution]
+  M[Top similar successful episodes] --> H[Memory-induced skill distribution]
+  D --> F[Four confidence features]
+  H --> F
+  F --> C[Feature model plus historical success rate]
+  C --> T{Confidence band}
+  T -->|Below 0.40| R[ReAct fallback]
+  T -->|0.40 to 0.65| I[Intermediate: increased repair budget]
+  T -->|Above 0.65| N[Normal DAG execution]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class Q,M source
+  class D,H,F,C,T process
+  class I,N output
+  class R caution

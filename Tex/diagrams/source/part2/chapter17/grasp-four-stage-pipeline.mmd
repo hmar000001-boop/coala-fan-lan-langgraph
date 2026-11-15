@@ -1,0 +1,18 @@
+flowchart LR
+  accTitle: Four stages of the GraSP control path
+  accDescr: GraSP links four stages. Memory-conditioned retrieval proposes skills from semantic relevance and episodic experience. DAG compilation creates a typed executable graph. Verified execution checks node preconditions and postconditions and repairs failures locally. Confidence-based routing sends unreliable retrieval to reactive fallback.
+  Q[Task and current state] --> R[1. Memory-conditioned retrieval]
+  M[(Episodic experience)] --> R
+  L[(Typed skill library)] --> R
+  R --> C[2. DAG compilation]
+  C --> X[3. Verified execution and local repair]
+  X --> T[4. Confidence-based routing]
+  T -->|Reliable structured path| X
+  T -->|Low retrieval confidence| F[ReAct fallback]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class Q,M,L source
+  class R,C,X,T process
+  class F caution

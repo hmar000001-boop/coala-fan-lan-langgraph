@@ -1,0 +1,25 @@
+flowchart TB
+  accTitle: Five typed local repair operators
+  accDescr: GraSP's local repair algebra uses five different operators. Rebind changes arguments for an existing skill. InsertPrereq adds missing prerequisite skills. Substitute replaces a skill with a compatible alternative. Rewire changes local dependencies, especially soft order edges. Bypass skips a node when the current state already satisfies its downstream requirements.
+  F[Classified failure and affected subgraph] --> D{Diagnosis}
+  D --> R[Rebind: change invocation arguments]
+  D --> I[InsertPrereq: add prerequisite subgraph]
+  D --> S[Substitute: replace skill schema]
+  D --> W[Rewire: change local edges]
+  D --> B[Bypass: skip already-satisfied work]
+  R --> V[Validate proposed patch]
+  I --> V
+  S --> V
+  W --> V
+  B --> V
+  V -->|Valid| X[Resume verified execution]
+  V -->|Invalid or exhausted| E[Escalate to global replan or fallback]
+  classDef source fill:#EAF4FB,stroke:#1A4A8A,color:#1C1C1E
+  classDef process fill:#F4F4F4,stroke:#888888,color:#1C1C1E
+  classDef output fill:#EEF7EE,stroke:#27AE60,color:#1C1C1E
+  classDef caution fill:#FEF9E7,stroke:#F39C12,color:#1C1C1E
+  class F source
+  class D,V process
+  class R,I,S,W,B output
+  class X output
+  class E caution

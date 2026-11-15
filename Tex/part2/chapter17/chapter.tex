@@ -1,4 +1,949 @@
 \chapter{The Closed Candidate B5 and GraSP}
+\label{ch:closed-b5-grasp}
+
+\begin{learningbox}
+\textbf{Chapter at a glance.} A research review should be capable of closing a proposed gap when a strong existing system already implements the control relationship that the gap was meant to capture. This chapter follows that process for B5. It reconstructs the original candidate, explains the closest-baseline decision that removed it from Fan and Lan's residual list, and studies GraSP as the system that supplies the relevant selection, verification, repair, and fallback chain. A practical bridge then maps the published design into Java-like contracts and tests, while keeping that reconstruction distinct from both GraSP's implementation and the papers' theoretical claims.
+\end{learningbox}
+
+\section{The candidate gap that disappeared}
+\label{sec:ch17-gap-disappeared}
+
+Imagine an agent that must complete a task requiring several reusable \glspl{skill}. It retrieves a skill for preparing an item, another for locating the required tool, and a third for performing the final operation. The list looks relevant, but it does not yet say which action must happen first, which output supplies the next action's input, or which environmental condition must hold before an operation is allowed to run. A flat sequence can hide these relationships inside a model-generated explanation. If the second operation fails, the runtime may discard the remaining sequence and ask the model to plan again, even when the failure affects only a small part of the task.
+
+This is a problem of orchestration rather than skill availability. Reusable procedures are useful only when an agent can select an appropriate subset, establish how the procedures depend on one another, check that each invocation is applicable, and decide what to do when an execution step fails. A \gls{skilllibrary}\index{skill library} does not automatically provide those controls. Nor does a model's ability to describe an execution order prove that the runtime enforces it.
+
+A plausible research question follows: what if an agent connected calibrated selection, typed verification, bounded repair, and a planner fallback into one executable control chain? Fan and Lan initially retained that question as candidate B5 while examining how historical cognitive mechanisms correspond to modern agent systems. Their subsequent closest-baseline screening identified GraSP, a graph-structured skill-composition system,\index{GraSP} as already implementing the relevant chain. B5 was therefore removed from the residual intervention count and retained as a closed negative case.\index{B5|see{closed candidate}}\index{closed candidate} It is not a sixth surviving residual hypothesis.\FanLanCite{\S II-D--II-E; \S VI-B--VI-C, B5; Table V; Table VI}
+
+The result is important for a reason that is easy to miss. A research agenda is not improved by retaining every attractive idea. If a reviewed system already implements the proposed control relationship, continuing to describe that relationship as absent makes the agenda less accurate. A candidate must be exposed to the strongest relevant baseline, and the absence claim must be withdrawn when the baseline contradicts it. Closing B5 is therefore evidence that the review's method can remove a candidate, not merely generate one.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+\textbf{The scope of the negative case.} B5 is closed within the frozen analytical corpus and the provisional coding rules reported by Fan and Lan. This does not prove that GraSP is universally applicable, that every skill-governance problem has been solved, or that the wider literature contains no alternative system. The conclusion is bounded by the evidence the review examined.
 \end{notebox}
+
+\subsection{What the chapter will establish}
+
+By the end of the chapter, the reader should be able to explain why a flat skill list is different from an executable skill graph; reconstruct GraSP's retrieval, compilation, verification, repair, and routing stages; distinguish the five local repair operators; interpret the E3 and D4 codes independently; and identify both the evidence supporting B5's closure and the limits of that evidence. The reader will also see how the published system can be represented in Java-like types and tested without pretending that the book has reproduced GraSP's code or experiments.
+
+The practical bridge has a different purpose from the implementation bridges in the preceding mechanism chapters. Those chapters considered residual hypotheses and proposed testable runtime couplings. This chapter studies a candidate that the source review says is already closed. Its engineering work is therefore a faithful reconstruction and reproducibility map. The code contracts and additional production checks below are book-created representations, not GraSP source code and not features prescribed by Fan and Lan.
+
+\section{The evidence boundary and the meaning of closure}
+\label{sec:ch17-evidence-boundary}
+
+Two papers have different roles in the chapter. Fan and Lan provide the analytical framework, the historical-to-modern mapping, the six-candidate derivation, and the decision to close B5. Xia and colleagues provide the primary technical description of GraSP: its architecture, graph definition, execution procedure, repair operators, experimental setup, ablations, and stated limitations. The book uses the second paper to understand the system that the first paper identifies as the closest baseline.\FanLanCite{\S II-A--II-E; \S III-C, ICARUS; \S IV-B--IV-C; \S V-A--V-B; \S VI-B--VI-C, B5; Appendix C-O}\autocite{xia2026grasp}
+
+A third source is used narrowly for historical context: Choi and Langley's account of the evolution of ICARUS. It supports the reader's understanding of the historical architecture, but it does not become a third formal foundation for Part II. The chapter does not infer that GraSP descended from ICARUS. Fan and Lan's classification is functional convergence, not documented inheritance.\autocite{choi2018icarus}
+
+\subsection{The claim categories}
+
+The chapter separates four kinds of statement:
+
+\begin{description}
+  \item[Source-described mechanism.] A mechanism, state field, trigger, algorithm step, operator, threshold, or experimental condition explicitly described by GraSP or Fan and Lan. It is attributed to the relevant paper and cited at the point of use.
+  \item[Fan and Lan's analysis.] A mapping, evidence/depth code, residual-candidate decision, or interpretation made by the review. It is attributed to Fan and Lan, not to the GraSP authors.
+  \item[Book explanation or example.] A teaching analogy, simplified trace, or illustrative task constructed to make the mechanism understandable. It is identified as a book example and is not presented as an experimental trace.
+  \item[Engineering reconstruction.] A Java-like type, interface, state machine, invariant check, persistence proposal, or test suggested by this chapter. It is labelled as an engineering representation and is not attributed to either paper.
+\end{description}
+
+These categories prevent a common attribution error. A typed Java record may faithfully represent an attribute that GraSP describes, but the exact Java record is still ours. A transactional persistence protocol may be a sensible production extension, but the GraSP paper does not thereby become a specification for that protocol. Similarly, Fan and Lan's E3/D4 classification is their mapping result; it is not a performance score produced by the GraSP experiments.
+
+\subsection{A bounded review, not a universal absence proof}
+
+Fan and Lan describe their work as a bounded mechanism-level mapping review. Their corpus was frozen on 26 July 2026. It includes ten historical architecture families, eight general runtime families, and forty-two mechanism-focused modern records. The paper does not claim a PRISMA completeness result or a search-recall estimate. Its coding process includes two passes, but the manuscript does not claim independent inter-rater reliability; the D3/D4 claim packets are retained for later independent recoding. The five residual bundles and the closed B5 case are therefore conditional on the recorded corpus, search, and provisional source codes.\FanLanCite{\S II-A--II-E; \S VII-C; Appendix C-O; Appendix F}
+
+This boundary does not make the result unusable. It tells us what kind of conclusion it is. B5 is closed in the reviewed corpus because the GraSP paper describes the complete control chain that B5 proposed. The review does not claim to have searched every skill-based system ever built, inspected every possible implementation, or demonstrated universal transfer beyond the domains in which GraSP was evaluated.
+
+\section{How B5 became a candidate}
+\label{sec:ch17-b5-candidate}
+
+\subsection{The ICARUS connection}\index{ICARUS}
+
+ICARUS is one of the historical cognitive architectures in Fan and Lan's catalog. Its relevant mechanism is grounded hierarchical skill control. Percepts instantiate concepts about the current environment; goals and those grounded concepts help determine which skills are applicable; and skills can be organized hierarchically so that a higher-level procedure advances the state through subskills or actions. Problem solving can also contribute to skill acquisition or refinement. The important point for this chapter is not that ICARUS is simply a place where procedures are stored. Its skills participate in goal-directed control and are tied to the state in which they are applicable.\FanLanCite{\S III-C, ICARUS; Fig. 3; Appendix A}\autocite{choi2018icarus}
+
+A modern skill library can resemble only one part of this arrangement. It may store reusable instructions but leave applicability, composition, execution order, verification, and recovery to a general-purpose model call. A more developed system can expose typed contracts, invoke only skills whose preconditions match, and update its future use of skills based on experience. The relevant comparison is therefore between control operations, not between the names of two repositories.
+
+\subsection{The predecessor chain}
+
+Fan and Lan's modern mapping records several lines of work around skill induction, composition, typed contracts, local repair, adaptive compilation, rollback, and code-path fallback. The catalog includes, among others, SGDR, Agent Workflow Memory, Voyager, SkillComposer, SkillOps, SkVM, SkillSmith, SkCC, and GraSP. These systems do not all implement the same mechanism. Some induce reusable procedures; some compile a path; some govern skill invocation or maintenance; others adapt a compiled path after failures. The review distinguishes these cases rather than treating every system called a skill framework as equivalent.\FanLanCite{\S IV-B--IV-C; \S V-A, ICARUS mapping; Table IV; Table IX; Appendix C-K--C-P}
+
+The predecessor chain matters because it shows how a candidate can emerge even when many of its constituent ideas already exist. The residual question is about their composition at a particular runtime boundary. Candidate B5 was not simply a request for another way to induce skills. It concerned how a runtime chooses whether to use a structured skill route, verifies the typed steps, repairs a local failure under a bound, and transfers control to a broader planner or reactive fallback when the local route is no longer viable.
+
+\subsection{The original B5 chain}
+
+Fan and Lan state the original candidate as:
+
+\begin{center}
+\textbf{Calibrated multi-skill routing}
+\(\longrightarrow\) \textbf{typed verification}
+\(\longrightarrow\) \textbf{bounded repair}
+\(\longrightarrow\) \textbf{planner fallback.}
+\end{center}
+
+Each edge contributes a distinct control decision:
+
+\begin{enumerate}
+  \item \textbf{Calibrated multi-skill routing} decides whether the retrieved skill set is sufficiently trustworthy for structured execution. A topical match alone is not enough; the route must consider evidence about retrieval reliability and task coverage.
+  \item \textbf{Typed verification} represents each skill invocation with explicit arguments, preconditions, effects, and a verifier. A node is not treated as successful merely because the model returned a plausible explanation.
+  \item \textbf{Bounded repair} responds to a classified failure by changing a limited portion of the graph. The patch is constrained so that local recovery does not silently invalidate the entire verified execution history.
+  \item \textbf{Planner fallback} provides an escalation path when confidence is too low, compilation fails, or local repair cannot produce a valid graph. The runtime does not continue executing a known-invalid structure merely because a repair attempt was made.
+\end{enumerate}
+
+The proposed unit was the composition. A skill library could have retrieval without typed execution. A workflow compiler could create structure without verification. A repair mechanism could modify a plan without a calibrated entry route or a reliable fallback. The candidate asked whether one system had connected all these parts into operative runtime control.\FanLanCite{Table V; \S VI-C, B5}
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter17/b5-candidate-to-closure.png}{The six initial candidate bundles are screened against the modern corpus. GraSP supplies the full B5 selection, verification, repair, and fallback chain, so B5 is closed while five residual hypotheses remain.}{fig:ch17-b5-closure}
+
+\subsection{Why closest-baseline screening changes the answer}
+
+A weak comparison could have left B5 open. If the review compared the candidate only with a flat skill list or a workflow tool that had no node-level verification, it could reasonably conclude that the full chain remained absent. The relevant question, however, is not whether one chosen baseline is incomplete. It is whether a stronger reviewed system already composes the required edges.
+
+Fan and Lan's screening identifies GraSP as that system. They map its calibrated confidence routing, typed skill DAG, node pre/postcondition checks, five bounded repair operators, and escalation to global replanning or ReAct fallback onto the B5 candidate. They therefore remove B5 from the residual count and retain it as a negative case.\FanLanCite{\S II-D; \S VI-B; \S VI-C, B5; Table V; Appendix C-O}
+
+The inference is not based on shared vocabulary alone. It rests on the presence of state objects and transitions that correspond to the proposed chain. The following sections reconstruct those objects and transitions in enough detail to make the screening decision auditable.
+
+\section{Retrieval is not orchestration}
+\label{sec:ch17-retrieval-not-orchestration}
+
+GraSP begins from a practical observation: providing an agent with more skills does not necessarily improve task execution. A system may retrieve several procedures that look relevant, then place them into a prompt as a flat list. The language model must still infer which procedures apply, what order they require, how one result supplies another's input, and which earlier result becomes invalid when a later step fails. The extra material can consume context without providing a reliable execution path.\autocite{xia2026grasp}
+
+\subsection{Three different operations}
+
+It helps to separate three questions that are often collapsed:
+
+\begin{description}
+  \item[Retrieval:] Which available skills are candidates for the task and current state?
+  \item[Compilation:] How do the selected skills depend on one another, and what valid executable graph connects the initial state to the goal?
+  \item[Execution:] Which node is ready now, what must be checked before and after it runs, and how should failure change the graph or control route?
+\end{description}
+
+A retrieval system can answer the first question while leaving the other two implicit. GraSP adds a \gls{graphcompilation} stage between retrieval and execution. The output is a typed directed acyclic \gls{skillgraph} (DAG)\index{directed acyclic graph (DAG)}\index{skill graph}, not merely an ordered paragraph. Nodes represent instantiated skill invocations; typed edges express the relationships that determine whether one invocation can safely follow another.\autocite{xia2026grasp}
+
+\subsection{Why flat execution can make failure expensive}
+
+Suppose a sequential plan contains \(N\) skill invocations and the invocation at position \(k\) fails. A flat execution model may need to reconsider the remaining suffix because it has no explicit representation of which later steps actually depend on the failed one. If the causal effect of the failure is confined to a small neighborhood, replanning the entire suffix can repeat work that remains valid.
+
+GraSP's argument is that a typed DAG makes the affected region more explicit. A failure at a node invalidates only the descendants that depend on that node, subject to the graph's dependency semantics and the repair rule. With a bounded out-degree \(d\) and a repair radius \(h\), the paper contrasts a linear replanning view \(O(N)\) with a local neighborhood bound expressed as \(O(d^h)\). This is a structural complexity argument, not a guarantee that every real workload has constant repair cost. The bound depends on the graph degree, chosen neighborhood radius, and the actual distribution of dependencies.\autocite{xia2026grasp}
+
+The important gain is not that graphs are always faster than lists. It is that the graph exposes causal dependencies that a runtime can inspect. If a state or data edge proves that one node's output is required by another, the runtime knows that the downstream node cannot simply proceed after the upstream failure. If an unrelated branch has already been verified, the runtime can preserve that verified work rather than treating the whole plan as a single indivisible sequence.
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-four-stage-pipeline.png}{GraSP separates memory-conditioned retrieval, typed DAG compilation, verified execution with local repair, and confidence-based routing to reactive fallback.}{fig:ch17-grasp-pipeline}
+
+\section{GraSP's four-stage control path}
+\label{sec:ch17-four-stage}
+
+GraSP describes four stages: memory-conditioned retrieval, DAG compilation, verified execution with local repair, and confidence-based routing. The stages are connected, but they answer different questions. Retrieval proposes a manageable skill set; compilation makes dependencies executable; verification governs node completion; repair and routing decide how execution should continue after evidence changes.\autocite{xia2026grasp}
+
+\subsection{Stage 1: memory-conditioned skill retrieval}
+
+Let \(q\) be the task, \(x\) the current state, \(\mathcal{L}\) the \gls{skilllibrary}, and \(\mathcal{M}\) \gls{episodicmemory}. GraSP retrieves the top \(k\) successful memory records \(R\) and computes normalized similarities \(\rho_1,\ldots,\rho_k\). It constructs a direct semantic distribution \(p_{\mathrm{dir}}(s\mid q,x)\) over skills and a memory-induced distribution based on how frequently each skill appears in the retrieved successful trajectories. The two distributions are mixed to produce a memory-conditioned skill distribution, from which the top \(M\) candidate skills are selected.
+
+\[
+ p(s\mid q,x,R)=\lambda p_{\mathrm{dir}}(s\mid q,x)
+ +(1-\lambda)\frac{1}{Z}\sum_{j=1}^{k}\rho_j\,\mathrm{freq}(s,\tau_{i_j}).
+\]
+
+Here \(\tau_{i_j}\) denotes a retrieved successful trajectory, \(\mathrm{freq}\) captures the skill's occurrence in that trajectory, and \(Z\) normalizes the memory-derived contribution. The system selects the top \(M\) skills for compilation. The direct retriever contributes current task relevance; the episodic term contributes evidence about which skills participated in successful earlier trajectories with similar context.\autocite{xia2026grasp}
+
+The combination does not mean that a remembered skill is automatically correct for the current state. Memory is a prior over candidates. The later graph compiler still has to validate bindings and dependencies, and the executor still has to check the current preconditions and postconditions. This distinction matters because episodic similarity and operational applicability are related but not identical.
+
+\subsection{Retrieval confidence and route selection}\index{confidence routing}
+
+GraSP computes a \gls{retrievalconfidence} value\index{retrieval confidence} \(c_{\mathrm{ret}}\) from four features:
+
+\begin{enumerate}
+  \item mean similarity of the retrieved memory records, \(\bar{\rho}\);
+  \item agreement between the direct and memory-induced distributions, represented through \(1-\mathrm{JSD}(p_{\mathrm{dir}}\|p_{\mathrm{mem}})\);
+  \item the margin between the top two skill probabilities, \(p_{(1)}-p_{(2)}\); and
+  \item coverage of the task goal by the selected skill set, \(|\mathrm{Cover}(\hat{\mathcal{S}},g)|/|g|\).
+\end{enumerate}
+
+The four values form a feature vector \(\mathbf f\). The reported formula combines a sigmoid model over those features with a historical success rate for the relevant confidence bin:
+
+\[
+ c_{\mathrm{ret}}=\eta\,\sigma(\mathbf w^{\top}\mathbf f+b)
+ +(1-\eta)c_{\mathrm{hist}}.
+\]
+
+The authors call this a calibrated confidence. The reported formula is more specific than a generic confidence label: it mixes a learned feature-based estimate with a historical success rate. The paper does not justify assuming an additional calibration guarantee, a particular calibration dataset size, or a post-hoc calibration procedure beyond what it specifies. The numerical quality of the estimate must therefore be evaluated under the paper's task and data conditions.\autocite{xia2026grasp}
+
+\BookDiagram[0.55\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-retrieval-confidence.png}{Four retrieval features feed the reported confidence formula. The low, intermediate, and high confidence regions choose reactive fallback, increased repair caution, or normal DAG execution.}{fig:ch17-retrieval-confidence}
+
+The paper's default values are \(\tau_{\mathrm{low}}=0.40\) and \(\tau_{\mathrm{high}}=0.65\). When confidence is below the lower threshold, the system uses ReAct fallback. Above the higher threshold it executes the DAG with normal repair. In the intermediate region, repair budgets are increased as a precaution. These are the paper's experimental defaults, not universal decision thresholds. A new domain, skill library, base model, or loss profile would require a new evaluation of the routing policy.\autocite{xia2026grasp}
+
+\subsection{Stage 2: compile a typed skill DAG}
+
+The compiler receives the task and goal, current state, selected skills, retrieved experience, and a summary of that experience. An LLM proposes skill-invocation nodes, but the proposed nodes do not become executable merely because they were generated. Their arguments are validated and bound against the skill library. The compiler then infers dependencies by comparing effects with preconditions, outputs with inputs, and memory-derived precedence or resource-conflict information. It attaches verifiers and repair budgets, resolves cycles, and rejects a graph that does not satisfy the GraSP definition. If compilation fails, the main algorithm falls back to reactive control.\autocite{xia2026grasp}
+
+The paper defines a GraSP as a DAG \(G=(V,E)\) containing a source node, skill nodes, and a sink node. It must satisfy four conditions:
+
+\begin{enumerate}
+  \item \textbf{Acyclicity:} the graph contains no directed cycle.
+  \item \textbf{Reachability:} the source node can reach the sink node through the graph.
+  \item \textbf{Goal completeness:} the graph's effects cover the task goal.
+  \item \textbf{Executability:} every skill node has a bound schema, arguments, and verifier.
+\end{enumerate}
+
+A flat sequence can be represented as a special case in which the graph contains only order edges. The DAG adds the ability to distinguish state dependencies, data dependencies, and soft ordering constraints.\autocite{xia2026grasp}
+
+\subsection{The graph's node state}
+
+Each \gls{skillnode} carries a tuple of attributes:
+
+\[
+ a(v)=\langle\kappa_v,\theta_v,\phi_v^{\mathrm{pre}},
+ \phi_v^{\mathrm{eff}},\nu_v,\zeta_v,c_v,b_v\rangle.
+\]
+
+The fields have operational meaning. The schema \(\kappa_v\) identifies the skill. The bound arguments \(\theta_v\) specify the invocation. The precondition set \(\phi_v^{\mathrm{pre}}\) states what must already hold; the effect set \(\phi_v^{\mathrm{eff}}\) describes what the skill is expected to establish. The \gls{skillverifier} \(\nu_v\) evaluates whether the expected result occurred. The status \(\zeta_v\) records execution progress, \(c_v\) is the node confidence, and \(b_v\) is its repair budget.\autocite{xia2026grasp}
+
+A verifier is not an ornamental annotation. It is part of the condition that allows an invocation to be treated as completed. A node whose model call returns text but whose postcondition is not verified has not earned the same state transition as a node whose result passed its verifier. The verifier may itself rely on environment observations or structured checks; the paper's key requirement is that the verifier is attached to the node and participates in execution control.
+
+\subsection{Three edge types with different semantics}
+
+The graph uses three edge types\index{typed graph edges}. They must not be collapsed into a generic notion of dependency.
+
+\begin{description}
+  \item[\gls{stateedge}.] An edge \((u,\textsf{state},v)\) means that an effect of node \(u\) satisfies a precondition of node \(v\). It is a causal relation over environment or task state.
+  \item[\gls{dataedge}.] An edge \((u,\textsf{data},v)\) means that an output produced by \(u\) binds an input required by \(v\). It is a data-flow relation.
+  \item[\gls{orderedge}.] An edge \((u,\textsf{order},v)\) expresses a soft precedence constraint, which may arise from experience or a resource conflict. It states that one node should precede another without claiming that the first node establishes a precondition or supplies a required value to the second.
+\end{description}
+
+GraSP treats state and data edges as hard: they cannot be removed without proof that the dependency has become obsolete. Order edges are soft and may be rewired during repair. This distinction prevents a repair process from casually removing a causal or data dependency merely to make the graph topologically convenient. During compilation, cycles are resolved by removing low-confidence soft edges. A cycle that remains after allowable soft-edge treatment means the proposed graph cannot be accepted as a valid DAG.\autocite{xia2026grasp}
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-typed-dag-edges.png}{A typed skill graph distinguishes hard state and data dependencies from soft order edges. The source and sink nodes bound the task path.}{fig:ch17-typed-edges}
+
+\subsection{Stage 3: verified execution}
+
+The executor traverses the graph in topological order. For each ready node, it performs three steps:
+
+\begin{enumerate}
+  \item check that the current state satisfies the node's preconditions;
+  \item invoke the skill implementation with its bound arguments; and
+  \item evaluate the postcondition verifier against the before-and-after state.
+\end{enumerate}
+
+Only when the checks pass does the executor mark the node as verified and proceed. This is a control transition: the successful node becomes part of the validated execution state on which downstream work may rely. If a check fails, the system creates a failure event and invokes local repair.\autocite{xia2026grasp}
+
+\BookDiagram[0.56\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-node-execution-and-failure.png}{A ready node is checked before execution and after execution. Only verified nodes advance the execution state; any failed check creates a typed event for repair.}{fig:ch17-node-execution}
+
+\subsection{Failure is typed state}
+
+GraSP represents a failure event as
+
+\[
+ \epsilon=\langle v,\tau_{\epsilon},m_{\epsilon},x_t\rangle,
+\]
+
+where \(v\) is the failed node, \(\tau_{\epsilon}\) is the failure type, \(m_{\epsilon}\) is a structured message, and \(x_t\) is the current environment state. The failure type is one of \texttt{precondition}, \texttt{execution}, \texttt{postcondition}, or \texttt{timeout}.\autocite{xia2026grasp}
+
+This representation matters because different failures suggest different repairs. A precondition failure may indicate that a required prerequisite has not been established. An execution failure may suggest that the chosen skill is unsuitable for the current state or that its invocation failed. A postcondition failure means that an invocation occurred but did not establish the expected effect. A timeout reports that the operation did not finish within its allowed window; it does not by itself prove whether an external side effect occurred. The paper defines the failure categories, while a production implementation must still decide how it reconciles ambiguous external effects before retrying.
+
+The message and state are part of the event, not incidental log text. A repair operator must reason about the failed node, its requirements, the current environment, and the affected dependencies. A generic instruction to “try again” does not specify any of those things.
+
+\subsection{Stage 4: confidence-based routing}
+
+Confidence routing operates at the entry to structured execution. It determines whether the retrieved skill set is reliable enough for a graph-based route. It is separate from the later escalation that occurs after a graph has been compiled and a node fails. The distinction is important:
+
+\begin{itemize}
+  \item \textbf{Entry routing} chooses between structured graph execution and reactive control based on retrieval confidence.
+  \item \textbf{Failure escalation} begins after a specific execution failure; it tries a bounded local repair, then a bounded global replan, and finally a reactive fallback when the available repair/replan budget is exhausted.
+\end{itemize}
+
+The entry router does not replace local verification, and the post-failure fallback is not merely a second confidence threshold. One operates before the graph is trusted for execution; the other responds to evidence that an already-running graph can no longer proceed through the current local repair path.\autocite{xia2026grasp}
+
+\section{The five local repair operators}\index{GraSP!local repair}
+\label{sec:ch17-five-repair-operators}
+
+A failed node should not automatically invalidate all progress. GraSP defines five typed \glspl{repairoperator}. Each operates on the failed node and its relevant neighborhood, and each must return a valid graph. The operators are alternatives selected in light of the failure and current state; they are not five mandatory steps that must be applied in sequence.\autocite{xia2026grasp}
+
+\subsection{Rebind: change invocation arguments}\index{GraSP!repair operators!Rebind}
+
+\texttt{Rebind} updates the arguments bound to a failed node when the skill itself is appropriate but its parameters are incorrect. For example, a skill might be the correct action for a task but have received an identifier or target value that does not refer to the intended object. Rebinding retains the skill schema and changes its invocation arguments.
+
+A correct repair must still validate the new values against the skill's argument schema and the current state. Rebind does not mean “ask the model for new arguments and trust them.” The proposed arguments must be type-checked and the resulting node must retain a verifier.
+
+\subsection{InsertPrereq: add a missing prerequisite subgraph}\index{GraSP!repair operators!InsertPrereq}
+
+\texttt{InsertPrereq} inserts a subgraph that establishes preconditions which are currently false. Let the failed node's missing precondition set be
+
+\[
+ P^{-}(v_f,x_t)=\{p\in\phi_{v_f}^{\mathrm{pre}}:x_t\not\models p\}.
+\]
+
+The inserted subgraph must establish the missing conditions before the failed node is attempted again. This operator changes the graph because the original sequence was missing a necessary producer or prerequisite procedure. The new nodes must come from the skill library and must themselves have valid argument bindings, dependencies, and verifiers.
+
+\subsection{Substitute: replace the skill schema}\index{GraSP!repair operators!Substitute}
+
+\texttt{Substitute} replaces the failed node's skill schema with another skill while preserving compatibility with downstream requirements. The replacement cannot simply be semantically similar. Its effects must cover the downstream requirements that depended on the original node. In the paper's notation, the replacement's effect set must include the downstream requirement set associated with the failed node.\autocite{xia2026grasp}
+
+This is a useful distinction between replacing an implementation and changing the task's intended result. A substitute skill may perform the same role through a different operation, but it must preserve the interface that later nodes rely on. If it cannot establish the necessary effects or outputs, the graph is not valid merely because the model describes it as an alternative.
+
+\subsection{Rewire: edit local graph edges}\index{GraSP!repair operators!Rewire}
+
+\texttt{Rewire} modifies edges in the local neighborhood of the failed node by adding, removing, or retyping edges. It is appropriate when the skill nodes may still be suitable but the dependency structure is wrong or incomplete. Rewire must respect the hard/soft distinction: state and data edges are hard and require evidence of obsolescence before removal; order edges are soft and may be revised when their precedence assumptions no longer hold.
+
+The operator is local. It is not permission to redesign the entire plan while calling the result a repair. Its patch must remain within the allowed neighborhood and satisfy the graph's validity conditions.
+
+\subsection{Bypass: skip a node whose downstream requirements already hold}\index{GraSP!repair operators!Bypass}
+
+\texttt{Bypass} skips a node when the current state already satisfies the requirements that its downstream dependents need. A node may be unnecessary because the environment has changed or another operation has already established the required effects. The operator does not simply ignore a failed skill. It checks whether the state already satisfies the downstream requirements that made the node useful.
+
+This distinction protects against an unsafe interpretation of bypass. A step can be skipped only when its intended contribution is no longer needed. If a downstream node still depends on an effect that is absent, bypassing the producer would leave the graph structurally executable but semantically incomplete.
+
+\BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-five-repair-operators.png}{Five typed local repair operators address different failure causes: change arguments, add prerequisites, replace a skill, edit local dependencies, or bypass work already satisfied by the current state.}{fig:ch17-repair-operators}
+
+\subsection{Repair validity and patch bounds}
+
+GraSP gives explicit validity conditions for a repair patch. The repaired graph must remain acyclic; every new node must correspond to a skill in the library; argument schemas must type-check; all affected nodes must have verifiers; unaffected verified ancestors must remain unchanged; and the patch must stay within the node and edge modification limits.\autocite{xia2026grasp}
+
+The default experimental parameters include a two-hop repair neighborhood, at most three nodes added or changed per patch, at most five edges added or changed, at most two repair attempts per node, and at most one global replan per episode. These values are the reported experimental defaults. They are not universal design constants and should not be copied into a different domain without sensitivity analysis.\autocite{xia2026grasp}
+
+\begin{warningbox}
+\textbf{Bounded does not mean safe by itself.} A patch can fit within a small neighborhood and still be wrong. The validity conditions constrain graph structure, schemas, verifiers, verified progress, and patch size. A production implementation also needs to ensure that the environment state has not changed in a way that invalidates a prior verification, and it must reconcile uncertain external side effects before repeating an action. Those latter checks are engineering hardening proposals, not additional GraSP mechanisms.
+\end{warningbox}
+
+\section{Escalation: local repair, global replan, and ReAct}
+\label{sec:ch17-escalation}
+
+Local repair is the first recovery response, but it is not the only one. GraSP's main loop distinguishes several reasons to leave the graph route. The confidence router can select ReAct before compilation. The compiler can fail to produce a valid graph, which also leads to reactive fallback. After execution begins, a node failure invokes local repair. If repair fails and the global-replan budget remains, the system updates the residual task and replans. If the global-replan allowance is exhausted, it falls back to ReAct on the residual task.\autocite{xia2026grasp}
+
+The paths can be represented as follows:
+
+\begin{enumerate}
+  \item Low retrieval confidence: use ReAct on the task and current state.
+  \item Compilation failure: use ReAct because no valid executable graph was produced.
+  \item Node failure with valid local patch: apply the patch, reset the affected subgraph as specified, and continue.
+  \item Local repair failure with remaining global-replan allowance: replan the residual task.
+  \item Global replan exhausted or unsuccessful: use ReAct on the residual task.
+\end{enumerate}
+
+A key nuance is that the fallback is not described as proof that reactive control will succeed. It is an alternative control route when the structured skill path is not sufficiently reliable or repairable. The source paper's experiments measure how often the three-layer route resolves failures, but every route still has a non-zero ultimate-failure rate.\autocite{xia2026grasp}
+
+\BookDiagram[0.59\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-escalation-lifecycle.png}{Entry confidence and compilation determine whether structured execution starts. A failed node triggers bounded local repair, then a bounded global replan, and finally reactive fallback if the structured route is exhausted.}{fig:ch17-escalation}
+
+\subsection{Entry confidence is not a repair budget}
+
+The confidence thresholds determine how the system enters the execution path. The repair budget determines how much local graph modification is permitted after a failure. They are related through the system's control policy, but they are not the same variable. In the intermediate confidence region, the paper increases repair budgets as a precaution. It does not state that increasing the budget changes the measured confidence itself or makes an invalid graph acceptable.
+
+This is one reason to avoid a single generic “reliability score” in an implementation. Retrieval confidence, node confidence, repair budget, graph validity, and verification outcome have different meanings. A high retrieval score does not exempt any node from precondition or postcondition checks. A larger repair budget does not waive graph validity. A successful local patch does not prove that the task goal has been reached; the main loop still checks whether the current state satisfies the goal before returning success.\autocite{xia2026grasp}
+
+\section{Why Fan and Lan close B5}
+\label{sec:ch17-why-b5-closes}
+
+\subsection{The seven-field mechanism analysis}
+
+Fan and Lan reconstruct mechanisms through seven fields: state, control, transition, persistence, failure, learning, and resource/governance policy. This representation helps distinguish a system that stores reusable skills from one that governs how they are invoked and adapted. Applied to GraSP, the fields can be summarized as follows.\FanLanCite{\S II-C--II-D; \S VI-A; Appendix C-O}
+
+\begin{table}[tbp]
+\centering
+\caption{A seven-field reading of GraSP for the B5 comparison.}
+\label{tab:ch17-seven-fields}
+\small
+\begin{tabularx}{\textwidth}{P{0.23\textwidth}X}
+\toprule
+\textbf{Field} & \textbf{GraSP mechanism state and control} \\
+\midrule
+State & Retrieved skills and successful episode records; typed DAG nodes and edges; bound arguments, preconditions, effects, verifiers, node status, confidence, and repair budgets. \\
+Control & Retrieval and routing, graph compilation, topological execution, node verification, local repair, global replanning, and ReAct fallback. \\
+Transition & Task arrival; retrieval-confidence decision; graph compilation; a ready node's precondition/execution/postcondition result; repair validation; replan-budget exhaustion. \\
+Persistence & Skill library and episodic experience are used across tasks. The per-task graph and execution state exist during an episode. The paper does not specify a complete production checkpoint or crash-recovery format. \\
+Failure & Typed precondition, execution, postcondition, or timeout events, each associated with a failed node, structured message, and current state. \\
+Learning & Retrieval is influenced by successful prior trajectories and historical success within confidence bins. The evidence supports experience-dependent future selection; it does not justify inventing an unreported universal online-learning rule. \\
+Resources & Top-\(k\) memory retrieval, top-\(M\) skill selection, confidence thresholds, repair neighborhood and patch limits, per-node repair attempts, global replanning allowance, and per-episode environment-step budgets. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The table is a book-level reading of the source descriptions, not an additional formal code supplied by the GraSP authors. In particular, the persistence field should not be over-read. The paper clearly uses an episodic memory and a skill library, but it does not provide a general transactional persistence architecture with crash recovery, idempotent external effects, schema migration, or multi-process concurrency semantics. Those questions belong to a production reconstruction, not to the source claim used to close B5.
+
+\subsection{E3 and D4 answer different questions}
+
+Fan and Lan assign the GraSP correspondence \textbf{E3/D4}.\index{evidence relation!E3}\index{migration depth!D4} The two codes must be read independently.
+
+\begin{description}
+  \item[E3 — functional approximation.] E3 means that the modern system solves a comparable control problem through a materially different internal organization. It is not documented source lineage. Fan and Lan map ICARUS's applicability-governed hierarchical skill mechanism to GraSP's modern skill-graph runtime, but they do not claim that GraSP inherited its design from ICARUS.
+  \item[D4 — adaptive control law.] D4 means that experience updates future invocation, selection, or control policy. In GraSP, successful episodic experience informs the memory-induced skill distribution, and historical success contributes to retrieval confidence. This is deeper than merely storing a log or exposing a callable skill interface.
+\end{description}
+
+E3 is not a weaker form of D4, and D4 is not a degree of historical resemblance. One describes the relationship between a historical mechanism and the modern case; the other describes how deeply the mapped mechanism is implemented. A result can be E3 and D4 because a modern system can provide experience-adapted control while organizing it differently from its historical comparator.\FanLanCite{\S II-D; Table II; Table IX; Appendix C-O}
+
+\BookDiagram[0.55\textheight]{Tex/diagrams/generated/part2/chapter17/b5-evidence-depth-packet.png}{The B5 packet separates the evidence relation E3 from migration depth D4. GraSP functionally approximates ICARUS skill governance and adapts later selection using experience, without a documented lineage claim.}{fig:ch17-ed-packet}
+
+\subsection{Why convergence is not E4}
+
+E4 is structural convergence inferred from comparable node-and-edge organization when no transfer evidence is found. E3 is functional approximation: the modern system solves a comparable control problem through materially different internal organization. Fan and Lan code GraSP as E3 because its functional relationship to ICARUS skill governance is not merely an inferred structural resemblance. The code does not establish source inheritance. It identifies a functional correspondence.\FanLanCite{\S II-D; Table II; Table IX}
+
+The word “convergence” can be used in the ordinary sense that two systems arrive at comparable solutions, but it must not erase the paper's code distinctions. In the E/D framework, one must report the assigned evidence relation and the migration depth exactly rather than using “convergence” as a catch-all label.
+
+\subsection{D4 does not mean complete ICARUS migration}
+
+The specific skill-governance edge reaches D4 because experience changes later control. It does not follow that GraSP implements the entire ICARUS architecture. The source packet explicitly records the missing invariant as the absence of a source-lineage claim or universal cross-domain validation. The mapping is limited to the relevant control mechanism, not to perception, conceptual memory, embodied action, or every other ICARUS component.\FanLanCite{Table IX; Appendix C-O}
+
+This is an important methodological safeguard. A high migration-depth code does not erase missing historical invariants. Nor does it convert a mechanism-level correspondence into a claim that one system is a complete port of another. The appropriate conclusion is narrower: GraSP implements the chain needed to close B5 in the reviewed corpus, and Fan and Lan classify that correspondence E3/D4.
+
+\subsection{The closure packet}
+
+The closure can be reconstructed as a sequence of explicit questions:
+
+\begin{enumerate}
+  \item What exactly was absent according to the candidate B5 statement? Calibrated multi-skill routing, typed verification, bounded repair, and planner fallback were not found composed in the preceding screened candidates.
+  \item Which system is the closest relevant baseline? GraSP, because it exposes all four control edges in one described architecture.
+  \item What state makes the edges visible? Retrieval confidence, selected skills, typed graph nodes and edges, verifiers, failure events, repair budgets, and episode outcomes.
+  \item What triggers the control transitions? Task arrival, confidence thresholds, node readiness, verifier results, repair validation, and replan exhaustion.
+  \item What is preserved? Confidence routes the task; verification gates progress; typed repair preserves unaffected verified ancestors; and failed local repair escalates to replanning or fallback.
+  \item What is the classification? E3/D4, recorded on separate axes.
+  \item What happens to the candidate? B5 is removed from the residual intervention count and retained as a negative case and a baseline for proposed extensions.
+\end{enumerate}
+
+This is the logic of closest-baseline screening. It tests the candidate's absence condition against a system that already implements the claimed chain. It is not enough to show that a baseline shares a label or achieves a similar score; the review needs identifiable state, triggers, control edges, and preserved invariants.\FanLanCite{\S II-C--II-E; \S VI-B; \S VI-C, B5; Table V; Table IX; Appendix C-O}
+
+\section{What the GraSP experiments establish}
+\label{sec:ch17-grasp-experiments}
+
+The B5 closure is a mechanism-mapping result, not a performance conclusion derived from Fan and Lan's review. The empirical results discussed in this section belong to GraSP's own experiments. They provide evidence that the proposed graph orchestration improves performance under the paper's benchmark and model configurations. They do not independently validate every possible use of GraSP or establish that the system is superior in all domains.\autocite{xia2026grasp}
+
+\subsection{Benchmarks, models, and baselines}
+
+GraSP evaluates four interactive benchmarks:
+
+\begin{itemize}
+  \item \textbf{ALFWorld}\index{ALFWorld}, which contains household tasks and seen/unseen task splits;
+  \item \textbf{ScienceWorld}\index{ScienceWorld}, which covers 30 task types involving interactive science experiments;
+  \item \textbf{WebShop}\index{WebShop}, which contains 500 web-shopping sessions; and
+  \item \textbf{InterCode}\index{InterCode}, evaluated on the NL2Bash split for interactive coding tasks.
+\end{itemize}
+
+The study compares ReAct\index{ReAct}, Reflexion\index{Reflexion}, ExpeL\index{ExpeL}, ReAct + Skills\index{ReAct + Skills}, and GraSP. Skill-augmented methods are given the same skill library and episodic memory so that the comparison focuses on how the skills are organized and executed. The paper evaluates eight model backbones: DeepSeek V3.2 as the primary model, GPT-4.1, Claude-4-Sonnet, GLM-5, Gemini 2.5 Pro, o4 Mini, Qwen3-235B, and Kimi-K2.5. API calls use temperature 0.0. Main table results are averaged over three runs.\autocite{xia2026grasp}
+
+\subsection{Metrics and comparison fairness}
+
+The reported task outcome is average reward or score for ALFWorld, ScienceWorld, and WebShop, and success rate for InterCode. The paper also reports average environment steps. These metrics must be read with their benchmark-specific meaning: reward/score and success rate are not interchangeable raw quantities, even though the paper places them in a common results table for compact comparison.
+
+The shared skill library and episodic memory help isolate the orchestration difference among the skill-augmented methods. That design is useful, but it does not eliminate every possible confound. A reproduction should still report model versions, prompts, skill set, retrieval configuration, environment versions, run count, and the precise task split. The published results are averaged over three runs per cell; this is the source's reported design, not a general guarantee that three replications are sufficient for every follow-up experiment.\autocite{xia2026grasp}
+
+\subsection{Main performance results}
+
+GraSP reports the best result in all 48 model/split cells in its main comparison. The authors report average gains of 12.7 points over ExpeL and 6.9 points over the strongest per-cell baseline. They also report approximately 24\% fewer environment steps on average than ReAct and approximately 10\% fewer than ReAct + Skills, with the largest reported reduction reaching 41\% on a long-horizon ScienceWorld unseen setting. In the example highlighted by the paper, Gemini 2.5 Pro reduces the step count from 19.1 to 11.3 on that ScienceWorld setting.\autocite{xia2026grasp}
+
+These results are notable because the system improves both the task outcome and the amount of interaction reported by the environment-step metric. But the values should not be collapsed into a single universal “efficiency” claim. The relative improvement depends on the benchmark, model, split, baseline, and metric. A system can reduce environment steps without reducing every relevant resource, such as wall-clock latency, token use, monetary API cost, or maintenance overhead. The paper's main results support the metrics it reports; the wider operational measures would need separate experiments.
+
+\begin{table}[tbp]
+\centering
+\caption{Selected reported GraSP findings and their experimental scope.}
+\label{tab:ch17-grasp-findings}
+\small
+\begin{tabularx}{\textwidth}{P{0.29\textwidth}X}
+\toprule
+\textbf{Finding} & \textbf{What the paper reports} \\
+\midrule
+Main comparison & GraSP is best in all 48 model/split cells; results compare five methods across the benchmark/model configurations. \\
+Average outcome gain & +12.7 points over ExpeL and +6.9 over the strongest per-cell baseline. \\
+Environment steps & About 24\% fewer steps on average than ReAct and about 10\% fewer than ReAct + Skills; up to 41\% in the highlighted ScienceWorld case. \\
+Local repair & 84.2\% recovery for precondition failures versus 61.8\% for global replanning; the paper also reports an approximately 16\% advantage on postcondition failures. \\
+Escalation & Across episodes, direct success, local repair, global replanning, and ReAct fallback each contribute to the final success distribution; 13--18\% remain ultimate failures. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The component ablations: five conditions, not five main-table rows}
+
+The GraSP paper describes five component ablations in Appendix C.2:
+
+\begin{enumerate}
+  \item \textbf{Without experience memory.} Remove the memory-induced skill distribution and experience summary, leaving direct retrieval. This isolates the contribution of episodic grounding.
+  \item \textbf{Without DAG structure.} Execute the retrieved skills as a flat sequence in the order proposed by the LLM. This removes explicit dependency tracking and partial execution.
+  \item \textbf{Without local repair.} Disable local repair operators and escalate a node failure directly to global replanning or ReAct fallback.
+  \item \textbf{Without confidence routing.} Always execute the GraSP route regardless of retrieval confidence, thereby testing whether the adaptive entry route contributes to robustness.
+  \item \textbf{With global replanning instead of local repair.} Discard the graph and recompile from scratch when a node fails, with the same number of replanning attempts allocated.
+\end{enumerate}
+
+The main component table does not display five separate rows corresponding one-to-one with these five appendix conditions. Table 2 shows a progressive component build-up, selected comparison variants, and a global-replan comparison. It reports ReAct, a monolithic all-skills condition, ReAct + Skills, incremental additions of experience memory, DAG compilation, local repair, and routing, plus conditions without DAG, without local repair, and with global replan. The full five-condition design is specified in Appendix C.2; the main table is a selected quantitative presentation. A reader must not claim that every appendix ablation appears as an individually reported row in Table 2.\autocite{xia2026grasp}
+
+\begin{table}[tbp]
+\centering
+\caption{Selected main-table component results reported with DeepSeek V3.2. The first two columns are ALFWorld seen success rate and ScienceWorld seen reward.}
+\label{tab:ch17-component-results}
+\small
+\begin{tabularx}{\textwidth}{Xrr}
+\toprule
+\textbf{Configuration} & \textbf{ALFWorld} & \textbf{ScienceWorld} \\
+\midrule
+ReAct & 66.4 & 69.9 \\
+Monolithic (all skills, no selection) & 67.1 & 71.0 \\
+ReAct + Skills (flat) & 74.9 & 79.6 \\
++ Experience Memory & 76.5 & 81.1 \\
++ DAG Compilation & 78.4 & 82.7 \\
++ Local Repair & 79.7 & 84.1 \\
++ Routing (GraSP) & 80.6 & 84.9 \\
+GraSP without DAG & 76.8 & 81.5 \\
+GraSP without Local Repair & 78.6 & 82.9 \\
+GraSP with Global Replan & 77.4 & 81.8 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The progressive rows suggest that each added component contributes under the selected conditions, with DAG compilation showing the largest increment in that table. The comparison with global replanning also supports the authors' claim that bounded local repair can outperform discarding and recompiling the whole graph in the tested settings. These figures should be described with their exact benchmark, split, model, and metric context; they are not transferable constants.
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter17/grasp-evaluation-and-ablations.png}{The experimental design separates the four-benchmark comparison, the selected component results in the main table, and the full five-condition ablation protocol in Appendix C.2.}{fig:ch17-evaluation}
+
+\subsection{Skill quantity and quality}
+
+The paper also examines what happens when the number and quality of retrieved skills change. In flat execution, adding more candidate skills can make performance worse because irrelevant procedures compete for attention and make the execution sequence harder to infer. The reported flat approach peaks around three skills and declines as more are included. GraSP is more robust to over-retrieval: at eight skills, the reported GraSP result remains above the flat baseline's optimum at three skills.\autocite{xia2026grasp}
+
+A similar pattern appears in the skill-quality analysis. When skill quality is degraded from high to low, the paper reports an approximately 9\% reward loss for flat execution and approximately 5\% for GraSP. The authors attribute the difference to compilation-time verification and the ability to repair or re-route when an imprecise description causes an execution problem. This is evidence for the tested quality-degradation setup, not proof that typed graphs can compensate for arbitrary corruption or malicious skill definitions.
+
+\subsection{What the experiments establish}
+
+Taken together, the experiments support several bounded conclusions. The graph structure helps control skill quantity and make dependencies explicit. Node-level verification and local repair can reduce the cost of certain failures in the evaluated tasks. Confidence routing and fallback allow the system to avoid structured execution when retrieval confidence is low. The main benchmarks indicate that these components can improve measured outcomes and reduce environment steps under the reported configurations.\autocite{xia2026grasp}
+
+They do not establish that every skill graph will be correct, that every verifier is sound, that a two-hop repair neighborhood is optimal, or that the same results will hold for API-based production work, visual tasks, cyclic refinement, or multi-agent execution. The authors themselves identify important limits to the DAG assumption and the evaluated domains. Those limits must remain visible when B5 is used as a baseline for future proposals.
+
+\section{Limitations and the meaning of a negative case}
+\label{sec:ch17-limitations-negative-case}
+
+\subsection{GraSP's stated limitations}
+
+The first stated limitation concerns DAG expressiveness. A DAG cannot directly represent a cyclic execution pattern. Many interactive tasks can be decomposed into acyclic subgoal sequences, but iterative refinement such as repeated measurement and adjustment may need an extension, for example explicit loop constructs or DAG unrolling. Such an extension changes the graph semantics and should not be presented as part of the original system unless it is implemented and evaluated.\autocite{xia2026grasp}
+
+The second limitation concerns broader applicability. The experiments demonstrate GraSP in four text-based interactive environments. The authors discuss multimodal environments, GUI interaction, real-world APIs, and multi-agent coordination as natural areas for extension. The fact that the architecture may be applicable to such settings is a research direction, not an empirical result already established by the current experiments.\autocite{xia2026grasp}
+
+\subsection{Additional engineering questions}
+
+A practical reconstruction should ask questions that the published design does not fully answer. How is a graph checkpoint stored if a process crashes? How does the system prevent a retried skill from repeating an irreversible external action? How is a skill version pinned to an existing graph? What happens when a verifier changes after a skill library update? How are concurrent graph executions isolated if they share a resource or external account? How is the successful experience record promoted into episodic memory, and how does the system avoid allowing a single unusual outcome to dominate later retrieval?
+
+These are not reasons to deny GraSP's published mechanism chain. They are open implementation questions for a production-grade adaptation. The book will mark any proposed answer as engineering design rather than claiming that GraSP already includes transaction semantics, idempotency keys, crash recovery, tenant isolation, or a formally verified trust system.
+
+\subsection{A negative case is not a negative experimental result}
+
+The phrase “negative case” describes the methodological role of B5 in Fan and Lan's residual extraction. It means that the candidate absence claim did not survive closest-baseline screening. It does not mean that the GraSP experiments were negative, that skill governance is unimportant, or that no further improvement is possible. The experiments report positive gains under their evaluated conditions. B5 is negative only in the sense that the proposed gap is not retained as an open residual within the review's corpus.\FanLanCite{\S VI-B--VI-C, B5; Table V}
+
+This distinction is crucial for scientific writing. A research proposal should not be retained just because it is interesting or because a familiar historical architecture inspired it. If the key control relationship already exists in a modern system, the correct next step is to treat that system as a baseline and identify what remains genuinely missing. A later proposal might improve graph verification, support cyclic workflows, extend the approach to another domain, or provide stronger persistence guarantees. It must state the difference from GraSP rather than relabel the already-implemented chain as an open problem.
+
+\subsection{Closure remains conditional}
+
+B5's closure is conditional in two ways. First, it is bounded by Fan and Lan's frozen corpus and stated search procedure. The paper makes no search-recall estimate and does not claim independent inter-rater reliability for the reported codes. Second, the GraSP performance and applicability claims are bounded by the primary paper's benchmarks, model list, experimental configuration, and limitations. The review's E3/D4 classification is not a universal certification of every GraSP implementation or deployment.
+
+The right conclusion is neither to weaken the closure until it says nothing nor to overstate it as a universal law. Within the reviewed evidence, GraSP implements the B5 chain, so B5 is closed and remains a mandatory comparison point for a proposed extension. Outside that evidence boundary, claims require additional sources, implementation inspection, and evaluation.
+
+\section{A faithful Java implementation map}
+\label{sec:ch17-implementation-map}
+
+\subsection{Why the bridge is a reconstruction, not a new B5 proposal}
+
+The purpose of the engineering bridge is to let a Java-oriented reader understand the executable state and contracts that make the source claim auditable. The following model is deliberately more explicit than a short paper description. It names records, invariants, and service boundaries that can be implemented and tested. It is not GraSP's original source code, and it is not a new residual mechanism. Where the design introduces additional production safeguards, those additions are labelled as engineering proposals.
+
+A useful implementation can be divided into six components:
+
+\begin{enumerate}
+  \item a skill library and episodic-memory adapter;
+  \item a retrieval service that returns the selected skills, experience context, and confidence evidence;
+  \item a graph compiler and validator;
+  \item an executor that checks preconditions and postconditions;
+  \item a bounded repair service implementing the five typed operators; and
+  \item a route/escalation controller that chooses structured execution, replanning, or ReAct fallback.
+\end{enumerate}
+
+The components exchange explicit records. The language model may propose nodes, arguments, edges, or repair candidates, but it does not directly mutate verified graph state. A deterministic validator checks the proposal before the state transition is accepted. This division is an engineering recommendation that makes the published typed and bounded design implementable and auditable.
+
+\subsection{Proposed type model}
+
+The following Java-like definitions are a book-created representation. They expose the fields and boundaries described by GraSP without pretending to reproduce its internal classes.
+
+\begin{lstlisting}[language=Java,caption={Book-created Java-like records for the typed skill graph}]
+enum EdgeType { STATE, DATA, ORDER }
+enum NodeStatus { PROPOSED, READY, RUNNING, VERIFIED, FAILED, INVALIDATED }
+enum FailureType { PRECONDITION, EXECUTION, POSTCONDITION, TIMEOUT }
+
+enum RouteKind { REACT, GRAPH_NORMAL, GRAPH_GUARDED }
+enum EscalationKind { LOCAL_REPAIR, GLOBAL_REPLAN, REACT_FALLBACK }
+
+record SkillSchema(
+    String skillId,
+    int version,
+    Map<String, ValueType> inputSchema,
+    Map<String, ValueType> outputSchema,
+    Set<Condition> declaredPreconditions,
+    Set<Condition> declaredEffects
+) {}
+
+record SkillInvocation(
+    String invocationId,
+    String skillId,
+    int skillVersion,
+    Map<String, TypedValue> boundArguments
+) {}
+
+record SkillNode(
+    String nodeId,
+    SkillInvocation invocation,
+    Set<Condition> preconditions,
+    Set<Condition> effects,
+    VerifierSpec verifier,
+    NodeStatus status,
+    double confidence,
+    RepairBudget repairBudget
+) {}
+
+record SkillEdge(String from, EdgeType type, String to) {}
+
+record SkillGraph(
+    String graphId,
+    String taskId,
+    String sourceNodeId,
+    String sinkNodeId,
+    Map<String, SkillNode> nodes,
+    Set<SkillEdge> edges,
+    GoalSpec goal
+) {}
+
+record FailureEvent(
+    String failedNodeId,
+    FailureType type,
+    String structuredMessage,
+    EnvironmentSnapshot stateAtFailure,
+    Instant observedAt
+) {}
+
+record RepairPatch(
+    String failedNodeId,
+    Set<SkillNode> addedOrChangedNodes,
+    Set<SkillEdge> addedOrChangedEdges,
+    Set<String> removedEdgeIds,
+    String selectedOperator
+) {}
+\end{lstlisting}
+
+Several fields above are implementation additions rather than literal paper attributes. Stable IDs, skill versions, timestamps, explicit graph IDs, and immutable snapshots support auditability and reproducibility. The source paper defines the node attributes as a tuple: skill schema, bound arguments, preconditions and effects, verifier, execution status, confidence, and repair budget. The Java record makes those fields explicit in a language-oriented implementation.\autocite{xia2026grasp}
+
+\subsection{Graph compiler and validation contracts}
+
+The compiler should accept a task, current environment snapshot, candidate skill set, episodic context, and retrieval confidence evidence. It returns either a validated graph or a structured compilation failure. A useful contract is:
+
+\begin{lstlisting}[language=Java,caption={Book-created compiler boundary and validation result}]
+interface SkillGraphCompiler {
+    CompilationResult compile(CompilationInput input);
+}
+
+sealed interface CompilationResult {
+    record Success(ValidatedSkillGraph graph)
+        implements CompilationResult {}
+    record Rejected(CompilationFailure failure)
+        implements CompilationResult {}
+}
+
+interface GraphValidator {
+    ValidationReport validate(
+        SkillGraph candidate,
+        SkillLibrarySnapshot library,
+        EnvironmentSnapshot state,
+        GoalSpec goal
+    );
+}
+\end{lstlisting}
+
+The validator should check the published graph conditions: acyclicity, source-to-sink reachability, goal completeness, and executability of every skill node. It should also validate that every referenced skill exists in the selected library snapshot, every argument binding conforms to the skill schema, every verifier is attached, and every typed edge is semantically justified. Cycle resolution may remove low-confidence soft order edges; it must not remove hard state or data edges merely to obtain a DAG. If a valid graph cannot be constructed, the route returns to the reactive fallback rather than executing an invalid intermediate representation.\autocite{xia2026grasp}
+
+\subsection{Runtime invariants}
+
+A faithful implementation should make the following invariants testable:
+
+\begin{enumerate}
+  \item Every executable node references a skill schema and a valid set of bound arguments.
+  \item Every node has explicit preconditions, effects, and a verifier.
+  \item A state edge is justified by an effect-to-precondition relation.
+  \item A data edge is justified by an output-to-input binding.
+  \item An order edge expresses precedence only; it must not be interpreted as proof of a state or data dependency.
+  \item The accepted graph remains acyclic and satisfies source-to-sink reachability and goal completeness.
+  \item A node is marked verified only after its precondition check, execution, and postcondition verification succeed.
+  \item A repair preserves unaffected verified ancestors and satisfies all patch bounds.
+  \item A repair that fails validation is rejected without partially mutating the accepted graph.
+  \item Local repair, global replanning, and reactive fallback consume distinct, observable control transitions.
+\end{enumerate}
+
+The first eight invariants translate explicit GraSP constraints into testable code contracts. The ninth is a book-level transaction recommendation: compute and validate a candidate patch before atomically replacing the accepted graph. The tenth makes escalation auditable. None should be interpreted as evidence that the GraSP paper specifies Java transaction mechanics or crash-safe graph persistence.
+
+\subsection{A proposed execution lifecycle}
+
+The published paper describes the main loop and state changes but does not define a reusable Java enum for every lifecycle state. A clear implementation can use the following conceptual states:
+
+\begin{description}
+  \item[RETRIEVED:] candidate skills and experience context are available.
+  \item[ROUTED:] the confidence decision selects ReAct, guarded graph execution, or normal graph execution.
+  \item[COMPILING:] the compiler proposes and validates the typed DAG.
+  \item[READY:] the graph is valid and at least one node is eligible for execution.
+  \item[RUNNING:] a ready node is undergoing precondition checking, invocation, and verification.
+  \item[VERIFIED:] the node passed its verifier and its effects can support dependent nodes.
+  \item[REPAIRING:] a typed failure event is being processed within the local repair budget.
+  \item[REPLANNING:] local repair failed but the episode still has global replanning allowance.
+  \item[FALLBACK:] structured execution is abandoned for the residual task and control passes to ReAct.
+  \item[SUCCEEDED or FAILED:] the task goal is verified, or available routes are exhausted without verified goal completion.
+\end{description}
+
+These labels are a book-level lifecycle abstraction. They should not be quoted as literal GraSP enum values. Their purpose is to prevent a common implementation bug: treating “the model proposed a patch” as equivalent to “the graph is repaired and execution may resume.” The transition from REPAIRING back to READY occurs only after graph validation succeeds. If validation fails, the system must follow the specified escalation path.\autocite{xia2026grasp}
+
+\subsection{Contracts for the five repair operators}
+
+Each repair operator should have a narrow contract and a validation gate. The proposed interface is:
+
+\begin{lstlisting}[language=Java,caption={Book-created repair service contract}]
+interface LocalGraphRepair {
+    RepairResult repair(
+        ValidatedSkillGraph graph,
+        FailureEvent failure,
+        EnvironmentSnapshot currentState,
+        SkillLibrarySnapshot library,
+        RepairBudget budget
+    );
+}
+
+sealed interface RepairResult {
+    record Repaired(
+        ValidatedSkillGraph graph,
+        RepairPatch patch
+    ) implements RepairResult {}
+    record Exhausted(String reason)
+        implements RepairResult {}
+    record Rejected(ValidationReport report)
+        implements RepairResult {}
+}
+\end{lstlisting}
+
+A repair result is accepted only after validation. Each operator has a distinct precondition:
+
+\begin{itemize}
+  \item \textbf{Rebind} may change arguments while retaining the skill schema, but the new arguments must type-check.
+  \item \textbf{InsertPrereq} may add a subgraph only when it establishes missing preconditions and every inserted node comes from the library.
+  \item \textbf{Substitute} may replace a schema only when the replacement preserves downstream interface/effect requirements.
+  \item \textbf{Rewire} may edit local edges while preserving hard dependencies unless evidence proves that a hard edge is obsolete.
+  \item \textbf{Bypass} may skip the failed node only when the current state already satisfies all requirements that downstream nodes need from it.
+\end{itemize}
+
+The repair manager should also enforce the paper's bounds: neighborhood radius \(h\), maximum changed/added nodes \(L_{\max}\), maximum changed/added edges \(E_{\max}\), and maximum attempts \(R_{\max}\) per node. The main loop separately caps global replans with \(P_{\max}\). A rejected patch should leave the previously accepted graph unchanged; this atomicity is an engineering recommendation for the reconstruction.
+
+\subsection{Verification is a control gate, not a guarantee of truth}
+
+A verifier makes expected effects explicit, but a verifier can be incomplete, stale, or wrong. If it checks only that a tool returned a successful status code, it may not establish the actual postcondition. If it relies on a language-model judgment, the system must still define what evidence the model receives and how the judgment is constrained. A production implementation should classify verifier types: deterministic predicates over observed state, structured schema checks, external read-after-write confirmation, or model-assisted assessments with recorded evidence.
+
+The first three can often be tested with explicit fixtures. Model-assisted verification requires separate evaluation of false acceptance and false rejection. A false acceptance may allow an unsafe downstream action; a false rejection may trigger unnecessary repair or fallback. These are book-level engineering concerns. They do not change the published GraSP definition, but they are necessary to reproduce its verification boundary in a real system.
+
+\subsection{Persistence and execution boundaries}
+
+GraSP uses an episodic experience memory and a skill library, but the paper does not specify a full production persistence model. A Java reproduction should therefore state its persistence assumptions rather than silently treating the presence of memory as proof of crash-safe operation.
+
+One workable engineering separation is:
+
+\begin{itemize}
+  \item \textbf{Long-lived skill catalog:} versioned schemas, argument types, preconditions, effects, verifier definitions, and executable implementations.
+  \item \textbf{Episodic experience store:} successful trajectory summaries and the information required to estimate the memory-induced retrieval distribution and historical success by confidence bin.
+  \item \textbf{Per-task execution record:} graph version, task and goal, selected skills, confidence features, route decision, node status, failure events, repair patches, fallback history, and terminal result.
+\end{itemize}
+
+The skill catalog and episodic memory are persistent across episodes in the conceptual model. The per-task graph is created for a task and changes as execution proceeds. Whether the graph is checkpointed after every transition is an implementation decision. If crash recovery is required, a system should persist an accepted graph revision and node outcome before allowing dependent external actions to proceed. It should also record which operations may have side effects and whether retry is idempotent. These details are not features claimed for GraSP; they are additional requirements for a production adaptation.
+
+\subsection{Observability and a reproducibility trace}
+
+An implementation should emit an event for every state transition that affects selection or execution. At minimum, the trace should contain:
+
+\begin{enumerate}
+  \item task and environment identifiers, with sensitive fields redacted or tokenized;
+  \item skill-library and model version identifiers;
+  \item retrieved memory record identifiers and normalized similarity values;
+  \item the direct and memory-induced skill distributions, selected top-\(M\) skills, confidence features, and \(c_{\mathrm{ret}}\);
+  \item the selected route and the thresholds used;
+  \item the graph version, typed edges, validation result, and compiled goal coverage;
+  \item for each node, the precondition result, execution result, verifier outcome, and state transition;
+  \item typed failure events and the repair operator considered/selected;
+  \item the changed node/edge set, patch validity result, and remaining repair budget;
+  \item global replans, ReAct fallback transitions, and terminal goal verification.
+\end{enumerate}
+
+This trace is a book-level observability recommendation. It is especially important for distinguishing a real control mechanism from a graph that is merely generated and displayed. The evaluator must be able to determine whether confidence changed the route, whether verification blocked a transition, whether a repair changed only a bounded region, and whether fallback occurred when the structured route was exhausted.
+
+\subsection{Vertical-slice implementation sequence}
+
+A faithful engineering reconstruction should be implemented in a sequence that preserves the source's control dependencies:
+
+\begin{enumerate}
+  \item define a versioned skill schema with typed inputs/outputs, preconditions, effects, and verifier contract;
+  \item implement retrieval over a fixed skill library and a small, auditable episodic-memory fixture;
+  \item compute the direct and memory-induced skill distributions and the four confidence features;
+  \item compile a small set of selected invocations into a DAG with state, data, and order edges;
+  \item validate acyclicity, reachability, goal completeness, bindings, and node verifiers;
+  \item execute in topological order with precondition and postcondition checks;
+  \item inject each failure type and implement the five repair operators behind a bounded patch validator;
+  \item implement confidence routing, compilation fallback, bounded global replanning, and final ReAct fallback;
+  \item add event traces and reproducible test fixtures;
+  \item only then add durable persistence, crash recovery, concurrency, and external side-effect reconciliation as separately tested engineering extensions.
+\end{enumerate}
+
+This order makes the core mechanism testable before adding infrastructure. It also makes it easier to identify which behavior is a source-faithful reconstruction and which behavior is a production extension.
+
+\subsection{Test categories}
+
+The test suite should include unit, property-based, integration, and experimental tests.
+
+\begin{description}
+  \item[Retrieval tests.] Verify distribution normalization, the top-\(M\) selection, feature calculation, and the confidence formula against hand-computed fixtures. Include conflicts between direct semantic relevance and episodic history.
+  \item[Compilation tests.] Generate valid and invalid graphs. Check cycles, missing source/sink reachability, goal incompleteness, invalid argument bindings, missing verifiers, and incorrect edge types.
+  \item[Execution tests.] Verify that a node cannot run before its preconditions hold and cannot be marked VERIFIED before its postcondition passes. Check that a failure event retains the correct node, failure type, message, and state snapshot.
+  \item[Repair tests.] Exercise each operator independently and assert that the returned graph satisfies all validity conditions and configured bounds. Confirm that unaffected verified ancestors remain unchanged.
+  \item[Escalation tests.] Test low-confidence fallback, compilation failure, intermediate confidence repair budget, local repair exhaustion, one allowed global replan, and final reactive fallback.
+  \item[Persistence tests.] For the book-level production extension, test process restart after node verification, after repair proposal but before patch acceptance, and after an external action whose completion status is uncertain.
+  \item[Evaluation tests.] Compare the full system against flat skill execution and the paper's stated baselines under matched task/model conditions. Run all five appendix ablations where feasible and report separately which component rows can be compared with the paper's main table.
+\end{description}
+
+\section{Worked example: compiling and repairing a skill graph}
+\label{sec:ch17-worked-example}
+
+\subsection{Example boundary}
+
+GraSP's Appendix E names a case study about heating a potato in ALFWorld. The sequence below is a book-created illustrative trace motivated by that task label. The exact node names, preconditions, state values, and repair sequence are teaching details; they are not claimed to reproduce the unpublished internal trace or a particular measured episode from the paper.\autocite{xia2026grasp}
+
+\subsection{Task and candidate skills}
+
+Suppose the task is to heat a potato using the interactive environment's available objects and appliances. The agent's current state indicates that the potato is not yet heated. Its skill library includes procedures for locating an appropriate appliance, moving an object, switching an appliance on, placing an item, and checking the resulting state. Memory retrieval returns successful trajectories from similar tasks, while direct retrieval ranks skills based on the current task and environment state.
+
+The compiler selects a small set of candidate invocations. A plausible graph might contain the following nodes:
+
+\begin{itemize}
+  \item \texttt{LocateAppliance}: identify the applicable appliance in the observed scene;
+  \item \texttt{OpenAppliance}: establish access to the appliance;
+  \item \texttt{PlacePotato}: place the potato in the required location;
+  \item \texttt{ActivateAppliance}: turn on the appliance using valid arguments;
+  \item \texttt{VerifyHeated}: inspect the resulting environment state.
+\end{itemize}
+
+These names and exact steps are illustrative only. The actual environment's skill library and object affordances determine which operations exist and what their conditions mean.
+
+\subsection{Confidence and route selection}
+
+The retrieval service combines the direct skill distribution with the memory-induced distribution. It computes memory similarity, distribution agreement, top-skill margin, and goal coverage, then evaluates \(c_{\mathrm{ret}}\). To keep the example distinct from measured results, suppose its confidence is represented symbolically as \(c^*\), with \(c^*>\tau_{\mathrm{high}}\). Under the paper's routing rule, this illustrative value selects full DAG execution with normal repair budget. The symbol is not an experimental value and is not a reported probability from the GraSP paper.
+
+\subsection{Compile and execute}
+
+The compiler binds each invocation to a versioned skill schema and infers edges. A state edge connects an operation that establishes appliance access to the operation that requires access. A data edge carries a located appliance identifier into later calls that need its identity. An order edge may represent a soft precedence preference from experience or resource contention. The graph validator then checks acyclicity, source-to-sink reachability, goal coverage, argument schemas, and verifier attachment.
+
+At runtime, the executor selects a ready node. It verifies the node's preconditions against the current state, invokes the skill, and runs the postcondition verifier. Only a verified node becomes part of the confirmed execution state. The next node becomes eligible only when its required dependencies are satisfied.
+
+\subsection{Inject a failure and choose an operator}
+
+Assume the activation step fails because the selected appliance identifier is stale. The failure event records the failed node, an execution or precondition failure type depending on the exact observation, a structured message, and the current environment state. The repair controller examines the local neighborhood.
+
+If the skill is still appropriate and only its argument binding is wrong, \texttt{Rebind} is the natural candidate. The corrected identifier must still be present in the current environment snapshot and must pass the schema check. If instead the appliance is not accessible and the current state does not satisfy an access precondition, \texttt{InsertPrereq} may add the necessary prerequisite skill. If a different appliance-control skill can satisfy the same downstream requirements, \texttt{Substitute} may be considered. If the failure reveals that a soft ordering constraint is wrong, \texttt{Rewire} may change the local ordering edge. If the appliance is already on and the downstream conditions are satisfied, \texttt{Bypass} may be valid.
+
+The example demonstrates why the five operators should not be treated as interchangeable retries. Each operator encodes a different diagnosis about what made the graph fail. The validator must check the candidate patch before the executor resumes. Unaffected verified ancestors remain intact; affected descendants are reset according to the repaired graph.
+
+\subsection{Escalate when local repair is insufficient}
+
+Now suppose the failure cannot be repaired within the configured node/edge bounds or all candidate operators produce invalid graphs. The local repair stage returns failure. If the episode still has global replan allowance, the system updates the residual task and recompiles. If the allowance is exhausted, it sends the residual task to ReAct fallback. The agent should then continue from the current observed state rather than assume that the entire original episode has been undone.
+
+The example has not demonstrated that any one repair will succeed. It demonstrates the control structure: the runtime distinguishes local repair from global replanning and reactive fallback, retains the state needed for those decisions, and does not label the task complete until the goal is verified.
+
+\subsection{What the example does and does not show}
+
+The worked example shows how typed dependencies and typed failure events make a local repair decision explicit. It illustrates the difference between changing arguments, adding a prerequisite, replacing a skill, editing local dependencies, and bypassing already-satisfied work. It also shows how the escalation path protects the runtime from unbounded local patching.
+
+It does not establish an empirical success rate, demonstrate the exact ALFWorld experimental trace, or validate a particular Java implementation. Those would require an executable reproduction, a version-pinned environment, controlled experiments, and a report of results. The example is a teaching reconstruction only.
+
+\section{Evaluating the closed case and reproducing the mechanism}
+\label{sec:ch17-evaluation-method}
+
+\subsection{Closest-baseline screening as a repeatable research procedure}
+
+The methodological lesson of B5 can be expressed as a sequence that applies beyond skill systems:
+
+\begin{enumerate}
+  \item specify the candidate gap as a set of state, trigger, authority, transition, persistence, failure, and learning relationships;
+  \item identify the strongest modern system that could plausibly implement the full chain;
+  \item inspect the system's primary paper and, when the claim depends on executable behavior, its version-pinned implementation evidence where available;
+  \item map each proposed edge to actual runtime state and control;
+  \item record what is preserved and what remains missing;
+  \item assign evidence relation and migration depth independently; and
+  \item close, narrow, or retain the candidate according to the observed evidence and falsification rule.
+\end{enumerate}
+
+A candidate should not survive merely because a researcher can phrase it in a new vocabulary. Conversely, an existing system should not be credited with the whole chain because it has a vaguely similar diagram or one related API. The comparison must demonstrate the nodes, edges, and invariants that make the proposed control real. This is the point of the closest-baseline screen in Fan and Lan's protocol.\FanLanCite{\S II-C--II-E; \S VI-B; Table V}
+
+\subsection{A reproduction protocol for a Java-style system}
+
+A careful reproduction should hold the model, prompt, skill library, episodic-memory data, environment, task population, and interaction budget constant across the compared methods. The study should record the model and dependency versions, graph compiler prompts, skill schema versions, confidence thresholds, repair bounds, random seeds, and number of independent runs. It should state whether the evaluation matches the original data splits or uses a new task set.
+
+The baseline set should include at least ReAct, Reflexion, ExpeL, and flat ReAct + Skills under the same skill library and episodic memory where the comparison design allows it. The component study should distinguish the main-table progressive results from the five Appendix C.2 conditions. If a reproduction cannot implement all five ablations, it must state which ones were run and why; it must not imply that the missing ablation was evaluated.\autocite{xia2026grasp}
+
+A Java-style reproduction can add tests for graph validity rate, verifier precision and recall against labelled state conditions, repair success by failure type, patch size, verified-work preservation, fallback frequency, compilation failure, latency, tokens, and wall-clock cost. These are useful extensions, not substitutes for the paper's reported reward/score, success rate, and environment-step metrics.
+
+\subsection{Falsification and narrowing criteria}
+
+A reproduction or extension should not be declared successful because it produces valid-looking DAGs. It should be rejected or narrowed if any of the following occurs:
+
+\begin{itemize}
+  \item the typed graph does not improve on flat skill execution when the skill library, model, and task conditions are matched;
+  \item local repair does not improve over global replanning or repeats failures without changing the relevant dependency structure;
+  \item a repair operator changes a hard state/data dependency without proving that the dependency is obsolete;
+  \item the verifier accepts outcomes that fail the actual task postcondition at an unacceptable rate;
+  \item confidence routing does not improve robustness over always executing the graph or always using the reactive baseline;
+  \item increasing the number of retrieved skills degrades GraSP as sharply as it degrades flat execution;
+  \item the system cannot preserve unaffected verified work or exceeds the stated repair bounds; or
+  \item a simpler baseline is non-inferior under a preregistered margin while using no more resources.
+\end{itemize}
+
+These tests evaluate a GraSP-style implementation. They do not reopen B5 automatically. A new residual hypothesis would need to specify a materially different control relationship that remains absent after GraSP is treated as the mandatory baseline.
+
+\subsection{Three conclusions that must remain separate}
+
+Three distinct conclusions follow from the methodological analysis:
+
+\begin{enumerate}
+  \item \textbf{B5 closure in Fan and Lan's corpus.} GraSP contradicts the absence condition for the proposed B5 chain, so the candidate is removed from the residual intervention count.
+  \item \textbf{GraSP's empirical results.} The primary GraSP paper reports improved outcomes and fewer environment steps across its specified benchmark/model configurations, with the limits described above.
+  \item \textbf{A book-level reproduction.} The Java-like mapping in this chapter is an implementation plan. It has not independently reproduced the GraSP implementation or its reported experiments. A reproduction must be built, measured, and reported before making that claim.
+\end{enumerate}
+
+\section{Boundaries with the preceding chapters and handoff to Chapter 18}
+\label{sec:ch17-cross-chapter-boundaries}
+
+Chapter 11 already teaches the historical-to-modern landscape, the ICARUS mapping, and the E/D coding framework. This chapter applies those tools to one closed candidate. It does not repeat the complete historical architecture catalog or the forty-two modern mechanism records. Chapters 12--16 explain B1, B2, B3, B4, and B6 as residual mechanism studies. Chapter 17 is different: it explains why B5 is not included among those residual hypotheses.\FanLanCite{\S VI-B--VI-D; Fig. 8; Table V}
+
+The cross-bundle analysis in Fan and Lan treats B5 as an implementation dependency for future compositions, not as a sixth residual control hypothesis. B4 scopes recovery and the goal boundary; B2 can supply typed recovery state and verified resolutions; B1 and reusable skills can supply candidates; B3 controls what content enters a bounded workspace; and B6 governs uncertainty, resources, authorization, interruption, and stopping. GraSP's closed skill-governance chain can therefore appear as a baseline or dependency in the future synthesis, while remaining distinct from the five open bundles.\FanLanCite{\S VI-D; Figs. 8--9}
+
+Chapter 18 will examine how B1, B2, B3, B4, and B6 might compose and how the closed GraSP capability fits into that composition. It must not infer that the residual mechanisms have already been validated simply because they can be connected to a GraSP-like skill governor. Each remaining bundle still has its own baseline, insertion point, falsifier, and experimental conditions. The synthesis must therefore end with compositional hypotheses and limits, not a claim that the combined architecture has already been proven.
+
+\begin{chapterrecap}
+B5 began as a candidate coupling calibrated multi-skill routing, typed verification, bounded repair, and planner fallback. Fan and Lan's closest-baseline screening identifies GraSP as already composing that chain. GraSP retrieves candidate skills using both direct task relevance and successful episodic experience, computes a retrieval-confidence value, compiles selected skills into a typed DAG, executes each node with precondition and postcondition checks, and repairs failures locally through five operators before escalating to global replanning or ReAct fallback.
+
+The graph's state and data edges are hard dependencies; its order edges are soft precedence constraints. The five repair operators—Rebind, InsertPrereq, Substitute, Rewire, and Bypass—encode different diagnoses rather than interchangeable retries. A patch must preserve DAG validity, valid skill nodes and bindings, verifiers, unaffected verified ancestors, and the configured node/edge limits. Entry confidence routing and post-failure escalation are separate control decisions.
+
+Fan and Lan assign the GraSP correspondence E3/D4. E3 describes functional approximation through a materially different organization, not documented historical lineage. D4 describes experience-dependent adaptation of future control, not complete migration of ICARUS or universal correctness. The code is specific to the mapped skill-governance mechanism and remains conditional on the review's frozen corpus and provisional coding.
+
+GraSP reports positive results across four interactive benchmarks and eight model backbones. Its main comparison, selected component table, and five Appendix C.2 ablations must be described with their distinct scope. The experiments support the reported task and efficiency results, but the paper's limitations on DAG expressiveness and evaluated domains remain important.
+
+The practical bridge in this chapter is a faithful Java-oriented reconstruction map, not a new B5 proposal and not an independently reproduced implementation. It makes skill schemas, typed edges, node verifiers, failure events, repair bounds, escalation, persistence assumptions, and observability explicit. A future extension must compare itself against GraSP rather than relabel its existing control chain as an open gap.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and exercises}
+\begin{enumerate}
+  \item Why is a retrieved list of relevant skills not yet an executable plan?
+  \item What is the difference between retrieval, DAG compilation, and verified execution?
+  \item What are the four conditions in the GraSP definition of a valid graph?
+  \item How do state, data, and order edges differ? Which are hard and which are soft?
+  \item What fields are stored on a GraSP skill node, and which of them directly participate in execution control?
+  \item What are the four failure types in the GraSP failure event?
+  \item When should Rebind be preferred to Substitute? When is InsertPrereq more appropriate?
+  \item Why must Substitute preserve the downstream interface, and why must Bypass check the current state?
+  \item What makes a repair patch valid, and what are the experimental default bounds?
+  \item How is initial confidence routing different from post-failure escalation?
+  \item What do E3 and D4 mean independently? Why does E3 not imply documented ICARUS lineage?
+  \item Why does D4 not establish complete historical migration?
+  \item Which five ablations are described in Appendix C.2, and which conditions are separately displayed in the main component table?
+  \item What can be concluded from the four-benchmark results, and what remains an external-validity question?
+  \item Why is B5 a negative case rather than a sixth residual hypothesis?
+\end{enumerate}
+
+\textbf{Practical exercise.} Given a five-node skill graph and one typed failure event, choose a repair operator. State which nodes and edges may change, which verified ancestors must remain untouched, which graph invariants must hold after the patch, and when the runtime must escalate instead of attempting another local repair.
+\end{reviewquestions}
+
+\section*{Source and example note}
+
+The theoretical account in this chapter is grounded in [Fan \& Lan], principally their ICARUS reconstruction, modern skill-system mapping, evidence/depth framework, B5 closure decision, and validity discussion. GraSP is treated through its own primary paper for the architecture, graph definition, algorithms, experiments, ablations, and stated limitations. Choi and Langley are used only as a historical reference for ICARUS because that work is part of the source context used by Fan and Lan. The chapter does not introduce a third formal theory foundation. The Java-like records, interfaces, validation gates, lifecycle labels, persistence model, observability trace, and test plan are engineering representations created for this book. The heating-a-potato example is a book-created illustrative trace motivated by the title of GraSP's Appendix E; its detailed node sequence is not claimed as an exact experimental trajectory.
+
+\section*{Looking ahead}
+
+Chapter 18 brings the Part II mechanism studies together. It will examine how the five residual bundles—B1, B2, B3, B4, and B6—might compose, what dependencies the source review identifies, and how the closed GraSP skill-governance chain should be treated as an existing baseline. The synthesis will remain an agenda for compositional experiments rather than a claim that the combined runtime has already been validated.

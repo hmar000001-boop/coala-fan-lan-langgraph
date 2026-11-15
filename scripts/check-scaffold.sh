@@ -8,8 +8,8 @@ for required in \
   Tex/part1/chapter03/chapter.tex Tex/part1/chapter04/chapter.tex \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
-  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex \
+  Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex Tex/part2/chapter17/chapter.tex \
+  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -171,7 +171,7 @@ done
 for term in belief desire intention commitmentpolicy reconsiderationschedule metacontrol methodauthority goaldrift continuationcondition delegationcontract; do
   grep -Fq "\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 15 glossary entry: $term" >&2; exit 1; }
 done
-# Chapter 16 is the sole active Markdown-only outline review and is now authorized and drafted.
+# Chapters 16 and 17 use the current Markdown-only outline review convention and are authorized/drafted.
 chapter16_outline="$ROOT/Tex/part2/chapter16/outline/Chapter_16_Outline_v1.md"
 test -s "$chapter16_outline" || { echo "Missing Chapter 16 Markdown outline: $chapter16_outline" >&2; exit 1; }
 grep -q '^\*\*Drafting status:\*\* Authorized' "$chapter16_outline" || {
@@ -208,4 +208,44 @@ done
 if find "$ROOT/Tex/part2/chapter16/outline" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.tex' \) | grep -q .; then
   echo "Chapter 16 outline review must be Markdown-only; found PDF or LaTeX outline artifacts." >&2; exit 1;
 fi
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-16 contain drafted prose; Chapter 15 has seven accessible Mermaid sources; Chapter 16 has nine accessible Mermaid sources and one canonical Markdown outline."
+# Chapter 17 is the approved Batch 8 closed-candidate case and has completed prose.
+chapter17_outline="$ROOT/Tex/part2/chapter17/outline/Chapter_17_Outline_v1.md"
+test -s "$chapter17_outline" || { echo "Missing Chapter 17 Markdown outline: $chapter17_outline" >&2; exit 1; }
+grep -q '^\*\*Drafting status:\*\* Authorized' "$chapter17_outline" || {
+  echo "Chapter 17 outline must record the author's drafting authorization." >&2; exit 1;
+}
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter17/chapter.tex" || {
+  echo "Chapter 17 prose source still contains a placeholder." >&2; exit 1;
+}
+grep -q '\\chapter{The Closed Candidate B5 and GraSP}' "$ROOT/Tex/part2/chapter17/chapter.tex" || {
+  echo "Chapter 17 title is missing from the LaTeX source." >&2; exit 1;
+}
+test -s "$ROOT/Tex/standalone/chapter17.tex" || { echo "Missing Chapter 17 standalone build entry." >&2; exit 1; }
+for key in fanlan2026mechanisms xia2026grasp choi2018icarus; do
+  grep -q "{$key," "$ROOT/Tex/bibliography/references.bib" || {
+    echo "Missing Chapter 17 bibliography entry: $key" >&2; exit 1;
+  }
+done
+for diagram in b5-candidate-to-closure grasp-four-stage-pipeline grasp-retrieval-confidence grasp-typed-dag-edges grasp-node-execution-and-failure grasp-five-repair-operators grasp-escalation-lifecycle b5-evidence-depth-packet grasp-evaluation-and-ablations; do
+  source="$ROOT/Tex/diagrams/source/part2/chapter17/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 17 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part2/chapter17/chapter.tex" || { echo "Chapter 17 does not reference $diagram.png" >&2; exit 1; }
+done
+for term in skill skilllibrary skillgraph skillnode skillverifier stateedge dataedge orderedge repairoperator retrievalconfidence graphcompilation; do
+  grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 17 glossary entry: $term" >&2; exit 1; }
+done
+for artifact in \
+  "$ROOT/review/Chapter_17_Source_Review_v1.md" \
+  "$ROOT/review/Chapter_17_Drafting_Review_v1.md" \
+  "$ROOT/review/Batch_08_Chapter_17_Authoring_Status_v1.md"; do
+  test -s "$artifact" || { echo "Missing Chapter 17 review artifact: $artifact" >&2; exit 1; }
+done
+if find "$ROOT/Tex/part2/chapter17/outline" -maxdepth 1 -type f \( -name '*.pdf' -o -name '*.tex' \) | grep -q .; then
+  echo "Chapter 17 outline review must be Markdown-only; found PDF or LaTeX outline artifacts." >&2; exit 1;
+fi
+grep -q 'Chapter placeholder' "$ROOT/Tex/part2/chapter18/chapter.tex" || {
+  echo "Chapter 18 must remain a placeholder until Chapters 9-17 are completed and reviewed." >&2; exit 1;
+}
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-17 contain drafted prose; Chapters 16-17 retain one canonical Markdown-only outline each; Chapter 17 has nine accessible Mermaid sources."

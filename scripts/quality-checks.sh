@@ -62,7 +62,8 @@ for expected in \
   'Understanding Activation, Retrieval Latency, and Utility: B1' \
   'Content Competition, Workspace and Broadcast: B3' \
   'Persistent Intentions, Reconsideration and Method Authority: B4' \
-  'Uncertainty, Resources, Interruption and Stopping: B6'; do
+  'Uncertainty, Resources, Interruption and Stopping: B6' \
+  'The Closed Candidate B5 and GraSP'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;
