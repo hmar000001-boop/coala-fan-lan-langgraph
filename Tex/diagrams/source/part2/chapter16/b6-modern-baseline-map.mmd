@@ -1,0 +1,30 @@
+flowchart TB
+  accTitle: Modern partial controls relevant to B6
+  accDescr: Modern systems contribute separate resource governance, uncertainty-aware tool use, help seeking, budget-aware search, and runtime interruption boundaries. The unresolved research question concerns their calibrated cross-stage coupling, not the absence of these individual controls.
+  subgraph RG[Resource governance]
+    A[AIOS scheduling and resource managers]
+    B[AgentRM admission and lifecycle management]
+    C[Budget-aware value search]
+  end
+  subgraph UC[Uncertainty-conditioned actions]
+    D[UALA tool interaction]
+    E[KnowNo help seeking]
+    F[Calibrate-Then-Act exploration]
+    G[Utility-guided action selection]
+  end
+  subgraph RB[Runtime boundaries]
+    H[State and checkpoints]
+    I[Tool approval and guardrails]
+    J[Interrupt and resume interfaces]
+  end
+  A --> K[Partial control evidence]
+  B --> K
+  C --> K
+  D --> K
+  E --> K
+  F --> K
+  G --> K
+  H --> K
+  I --> K
+  J --> K
+  K --> L[Open B6 question: calibrated uncertainty lineage changes resource, authority, interruption, and stopping decisions across stages]

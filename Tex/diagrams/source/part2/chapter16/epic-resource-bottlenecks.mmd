@@ -1,0 +1,14 @@
+flowchart LR
+  accTitle: EPIC processor timing and resource bottlenecks
+  accDescr: A teaching reconstruction of EPIC with perceptual, cognitive, and motor processor paths. Some activities overlap, while shared queues and a constrained motor channel delay operations that need the same resource.
+  P[Perceptual processor] --> Q1[Perceptual queue]
+  C[Cognitive processor] --> Q2[Cognitive queue]
+  M[Motor processor] --> Q3[Motor queue]
+  Q1 --> C
+  C -->|decision| M
+  M --> O[Environment response]
+  C -->|shared capacity| B[Resource bottleneck]
+  Q1 --> B
+  Q2 --> B
+  B --> S[Scheduled execution]
+  S --> O

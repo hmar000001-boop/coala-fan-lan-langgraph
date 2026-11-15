@@ -1,0 +1,13 @@
+flowchart LR
+  accTitle: Proposed B6 cross-stage control loop
+  accDescr: A proposed engineering architecture links a consequential proposal to a versioned uncertainty estimate. That lineage is consumed at memory admission, planning, scheduling, tool authorization, execution monitoring, and stopping. New observations create linked revisions rather than silently replacing prior estimates.
+  P[Consequential proposal] --> U[Versioned uncertainty lineage]
+  U --> M[Memory admission]
+  M --> PL[Planning]
+  PL --> S[Resource scheduler]
+  S --> A[Tool authorization]
+  A --> E[Execution monitor]
+  E --> T[Stop or continue decision]
+  T -->|new evidence| R[Observation and outcome]
+  R --> U
+  T -->|verified terminal result| Z[Terminal record]

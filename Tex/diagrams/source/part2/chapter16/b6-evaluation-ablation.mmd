@@ -1,0 +1,15 @@
+flowchart TB
+  accTitle: B6 evaluation trace, outcomes, and ablations
+  accDescr: Evaluation records an end-to-end trace from uncertainty provenance through budget, authorization, execution, interruption and stopping. It measures calibration and selective risk alongside tool, verification, deadline, and interruption costs. Three separate ablations remove the uncertainty state object, the authoritative control edge, and the learning update.
+  T[Required trace] --> P[Primary outcomes: calibration and selective risk]
+  T --> S[Safety outcomes: unauthorized and irreversible-action errors]
+  T --> E[Efficiency outcomes: help precision, verification cost, interruption latency]
+  T --> A1[Ablation 1: remove uncertainty state object]
+  T --> A2[Ablation 2: remove authoritative control edge but keep logs]
+  T --> A3[Ablation 3: remove learning update but retain runtime transition]
+  P --> F[Falsification and boundary analysis]
+  S --> F
+  E --> F
+  A1 --> F
+  A2 --> F
+  A3 --> F

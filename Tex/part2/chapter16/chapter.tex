@@ -1,4 +1,796 @@
 \chapter{Uncertainty, Resources, Interruption and Stopping: B6}
+\label{ch:uncertainty-resources-b6}
+
+\begin{learningbox}
+By the end of this chapter, you will be able to explain why a confidence value attached to one model or tool response is not the same as uncertainty that remains available to the whole runtime; reconstruct the complementary contributions of EPIC and Sigma; distinguish resource scheduling from uncertainty-conditioned action selection; interpret B6's E3/D3 record without treating it as a score for an entire agent; and design a testable control path that carries evidence-linked uncertainty into resource allocation, tool authorization, interruption, and stopping. You will also be able to distinguish a pause from a cancellation, a cancellation request from a confirmed cancellation, and budget exhaustion from successful completion.
+\end{learningbox}
+
+\section{The investigation that cannot afford to do everything}
+\label{sec:ch16-opening}
+
+Imagine that Product X's payment service begins returning intermittent HTTP 500 responses. The first alert is incomplete. The service is degraded, but the available evidence does not yet tell us whether the cause is a recent deployment, a database connection problem, a downstream payment-provider delay, or a burst of malformed requests. The agent has several possible ways to investigate. It can inspect deployment metadata, query a read-only health endpoint, retrieve a bounded log window, compare recent error rates, or run a more expensive diagnostic.
+
+The investigation is not free. Each option consumes some combination of model calls, tokens, external tool calls, wall-clock time, compute capacity, context space, and verification effort. Some resources can be reserved and counted. Others are scarce because of a shared bottleneck: a production database may have a strict query limit, an operator may be available for only a short time, and a diagnostic job may occupy the only permitted execution slot. A call that is cheap in tokens may be expensive in wall-clock time. A call that returns quickly may consume the last available request to a rate-limited service.
+
+The agent also has to decide what it is allowed to do. A read-only health query may fall within the authority granted for investigation. Restarting a service, rolling back a deployment, or issuing a payment write is different. These actions can affect customers or production state. They require an authorization decision that cannot be inferred from the model's confidence in its own explanation.
+
+Now introduce one more event. A second alert reports that the incident is affecting a larger part of production. A low-priority summarization task is still running, and a more urgent diagnostic needs the shared execution capacity. Should the scheduler interrupt the first task? Can it stop at a safe boundary? Has it already dispatched a remote operation that cannot be cancelled? If the task is suspended, what must be checked before it resumes? Finally, when should the agent stop investigating and report that the evidence is sufficient, or report that the budget has been exhausted while the diagnosis remains uncertain?
+
+These decisions are connected. A new observation can change the estimated risk of an action. That change can alter which investigation deserves resources, whether another verification step is worthwhile, whether a tool call is authorized, whether current work should be interrupted, and whether the run should continue. If the uncertainty estimate disappears after the planner call, later components cannot use it. If the scheduler ignores it, the estimate is only commentary. If the authorization gate treats high confidence as permission, a probabilistic estimate has been mistaken for delegated authority. If interruption loses the execution state, preemption may make the incident harder to resolve rather than safer.
+
 \begin{notebox}
-Chapter placeholder. No prose has been drafted. This chapter will be outlined and approved before writing.
+\textbf{The central problem.} An agent must decide not only what it believes, but also how uncertainty should change the work it performs, the resources it consumes, the actions it is permitted to take, and the point at which it should yield or stop.
 \end{notebox}
+
+This chapter studies that problem through B6, the sixth candidate bundle in Fan and Lan's mechanism-level review. The title is deliberately longer than ``uncertainty management.'' B6 connects uncertainty to resources, interruption, and stopping because its proposed contribution is a control relationship, not another score shown beside a model response. The chapter first reconstructs the historical mechanisms that make the relationship intelligible, then examines the modern controls that already implement important parts of it, and finally develops a concrete reference design. That design is an engineering proposal for this book. It is not an implementation prescribed by EPIC, Sigma, Fan and Lan, or any one of the modern systems discussed here.\FanLanCite{\S III-D; \S V-A; \S VI-C, B6; Table VI}
+
+\section{B6 in the mechanism-level review}
+\label{sec:ch16-b6-review}
+
+Fan and Lan identify B6 as the residual coupling between uncertainty and resource control. The term \gls{uncertaintyestimate} will refer to a proposition- or outcome-specific representation rather than a global confidence score.\index{uncertainty estimate} They propose that one calibrated uncertainty object accompany each consequential proposal and propagate through memory admission, planning, tool authorization, execution monitoring, and stopping. They connect that state to resource allocation and to the ability to interrupt work at a cognitive decision boundary. Their closest modern cases include systems that manage agent resources and systems that use uncertainty to select tools, request help, verify, explore, or stop. The review does not claim that those controls are absent. It argues that the reviewed systems do not yet supply the complete calibrated cross-stage propagation and cognitive preemption/interruption chain as one mechanism.\FanLanCite{\S IV-A--IV-B; \S V-A, EPIC/Sigma mapping; \S VI-C, B6; Appendix C-Q}
+
+The distinction matters. A runtime may expose a scheduler, task queue, interrupt event, cancellation method, or approval callback. A specialized agent may estimate uncertainty or ask a human for help. A search algorithm may reduce exploration when its remaining budget shrinks. Each is a substantive control capability. But the presence of several capabilities in one software stack does not prove that one calibrated uncertainty state travels between them and changes their decisions. The question is whether the causal edge is present and inspectable.
+
+\subsection{The proposed coupling}
+\label{sec:ch16-b6-proposed-coupling}
+
+The source hypothesis can be read as a chain. A consequential proposal is associated with an uncertainty estimate. The estimate has a defined target and \gls{calibration} context.\index{calibration} It remains traceable as the proposal moves through planning and memory selection. The scheduler considers it alongside the demand for scarce resources. The authorization gate considers it alongside consequence, reversibility, scope, and policy. Execution monitoring incorporates new observations without silently erasing the estimate's history. The runtime can then continue, verify, request help, yield, interrupt, or stop. A verified outcome remains linked to the estimate and decisions that preceded it.
+
+This is not a demand that every stage use the same numerical threshold. A retrieval decision, a production restart, and a human-escalation decision have different consequences and different error costs. Nor does ``one uncertainty object'' mean one scalar that describes the entire agent. It means that the uncertainty associated with a particular consequential proposition or proposal has a durable, versioned lineage that later stages can interpret without losing its identity.
+
+\begin{tipbox}
+\textbf{Read the word ``propagate'' carefully.} It does not mean copy the same number into every component and pretend it remains current. New observations may produce a new estimate revision. Propagation means preserving the target, provenance, calibration context, and derivation relationship so that downstream decisions can identify exactly which uncertainty information they consumed.
+\end{tipbox}
+
+\subsection{What the chapter will and will not claim}
+
+B6 is a residual hypothesis produced by a bounded mapping review. It is not a theorem that no system anywhere has combined uncertainty and resources in this way. Fan and Lan's corpus and coding rules define the scope of the result; their own validity discussion warns against treating an unobserved complete coupling as proof of an empty research area. Accordingly, the claim is limited: the reviewed corpus does not establish the complete coupling. That is materially different from saying that modern agents cannot do this.\FanLanCite{\S II-A--II-E; \S VII; Appendix F-C}
+
+The chapter also distinguishes a source-level statement from an engineering choice. Fan and Lan specify the control problem, the proposed insertion point, the closest baselines, and the falsifying outcomes. They do not prescribe the Java records, database schema, resource units, scheduler objective, calibration method, threshold values, event names, or transaction protocol developed below. Those are proposals made to turn the hypothesis into a system that can be implemented and rejected by experiments.
+
+\section{EPIC: why time and resource contention belong inside the model}
+\label{sec:ch16-epic}
+
+A common way to describe an agent is to list the components it has: a perception module, a reasoning module, a tool executor, and perhaps several parallel workers. That list says little about how the components compete for time. Two operations may both be available but still be unable to run at the same time because they require the same limited processor or channel. A third operation may be independent and able to proceed while the first two wait. Without timing and contention, the architecture does not explain which operation finishes first or why another one is delayed.
+
+Fan and Lan use \gls{epic} as a historical resource-control reference.\index{EPIC} EPIC models perceptual, cognitive, and motor processors with explicit processing times, parallel pathways, queues, and bottlenecks. A perceptual event can initiate processor activity, but shared bottlenecks and motor timing constrain which operations overlap and which must wait. The contribution is not merely that EPIC has several processors. It is that the organization of those processors and their timing predicts latency and interference.\FanLanCite{\S III-D, EPIC; Fig. 4; Appendix F-A}\autocite{kieras1997epic}
+
+\BookDiagram[0.52\textheight]{Tex/diagrams/generated/part2/chapter16/epic-resource-bottlenecks.png}{Historical teaching reconstruction of the EPIC resource idea: separate processor paths can overlap, while shared bottlenecks and channel capacity constrain timing.}{fig:ch16-epic}
+
+\subsection{Parallel work does not mean unlimited work}
+\label{sec:ch16-epic-parallel}
+
+Consider three abstract operations in an incident investigation:
+
+\begin{itemize}
+  \item a log query that occupies a database connection;
+  \item a local analysis that consumes CPU but no database connection;
+  \item a deployment-history query that uses a separate read-only service.
+\end{itemize}
+
+The local analysis may overlap with either query if compute is available. The two database-dependent operations may not overlap if the only permitted connection is already occupied. A fourth task may be ready to run but blocked by the same bottleneck. Counting four available tasks does not tell us that four tasks can execute simultaneously.
+
+The architecture must represent demand and capacity, including \gls{resourcecontention} when multiple activities require the same limited resource.\index{resource contention} If a resource has capacity one, admitting two operations that each require the whole capacity is not parallelism; it is an oversubscription decision. If a process can use a shared service only at a restricted rate, the scheduler must account for the service's limit rather than assuming that local concurrency is free. The system's temporal behavior follows from these constraints.
+
+A useful way to picture this is a timeline. An operation begins when its required resources can be reserved. An independent operation may start in parallel. An operation that needs an occupied bottleneck waits. If a higher-priority activity arrives, the runtime may decide to defer or preempt lower-priority work, but it must also account for whether that work can be paused safely. A processor model that predicts duration is not yet a full interruption policy; it supplies the resource and timing facts on which a policy can act.
+
+\subsection{From processors to modern runtime resources}
+\label{sec:ch16-epic-modern}
+
+A modern language-agent runtime has a different physical organization from EPIC. Its resources may include model inference capacity, tokens, tool quotas, browser sessions, database connections, containers, memory, wall-clock time, or human review. Some are continuously divisible; some are discrete; some are shared; some are leased; some cannot be recovered after a call has been made. A model call and a database query cannot be treated as interchangeable units simply because both consume budget.
+
+The useful historical lesson is narrower: resource demand, concurrency, queues, durations, and bottlenecks should be explicit enough to influence scheduling. A thread pool or semaphore can provide an implementation primitive. It does not automatically become a cognitive resource policy. The mechanism appears when the runtime's task state and resource demand determine what can start, what waits, which operation gets priority, and whether work should yield. Fan and Lan make this connection when they argue that the modern analogue must expose scheduling, preemption, and parallelism as consequences of task state and resource demand.\FanLanCite{\S III-D, EPIC; \S V-A; \S V-B}
+
+\subsection{Boundary of the EPIC comparison}
+
+EPIC does not provide the entire B6 mechanism. Its historical contribution is explicit timing and resource contention. It does not, by itself, establish a calibrated uncertainty record that follows a language-agent proposal from memory admission through tool authorization and execution monitoring. That complementary relationship is the reason Fan and Lan pair EPIC with Sigma rather than treating scheduling and confidence estimation as unrelated features.
+
+\section{Sigma: why uncertainty must remain part of the state}
+\label{sec:ch16-sigma}
+
+Suppose a model estimates that a deployment change probably caused an incident. The agent retrieves a deployment record, asks a diagnostic tool for evidence, receives a new observation, and then chooses between a further query and a report. If the original uncertainty value is attached only to the first model response, it may no longer describe the proposition used by the later decision. The tool result might support the hypothesis, weaken it, or reveal that the original question was underspecified. A later component needs to know what was estimated, from which evidence, under what calibration context, and how the estimate changed.
+
+Fan and Lan use \gls{sigma} as the historical reference for uncertainty propagation.\index{Sigma} Sigma uses factor graphs as a shared substrate for symbolic, probabilistic, and decision computations. Evidence can trigger message passing; updated beliefs support action selection; and learning can update parameters or structures in the same representation. The point for B6 is not that Sigma supplies a ready-made LLM confidence object. Its contribution is that uncertainty remains part of the state as evidence moves through inference and decision.\FanLanCite{\S III-D, Sigma; Fig. 4; Appendix F-A}\autocite{rosenbloom2016sigma}
+
+\BookDiagram[0.54\textheight]{Tex/diagrams/generated/part2/chapter16/sigma-uncertainty-propagation.png}{Historical teaching reconstruction of Sigma's factor-graph idea: evidence updates belief distributions that inform expected utility, action selection, and learning.}{fig:ch16-sigma}
+
+\subsection{A local score and a propagated state are different}
+\label{sec:ch16-local-vs-propagated}
+
+A local confidence score answers a narrow question at one point in a process. For example, a model may produce a probability for whether a log excerpt contains a database timeout. A tool may provide a calibrated probability that a robot action will succeed. A classifier may return a confidence for a particular label. These estimates can be useful. The limitation is not that local uncertainty values are always invalid; it is that they do not become a runtime-wide control state merely because they are available.
+
+Consider the difference between these two sequences:
+
+\begin{enumerate}
+  \item A model emits ``0.8 confidence.'' The planner copies that number into a prompt. The tool gate, scheduler, monitor, and stopping policy each make separate decisions without knowing the estimate's target, calibration set, freshness, or source evidence.
+  \item A proposal carries a versioned estimate tied to a defined outcome. A later observation creates a linked revision. The scheduler records which revision it used to allocate resources. The authorization gate records whether the same estimate was still applicable to the action being proposed. The monitor records the updated evidence and whether the estimate became stale or out of domain.
+\end{enumerate}
+
+The second sequence is not simply more logging. The identity and \gls{uncertaintylineage} of the estimate are available at the control boundaries where they can change execution.\index{uncertainty lineage} That is the bridge to B6.
+
+\subsection{What the factor graph analogy does not authorize}
+
+The proposed runtime record is not a copy of Sigma's factor graph. A JSON object containing a probability and evidence identifiers does not reproduce Sigma's inference semantics. Nor does Fan and Lan specify a calibration algorithm for every type of prediction. Sigma is used here as a historical model of a shared uncertainty-bearing representation, while B6 asks whether a comparable state can influence control across modern agent stages.
+
+A modern system may need several uncertainty records at once. The probability that a deployment caused an HTTP error is not identical to the probability that restarting a service will restore availability without data loss. A diagnostic estimate and an action-outcome estimate have different targets. Combining them requires a model of how the propositions relate. If the relationship is not known, the runtime must preserve the estimates separately rather than inventing independence or multiplying their values.
+
+\subsection{The two historical lessons together}
+\label{sec:ch16-epic-sigma-together}
+
+EPIC and Sigma contribute complementary control ideas. EPIC makes demand, duration, overlap, and bottlenecks explicit. Sigma makes uncertainty-bearing state persist through inference and decision. B6 asks whether a modern runtime can connect them: a consequential proposal carries a calibrated, evidence-linked uncertainty lineage; resource decisions use it alongside resource demand; tool authorization and execution monitoring consume it at explicit boundaries; and interruption or stopping can occur when the resulting risk and resource state justify a control transition.\FanLanCite{\S V-A, EPIC/Sigma mapping; \S V-B; \S VI-C, B6}
+
+\section{Modern systems already control parts of B6}
+\label{sec:ch16-modern-baselines}
+
+A residual hypothesis is meaningful only after the closest modern baselines have been considered. Fan and Lan separate general runtime families from mechanism-focused systems. The distinction prevents a framework interface from being mistaken for an implemented uncertainty policy, and it prevents a research prototype from being mistaken for a portable production invariant. Their resource and uncertainty examples are substantive, but the review treats them as partial controls rather than as proof that the full B6 coupling is already present.\FanLanCite{\S IV-A--IV-C; \S V-A--V-B; Appendix E-A; Appendix F-B}
+
+\subsection{Resource-side controls}
+\label{sec:ch16-resource-baselines}
+
+\paragraph{AIOS.} AIOS proposes an operating-system layer for LLM agents, with scheduling and managers for context, memory, storage, tools, and access. It gives resource governance an explicit runtime control surface rather than leaving every resource decision inside model-generated text. Fan and Lan use it as a resource-governance precedent. The boundary is that a scheduler and its managers do not, by themselves, prove that one calibrated uncertainty state propagates through every downstream decision.\autocite{meiaiOS2024}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, AIOS}
+
+\paragraph{AgentRM.} AgentRM treats agent-system resources as operating-system-like concerns. Fan and Lan describe its feedback-driven admission, compaction, hibernation, and scheduling controls as evidence that adaptive resource management has been operationalized. It is therefore a stronger comparator than a static token limit. Its scope remains resource management: it does not establish the complete calibrated uncertainty, tool-authorization, preemption, interruption, and stopping chain required by B6.\autocite{she2026agentrm}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, AgentRM}
+
+\paragraph{Budget-aware value search.} Budget-aware value search changes which search-tree node is selected as the remaining budget changes. This demonstrates that a budget can influence the agent's reasoning path rather than merely being checked after the path has been generated. Its mapped control is narrower than an uncertainty lineage that follows memory, planning, authorization, execution monitoring, and stopping.\autocite{li2026bavt}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, budget-aware value search}
+
+\subsection{Uncertainty-conditioned action controls}
+\label{sec:ch16-uncertainty-baselines}
+
+\paragraph{UALA.} The Uncertainty-Aware Language Agent uses uncertainty quantification to moderate interaction between an agent and the external world. Fan and Lan include it as an uncertainty-conditioned tool-interaction baseline. That is an important control edge: uncertainty can influence whether the agent reaches outside its current internal state. It is not evidence that the same calibrated object governs resource allocation, every later tool, interruption, and terminal stopping.\autocite{han2024uala}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, UALA}
+
+\paragraph{KnowNo.} KnowNo uses conformal prediction to align uncertainty with help seeking in multi-step robotic planning. It is a concrete example of uncertainty causing an agent to request human help rather than continuing as if every prediction were reliable. The boundary is equally important: a help trigger does not, on its own, implement a general multi-resource allocator or a persistent interruption authority across an entire language-agent runtime.\autocite{ren2023knowno}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, KnowNo}
+
+\paragraph{Calibrate-Then-Act.} Calibrate-Then-Act makes cost--uncertainty trade-offs explicit in environment exploration and stopping. It demonstrates that the expected value of further information can affect whether an agent continues to investigate or commits to an answer. Fan and Lan use it as evidence for an uncertainty-conditioned action/stopping edge, not as proof that a common uncertainty record has propagated through all the stages in B6.\autocite{ding2026calibratethenact}\FanLanCite{\S IV-B; \S V-A; Appendix F-B, Calibrate-Then-Act}
+
+\paragraph{Utility-Guided Agent Orchestration.} This is the closest cost-sensitive action baseline named in the B6 discussion. It selects among responding, retrieving, calling a tool, verifying, and stopping by considering estimated gain, step cost, heuristic uncertainty, and redundancy. That is real orchestration control; it would be inaccurate to describe it as having no resource or action policy. Fan and Lan's specific boundary is that the uncertainty signal is heuristic rather than calibrated, and the system does not provide cross-stage propagation or interruption authority. The residual therefore survives a cost-aware action selector.\autocite{liu2026utilityorchestration}\FanLanCite{\S VI-C, B6; Appendix C-Q; Appendix F-B, Utility-Guided Agent Orchestration}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{The modern controls contribute important parts of B6, but not the complete coupling as characterized by Fan and Lan.}
+\label{tab:ch16-modern-baselines}
+\begin{tabularx}{\linewidth}{P{0.22\linewidth}XX}
+\toprule
+\textbf{Control family} & \textbf{What the reviewed cases establish} & \textbf{What remains open for B6} \\
+\midrule
+Resource governance & Scheduling, admission, compaction, hibernation, or budget-sensitive search can change execution. & A calibrated uncertainty lineage is not shown to propagate into all resource and risk decisions. \\
+Uncertainty-conditioned action & Uncertainty can influence tool interaction, help seeking, exploration, verification, or stopping. & These controls do not by themselves establish multi-resource allocation, persistent cross-stage state, or interruption authority. \\
+General runtime boundaries & State, tools, approvals, checkpoints, cancellation, interruption, and resumption expose insertion points. & An interface boundary is not itself a calibrated control law or evidence that a system uses uncertainty to govern it. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Runtime interfaces are insertion points, not B6 implementations}
+\label{sec:ch16-runtime-insertion-points}
+
+General-purpose runtimes make practical boundaries visible. LangGraph exposes stateful graph execution with checkpoint, interrupt, and resume concepts. The OpenAI Agents SDK interface examined by Fan and Lan exposes run state, tools, handoffs, guardrails, approval, cancellation, and resume-related behavior. These are useful boundaries for an implementation discussion. They should not be promoted into evidence that the framework supplies calibrated uncertainty propagation or a B6 scheduler. The interface evidence is version-bounded in the review, and the scientific mechanism claim remains grounded in the paper's source analysis.\autocite{langgraph2026repo,openaiagents2026repo}\FanLanCite{\S IV-A; Appendix E-A, Table XI}
+
+The distinction is easy to miss because the same word can name different levels of control. A cancellation method is an API operation. A safe interruption policy must decide when cancellation is appropriate, which work can stop, what state is preserved, and what can be said about remote side effects. A checkpoint stores enough state to resume. A B6 controller must also decide whether the estimate, budget, permission, and evidence on which the checkpoint depended remain valid. A scheduler assigns work. A B6 controller needs to connect that assignment to calibrated uncertainty and action risk.
+
+\subsection{The comparison result}
+
+The modern landscape is not empty. Resource managers demonstrate that admission and scheduling can respond to system state. Uncertainty-aware systems demonstrate that confidence, calibration, and cost can influence tools, help, exploration, and stopping. Runtime frameworks expose the places where state and control could be connected. The remaining hypothesis is about the coupling and authority of these mechanisms: calibrated uncertainty must accompany consequential proposals, change resource allocation and tool governance across stages, and support cognitive preemption and interruption at a defined decision boundary.\FanLanCite{\S V-A--V-B; \S VI-C, B6; Appendix C-Q}
+
+\BookDiagram[0.60\textheight]{Tex/diagrams/generated/part2/chapter16/b6-modern-baseline-map.png}{Modern resource-governance and uncertainty-conditioned systems contribute separate control edges; the B6 hypothesis concerns their calibrated cross-stage coupling.}{fig:ch16-modern-baselines}
+
+\section{What E3/D3 says about B6}
+\label{sec:ch16-ed-coding}
+
+Chapter 11 introduced two independent coding axes. Evidence relation describes how a modern mechanism corresponds to a historical one. Migration depth describes how far the mapped mechanism has been implemented. These are separate questions, not two parts of a single maturity score. E3 identifies a functionally comparable control solution whose internal organization differs materially from the historical mechanism. D3 identifies a runtime control law in which an explicit trigger executes the mapped action and changes state; it does not require experience to update future policy. D4 is the level associated with outcome-dependent changes to future control policy.\FanLanCite{\S II-D; Table II; Appendix C-Q}
+
+Fan and Lan's B6 mapping is E3/D3. The evidence relation is a functional approximation: the resource and uncertainty systems solve comparable control problems without establishing a direct historical transfer from EPIC or Sigma. The depth code reflects explicit modern control transitions such as budget-sensitive scheduling, help seeking, tool arbitration, exploration, verification, or stopping. It does not say that the full B6 chain is present, because the residual is precisely the missing calibrated cross-stage propagation plus cognitive preemption and interruption.\FanLanCite{\S V-A, EPIC/Sigma mapping; \S V-B; \S VI-C, B6; Appendix C-Q}
+
+\begin{warningbox}
+\textbf{Do not read E3/D3 as ``almost complete.''} E3 and D3 answer different questions. E3 is not a lower quality grade than E2, and D3 is not a percentage of completion. The pair describes one bounded mapping claim in the paper's frozen corpus. It is not a score for AIOS, AgentRM, UALA, KnowNo, Utility-Guided Orchestration, or the quality of modern agents as a whole.
+\end{warningbox}
+
+\subsection{Why the resource and uncertainty parts form one bundle}
+\label{sec:ch16-one-bundle}
+
+The merge rule in Fan and Lan's review retains atomic residuals together when they share a runtime insertion boundary and one supplies state or authority needed by the other. For B6, a scheduler without uncertainty can allocate resources, but it cannot use the relevant calibrated risk state to decide when verification, help, or interruption is worth its cost. An uncertainty estimator without resource and action control can report a number, but the number does not determine what the runtime does next. The shared insertion points are the scheduler and tool-authorization boundary. The coupling can be tested by removing the state object or its authoritative control edge while leaving other behavior in place.\FanLanCite{\S II-D; \S VI-B, Table V; \S VI-C, B6; Table VI}
+
+\subsection{The source's four central failure conditions}
+
+Fan and Lan name four ways the proposed bundle can fail. First, \emph{sequential miscalibration}: an estimate that appears useful at one stage may become misapplied as the proposal moves into a different target, domain, or context. Second, \emph{excessive abstention}: uncertainty-aware control may request help or decline action so often that it prevents useful completion. Third, \emph{verification cost without risk reduction}: more checks consume resources without reducing the relevant risk. Fourth, \emph{interruption that prevents correct completion}: a controller may interrupt or preempt work at the wrong time and make the task fail. These are specific falsifiers, not generic warnings to ``be careful with confidence.''\FanLanCite{\S VI-C, B6; Table VI; Appendix D, Table X}
+
+\section{Reconstructing B6 with the seven mechanism fields}
+\label{sec:ch16-seven-fields}
+
+The seven-field representation from Chapter 10 is a way to reconstruct a mechanism, not a mandatory software schema. It asks what state the mechanism consumes, who controls it, what triggers a transition, what persists, how failure is represented, how experience changes future behavior, and how resources or governance constrain it. B6 is a useful test of the representation because the source identifies some fields clearly and leaves others deliberately open.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{B6 reconstructed through the seven fields. Source-supported facts are separated from implementation details that remain unspecified.}
+\label{tab:ch16-seven-fields}
+\begin{tabularx}{\linewidth}{P{0.15\linewidth}XX}
+\toprule
+\textbf{Field} & \textbf{B6 source record} & \textbf{What remains unspecified} \\
+\midrule
+State (S) & Budget, queue, context, uncertainty, and step cost appear in the resource/uncertainty record. & A Java object model, database schema, versioning strategy, and calibration payload are engineering proposals. \\
+Control (C) & Scheduler and tool-authorization boundaries influence resource/action decisions. & The paper does not prescribe one process boundary or universal scheduler implementation. \\
+Transition (T) & Scheduling, help, retrieval, tool use, verification, and stopping choices are identified; new evidence can affect control. & Exact event taxonomy, thresholds, tie-breaking, and priority rules are not specified. \\
+Persistence (P) & Uncertainty is intended to accompany consequential proposals across stages; common runtime state includes uncertainty and budget. & Durable schema, retention, expiry, crash recovery, and cross-session persistence are not specified for B6. \\
+Failure (F) & Sequential miscalibration, excessive abstention, verification cost without risk reduction, and harmful interruption are explicit failures. & Concrete exception types and recovery transitions are implementation proposals. \\
+Learning (L) & Sigma's historical mechanism can update parameters or structures; the synthesis discusses outcome-linked learning. & No B6-specific online calibration algorithm is prescribed, and the modern cases do not all implement one. \\
+Resources (R) & Token, time, tool, verification, concurrency, risk, preemption, interruption, and stopping are relevant resource/governance concerns. & The paper gives no single objective function, universal conversion rate, or global threshold. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The table is intentionally conservative. In particular, a reader should not infer a complete persistence design from the word ``propagate.'' Propagation establishes a control requirement: downstream stages must be able to access an estimate with its identity and context. The exact retention period, database representation, or recovery protocol is not specified. The same restraint applies to learning. Sigma's historical parameter/structure updates do not prove that a modern B6 system has a calibrated online update rule. A book-level implementation may propose one, but it must remain labelled as a proposal and evaluated independently.\FanLanCite{\S II-C; \S III-D, Sigma; \S VI-A; Appendix C-Q; Appendix E-A}
+
+\section{Designing a runtime that can act on uncertainty}
+\label{sec:ch16-runtime-design}
+
+We can now turn the residual hypothesis into an implementable design. The design below is deliberately explicit about authority. The model proposes explanations and actions. It may estimate resource demand or uncertainty. It does not reserve authoritative budget, grant its own tool permission, override an interruption, or declare that an external side effect has been undone. Those are runtime decisions owned by components whose state and transitions are durable and testable.
+
+\subsection{Start with authoritative state outside the model call}
+\label{sec:ch16-authoritative-state}
+
+A runtime cannot enforce a policy whose only representation is a paragraph in a prompt. The authoritative state should live in versioned records that can be read and changed by the components responsible for control. For a B6-capable system, the relevant state includes:
+
+\begin{itemize}
+  \item the active goal and scope owned by the B4 intention boundary;
+  \item the evidence and admitted context available through B1/B3 mechanisms;
+  \item the uncertainty lineage attached to each consequential proposition or proposal;
+  \item the resource budget, reservations, consumption, and deadlines;
+  \item the active work, tool-call state, and any in-flight external side effect;
+  \item recovery state when a typed failure is being handled through B2; and
+  \item the currently selected skill or workflow and its verification status, including any migrated skill governor used as the B5 baseline.
+\end{itemize}
+
+The B6 controller does not own all of these objects. It consumes the relevant state and governs risk/resource decisions across the boundaries. The intention governor remains the authority for changing or abandoning the goal. A recovery controller owns the typed recovery branch. A skill governor owns its graph and verification semantics. B6 supplies the risk and resource policy that can approve further bounded work, reserve verification capacity, ask for help, interrupt, or stop. This separation keeps a risk decision from silently becoming a goal decision.
+
+\BookDiagram[0.63\textheight]{Tex/diagrams/generated/part2/chapter16/b6-cross-stage-control-loop.png}{Proposed B6 control loop: uncertainty is linked to a consequential proposal and consumed at memory, planning, scheduling, authorization, monitoring, and stopping boundaries.}{fig:ch16-b6-loop}
+
+\subsection{The uncertainty lineage record}
+\label{sec:ch16-uncertainty-record}
+
+\EngineeringLabel{} The runtime should attach a versioned uncertainty record to each consequential proposition or proposal lineage. It should not use one global confidence value to describe an entire task. A payment-status proposition, a deployment-cause hypothesis, and a proposed production restart are different prediction targets. They may depend on overlapping evidence, but they do not automatically share one probability or one calibration guarantee.
+
+A proposed record can contain the following fields:
+
+\begin{itemize}
+  \item \texttt{\detokenize{estimateId}} — stable identity for this estimate revision;
+  \item \texttt{\detokenize{subjectRef}} — the proposition, event, or action outcome being estimated;
+  \item \texttt{\detokenize{targetDefinition}} — the exact event or outcome whose probability or prediction set is represented;
+  \item \texttt{\detokenize{prediction}} — a probability, interval, prediction set, or other typed output suitable for the target;
+  \item \texttt{\detokenize{modelVersion}} and \texttt{\detokenize{calibratorVersion}} — the estimator and calibration artifact that produced the value;
+  \item \texttt{\detokenize{calibrationDomain}} — the task, action class, environment, or population for which calibration evidence applies;
+  \item \texttt{\detokenize{calibrationEvidenceRef}} — the versioned evaluation record supporting the calibration claim;
+  \item \texttt{\detokenize{evidenceRefs}} and \texttt{\detokenize{parentEstimateId}} — provenance and derivation links;
+  \item \texttt{\detokenize{observedAt}}, \texttt{\detokenize{expiresAt}}, and \texttt{\detokenize{stageVersion}} — time, freshness, and process-stage metadata; and
+  \item \texttt{\detokenize{status}} — for example \texttt{\detokenize{CALIBRATED}}, \texttt{\detokenize{OUT_OF_DOMAIN}}, \texttt{\detokenize{STALE}}, \texttt{\detokenize{UNVALIDATED}}, or \texttt{\detokenize{UNKNOWN}}.
+\end{itemize}
+
+This schema is not in Fan and Lan. It is a proposed contract that makes the propagation requirement operational. The target definition is essential. An estimate that a log entry contains a timeout is not interchangeable with an estimate that the timeout caused a payment failure. An estimate about diagnosis is not an estimate about the safety of a restart. If the target changes, the runtime must create a new estimate or explicitly derive one under a documented model. It must not silently carry the old number forward.
+
+A lineage can have several revisions. A new observation should create a successor estimate with a link to the previous estimate and the evidence that changed it. The old revision remains available for audit. Downstream decisions record the exact revision they consumed. This permits a reviewer to reconstruct why the scheduler reserved resources or why the tool gate denied a proposal even if later evidence changed the estimate.
+
+\subsection{Calibration is target-specific evidence}
+\label{sec:ch16-calibration}
+
+Calibration is often described too casually. A model's verbal statement that it is ``90 percent confident'' is not, by itself, evidence that events assigned that probability occur 90 percent of the time. Calibration is evaluated against outcomes for a defined prediction task and a relevant population. Its meaning depends on how the target is defined, how the examples are sampled, and whether the calibration population resembles the situation where the estimate is used.
+
+A calibrated estimate for a read-only diagnostic classification is not automatically calibrated for a high-impact write action. A model version change, a new tool, a different environment, or a shift in the severity distribution may make an earlier calibration record less applicable. The runtime therefore needs explicit status for stale, out-of-domain, or unvalidated estimates. In those cases the system may choose a conservative policy, require verification, or ask for help. The exact response is an engineering decision; the important point is that an unvalidated score must not masquerade as a calibrated one.
+
+\begin{warningbox}
+\textbf{Calibration is not authorization.} A well-calibrated prediction describes expected outcomes under a stated target and population. It does not grant permission to restart a service, write to a payment system, disclose data, or take another consequential action. Authorization depends on the principal's policy, the action's scope and consequence, reversibility, and any required human approval.
+\end{warningbox}
+
+The chapter does not prescribe one calibration method. The estimator might use a calibrated classifier, a conformal prediction set, or another validated technique appropriate to the task. These are not interchangeable outputs; the contract must represent the method's semantics rather than forcing every result into a scalar probability. KnowNo is a concrete example of conformal prediction used for help-seeking in a robotic planner. Its role in the chapter is as a comparator identified by Fan and Lan, not as the universal calibration algorithm for every B6 domain.\autocite{ren2023knowno}\FanLanCite{\S IV-B; \S VI-C, B6; Appendix F-B}
+
+\subsection{Propagation without inventing independence}
+\label{sec:ch16-uncertainty-propagation}
+
+The same uncertainty estimate may be consumed by several downstream components, but new observations do not necessarily provide independent evidence. If two log queries retrieve overlapping windows, treating them as independent confirmations can exaggerate the strength of the conclusion. If a model summarizes an observation and a later model call summarizes that summary, the second text is not a new independent sensor. If the target changes from the proposition ``a database timeout is present'' to ``a database timeout caused the incident,'' the old estimate does not automatically transfer.
+
+The proposed runtime should therefore distinguish reuse from update. A downstream component may reuse an existing estimate if its target, context, and freshness remain applicable. A new observation may produce a linked revision. A derived proposition requires an explicit derivation step. Aggregation requires assumptions about the relationship among evidence sources and should be tested rather than improvised. Where dependence is unknown, retain the sources and uncertainty separately or use a conservative decision rule. Do not multiply probabilities merely because several records exist.
+
+This design is a practical expression of the Sigma-inspired idea that uncertainty remains part of the state during inference and decision. It is not a claim that a list of estimate records reproduces Sigma's factor graph or message-passing algorithm. The runtime contract preserves lineage and makes the control decisions inspectable; the inference method that creates a calibrated estimate remains a separately evaluated component.
+
+\subsection{A resource vector, not one fungible number}
+\label{sec:ch16-resource-vector}
+
+\EngineeringLabel{} The scheduler should represent resource demand as a \gls{resourcevector} with typed units.\index{resource vector} A proposal might consume model tokens, one model round trip, two external tool calls, several seconds of wall-clock time, a database connection, and one verification slot. It is misleading to collapse those quantities into a single ``cost'' unless the system has a validated domain-specific conversion model. A spare token budget does not compensate for an expired deadline, and unused local CPU does not create permission to call a rate-limited production endpoint.
+
+A proposed resource vector can include:
+
+\begin{itemize}
+  \item inference tokens or another model-capacity unit;
+  \item model calls or round trips;
+  \item external tool calls, separated by tool and quota domain;
+  \item wall-clock time and absolute deadline;
+  \item compute capacity or execution slots;
+  \item context/memory capacity; and
+  \item verification or human-review capacity when it is explicitly budgeted.
+\end{itemize}
+
+Each dimension has a unit, a capacity or limit, a reservation rule, a consumption record, and a reconciliation rule. Some limits are global to a run; others are shared across runs or enforced by an external service. Some resources are reserved before dispatch and settled afterward. Others, such as wall-clock deadline, are not refundable. A design must say which semantics apply to each dimension.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{An illustrative resource vector for the Product X investigation. The values are hypothetical teaching values, not measurements or recommendations.}
+\label{tab:ch16-resource-vector}
+\begin{tabularx}{\linewidth}{P{0.20\linewidth}P{0.16\linewidth}XX}
+\toprule
+\textbf{Resource} & \textbf{Unit} & \textbf{Why it is separate} & \textbf{Possible control rule} \\
+\midrule
+Inference capacity & tokens & Model usage is not equivalent to tool or elapsed-time use. & Reserve a maximum for each stage and retain a global cap. \\
+Model calls & calls & Each round trip has latency and provider limits. & Admit only when a call reservation is available. \\
+External tools & calls by tool & A database query and a deployment API call have different quotas and risks. & Maintain separate quotas and action-specific approval. \\
+Wall-clock time & \shortstack[l]{seconds /\\deadline} & Waiting can be costly even when tokens are cheap. & Use absolute deadlines and reserve time for verification. \\
+Compute & slots or CPU-time & Parallel work can contend for shared capacity. & Schedule against available concurrency and safe preemption points. \\
+Verification & slots or review minutes & Verification may be the scarce resource that prevents unsafe completion. & Protect a reserve; do not spend it on low-value exploration. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The scheduler can still optimize a task-level objective, but the resource constraints remain explicit. A constrained selection problem may maximize expected task progress or expected risk reduction subject to the capacity of each resource. If the designer chooses to combine risk reduction and task progress into one utility, the conversion weights are policy assumptions that must be exposed and evaluated. They are not supplied by Fan and Lan. The runtime must also retain hard constraints: an unauthorized action cannot become eligible merely because its score is high, and a resource vector cannot be overdrawn because an optimizer thinks the benefit is large.
+
+\BookDiagram[0.59\textheight]{Tex/diagrams/generated/part2/chapter16/b6-resource-vector-scheduler.png}{Proposed resource-vector scheduler: candidates request typed resources, reservations enforce separate limits, and new evidence can change priority without treating unlike resources as fungible.}{fig:ch16-resource-vector}
+
+\subsection{Budget allocation and scheduling}
+\label{sec:ch16-budget-scheduling}
+
+A useful scheduler considers at least five things: expected task progress, the uncertainty relevant to the next decision, the consequence of being wrong, the resources required by the candidate action, and the hard constraints that govern whether the action may occur. It should decide among several responses, not simply compute a confidence threshold. The options may include a cheaper diagnostic, another verification, a request for human help, a deferral, a safe preemption, or a stop with an explicit explanation.
+
+An implementation should reserve capacity before dispatch. Otherwise two concurrent workers can each observe that one tool call remains and both start it. Reservation creates an authoritative claim on a resource. When the operation finishes, the runtime reconciles the reservation against actual consumption. A reservation must be released or settled exactly once, even when duplicate events arrive or a worker retries after a crash.
+
+The scheduler should also avoid consuming all capacity on exploration. A verification reserve can protect a later check that is required before reporting success. A deadline reserve can leave time for an operator handoff. A per-stage cap can prevent a single uncertain branch from monopolizing the run. These policies are proposed engineering controls. They must be tested against fixed-budget and simpler budget-aware baselines rather than assumed to be beneficial.
+
+Concurrency introduces further requirements. A shared resource may be temporarily unavailable. A high-priority task may preempt work that is safe to pause. A low-priority task can starve if urgent tasks arrive continuously. Priority inversion can occur when a high-priority operation waits for a resource held by low-priority work. The implementation needs an explicit policy for fairness, priority aging, emergency reserve, and resource release. It must also distinguish resources that can be preempted from external actions that cannot be undone once dispatched.
+
+\subsection{Tool authorization is a separate authority}
+\label{sec:ch16-tool-authorization}
+
+Uncertainty is one input to authorization, not its substitute. The policy should consider the requested operation, the principal's authority, the exact target and scope, the action's consequence, reversibility, possible data exposure, required verification, and any human approval condition. A read-only query can be allowed under one policy while a write operation is denied. The same probability estimate may inform both decisions, but it does not make them equivalent.
+
+A proposed authorization record should include the subject and principal, the exact tool and operation, target scope, the goal/intention reference, the uncertainty estimate revision consumed, consequence and reversibility classification, policy version, required verifier or human approver, decision, reason, and expiry. The decision should be bound to the action as requested. If the model changes the target, payload, or operation, the old authorization must not silently apply to the new request.
+
+This distinction blocks a dangerous shortcut: ``the model is confident, therefore the action is allowed.'' Even a well-calibrated estimate that a restart will fix the problem does not prove that the agent has permission to restart production. Conversely, a low estimated risk does not waive a policy that requires human approval for an irreversible action. The authorization component owns that decision; the model supplies a proposal and supporting evidence.
+
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter16/b6-authorization-and-interruption.png}{Proposed authority boundary: the model proposes, uncertainty informs the decision, policy authorizes the exact action, and a separate monitor can request safe interruption.}{fig:ch16-auth-interrupt}
+
+\subsection{Scheduling, preemption, interruption, cancellation and stopping}
+\label{sec:ch16-interrupt-stop}
+
+These terms are often used as if they all mean ``stop the task.'' They do not. A runtime needs distinct states and semantics because pausing local reasoning is not the same as cancelling an external side effect, and neither is the same as ending the run.
+
+\begin{description}
+  \item[Scheduling.] Decide which eligible work should receive available resources next. Scheduling need not interrupt anything that is already running.
+  \item[\gls{preemption}.] Temporarily yield a lower-priority activity at an agreed safe boundary so another activity can use a constrained resource. A preempted activity should retain a validated checkpoint and its unspent budget when it is resumable.
+  \item[\gls{interruption}.] An authoritative event asks the current activity to stop at the earliest defined safe boundary because risk, policy, priority, or new evidence has changed. An \gls{interruption} request is a control event, not merely a message appended to a prompt.
+  \item[\gls{cancellation}.] Request termination of an executing task or tool operation. The request may be rejected, delayed, or acknowledged after the remote system has already performed a side effect.
+  \item[Suspension.] Preserve the task's state while no execution is active, pending a resource, condition, deadline, or human decision.
+  \item[Resumption.] Continue from a validated checkpoint only after checking that the assumptions, permissions, uncertainty lineage, budget, and external state are still current.
+  \item[Stopping.] Terminally end the current run or decision process with an explicit reason. Verified success, safe refusal, abstention, infeasibility, deadline exhaustion, budget exhaustion, and escalation are different terminal or handoff outcomes.
+\end{description}
+
+A \gls{cancellation} acknowledgement must not be interpreted as proof that an external effect did not happen. A network request may have reached a payment provider before the local timeout. The remote operation may complete even if the local worker stops waiting. A service may not support cancellation at all. The runtime should therefore track at least the cancellation request, the tool's reported cancellation status, and the known or unknown side-effect status as separate facts. When the effect is consequential, read-after-write reconciliation or human review may be necessary.
+
+A safe preemption boundary depends on the operation. A local summarizer can often pause between chunks. A read-only query may be allowed to complete. A deployment operation may be non-preemptible after dispatch. The runtime should state the cancellation capability for each tool contract rather than assume every tool behaves like a cooperative local task.
+
+\subsection{A proposed lifecycle state machine}
+\label{sec:ch16-state-machine}
+
+\EngineeringLabel{} The following state machine is a proposed control contract for the examples in this chapter. It is not a state machine defined by Fan and Lan. Its purpose is to make transitions, authority and persistence testable.
+
+\begin{description}
+  \item[READY.] The activity is eligible to be scheduled but has no active reservation.
+  \item[RESERVED.] The scheduler has committed the required resource reservation; dispatch is not yet confirmed.
+  \item[RUNNING.] The operation has been dispatched and is executing or awaiting a result.
+  \item[PREEMPT\_REQUESTED.] The governor has requested that work yield at a safe boundary; the worker has not yet confirmed the checkpoint.
+  \item[INTERRUPT\_REQUESTED.] An authoritative interruption event is pending. The worker must reach the defined boundary or report why it cannot.
+  \item[SUSPENDED.] No further execution is active. State and reservation reconciliation are persisted.
+  \item[RESUME\_CHECK.] The runtime validates checkpoint identity, current policy, permission, estimate freshness, external state and remaining budget.
+  \item[STOPPED.] The run is terminal without verified success, with an explicit reason such as safe refusal, abstention, infeasibility or budget exhaustion.
+  \item[COMPLETED.] The authorized objective for this run has been verified as complete under its required postconditions.
+\end{description}
+
+\texttt{\detokenize{STOPPED}} and \texttt{\detokenize{COMPLETED}} are intentionally distinct. The fact that a controller has no more work scheduled does not prove that the objective was achieved. A run can stop because the deadline expired, because it lacks authority, because the evidence remains insufficient, or because continuation would create unacceptable risk. A completion record needs verified outcome evidence.
+
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter16/b6-state-machine.png}{Proposed B6 activity state machine separating reservation, execution, preemption, interruption, suspension, resume validation, unsuccessful stopping, and verified completion.}{fig:ch16-state-machine}
+
+Every transition should record its trigger, evidence, authority, budget effect, uncertainty revision consumed or produced, tool side-effect status, persistence effect, and whether it is terminal. Transitions must be guarded. For example, \texttt{\detokenize{RESUME_CHECK}} cannot return to \texttt{\detokenize{RUNNING}} merely because a checkpoint exists. It must first confirm that the permission remains valid, the resource reservation can be reacquired, the estimate has not expired or moved out of domain, and the external state has not changed in a way that invalidates the plan.
+
+\subsection{Learning and calibration updates}
+\label{sec:ch16-learning}
+
+The source record leaves a B6-specific learning algorithm unspecified. Sigma's historical mechanism can update parameters or structures, and the synthesis runtime discusses outcomes as potential inputs to later control. That does not mean every B6 comparator learns a common calibration policy, or that Fan and Lan provide an online update rule. A book-level implementation may experiment with calibration updates, but it should keep that update path separate from the immediate runtime control path.\FanLanCite{\S III-D, Sigma; \S VI-A; Appendix C-Q}
+
+A conservative proposal is to admit only verified outcome labels into calibration feedback. The system should preserve the prediction, target definition, model and calibrator versions, evidence, decision, and resulting outcome. Training/update data must be separated from evaluation data. Calibration should be monitored by domain and action class, because aggregate performance can hide a poorly calibrated high-consequence slice. Every updated calibrator should be versioned, and a rollback or disable mechanism should be available if drift degrades calibration. Most importantly, the runtime transition should remain testable with learning disabled. This supports the source-required ablation that removes learning while retaining the immediate control edge.
+
+\section{Java-like contracts, persistence and concurrency}
+\label{sec:ch16-contracts}
+
+The previous section described responsibilities. This section makes their boundaries concrete with Java-like contracts. The types are proposed for this book; they are not copied from Fan and Lan or from a particular framework. The examples use ordinary Java records and enums so that the data contract is visible without requiring a specific persistence or orchestration library.
+
+\subsection{Core records}
+\label{sec:ch16-core-records}
+
+The uncertainty record must say what it predicts and which calibration context supports it. The resource vector must preserve units. The action proposal must not carry authority merely because a model generated it.
+
+\begin{lstlisting}[language=Java,caption={Proposed records for an uncertainty lineage and a typed resource vector}]
+record UncertaintyEstimate(
+    UUID estimateId,
+    String subjectRef,
+    String targetDefinition,
+    Prediction prediction,
+    String modelVersion,
+    String calibratorVersion,
+    String calibrationDomain,
+    String calibrationEvidenceRef,
+    List<String> evidenceRefs,
+    UUID parentEstimateId,
+    Instant observedAt,
+    Instant expiresAt,
+    CalibrationStatus status
+) {}
+
+sealed interface Prediction permits Probability, Interval, PredictionSet {}
+record Probability(double value) implements Prediction {}
+record Interval(double lower, double upper) implements Prediction {}
+record PredictionSet(Set<String> outcomes) implements Prediction {}
+
+enum CalibrationStatus {
+    CALIBRATED, OUT_OF_DOMAIN, STALE, UNVALIDATED, UNKNOWN
+}
+
+record ResourceAmount(String resource, BigDecimal amount, String unit) {}
+record ResourceVector(List<ResourceAmount> amounts) {}
+
+record BudgetState(
+    UUID runId,
+    ResourceVector limit,
+    ResourceVector reserved,
+    ResourceVector consumed,
+    Instant deadline,
+    long version
+) {}
+\end{lstlisting}
+
+The \texttt{\detokenize{Prediction}} type is deliberately not a \texttt{\detokenize{double}}. A probability is one possible representation, but an interval or prediction set has different semantics. The \texttt{\detokenize{targetDefinition}} prevents a value from being consumed for a question it was not designed to answer. The calibration status records whether the estimate is applicable now. A stale record is not silently treated as fresh simply because it is still present in a database.
+
+The resource vector stores units alongside values. A production implementation would normally replace the free-form \texttt{\detokenize{resource}} and \texttt{\detokenize{unit}} strings with enums or validated unit types. The abbreviated form keeps the example readable. It must still reject incompatible units and duplicate resource dimensions before a reservation is attempted.
+
+\subsection{Proposal and authorization contracts}
+
+\begin{lstlisting}[language=Java,caption={Proposal and authorization are separate records with separate owners}]
+enum Consequence { LOW, MODERATE, HIGH, CRITICAL }
+enum Reversibility { REVERSIBLE, COMPENSATABLE, IRREVERSIBLE, UNKNOWN }
+
+enum AuthorizationStatus {
+    ALLOWED, DENIED, NEEDS_HUMAN, EXPIRED
+}
+
+record ActionProposal(
+    UUID proposalId,
+    UUID intentionId,
+    String toolName,
+    String operation,
+    String targetScope,
+    String payloadDigest,
+    Consequence consequence,
+    Reversibility reversibility,
+    ResourceVector estimatedDemand,
+    UUID uncertaintyEstimateId
+) {}
+
+record AuthorizationDecision(
+    UUID decisionId,
+    UUID proposalId,
+    String principalId,
+    String policyVersion,
+    AuthorizationStatus status,
+    String reason,
+    String requiredApprovalRef,
+    Instant decidedAt,
+    Instant expiresAt
+) {}
+\end{lstlisting}
+
+The authorization decision is bound to the proposal identity and a digest of the payload. If the model changes the operation or the target, it needs a new proposal and a new decision. The policy version is recorded so that the audit can reconstruct which rule was applied. The record also captures a required human approval. It does not store a vague Boolean named \texttt{\detokenize{safe}} that could be copied from one action to another.
+
+\subsection{Execution, interruption and outcome contracts}
+
+\begin{lstlisting}[language=Java,caption={Execution records distinguish interruption requests from external cancellation results}]
+enum ActivityState {
+    READY, RESERVED, RUNNING, PREEMPT_REQUESTED,
+    INTERRUPT_REQUESTED, SUSPENDED, RESUME_CHECK,
+    STOPPED, COMPLETED
+}
+
+enum CancellationStatus {
+    NOT_REQUESTED, REQUESTED, ACKNOWLEDGED,
+    REJECTED, TIMED_OUT, UNSUPPORTED, UNKNOWN
+}
+
+enum SideEffectStatus {
+    NONE, NOT_STARTED, IN_PROGRESS, CONFIRMED,
+    COMPENSATED, UNKNOWN
+}
+
+record InterruptionRequest(
+    UUID eventId,
+    UUID activityId,
+    String cause,
+    int priority,
+    Instant deadline,
+    String safeBoundary
+) {}
+
+record ExecutionState(
+    UUID activityId,
+    ActivityState state,
+    long generation,
+    UUID checkpointId,
+    UUID uncertaintyEstimateId,
+    UUID budgetReservationId,
+    CancellationStatus cancellationStatus,
+    SideEffectStatus sideEffectStatus,
+    Instant updatedAt,
+    long version
+) {}
+
+record StopRecord(
+    UUID runId,
+    String reason,
+    String evidenceRef,
+    UUID uncertaintyEstimateId,
+    UUID budgetSnapshotRef,
+    Instant stoppedAt
+) {}
+\end{lstlisting}
+
+\texttt{\detokenize{CancellationStatus}} and \texttt{\detokenize{SideEffectStatus}} are separate because cancellation is an attempted control over an operation, while the side-effect status describes what is known about the external world. An acknowledgement can coexist with \texttt{\detokenize{UNKNOWN}} side-effect status if the remote system cannot guarantee whether the request was already processed. That ambiguity must remain visible until reconciliation resolves it.
+
+\subsection{Contract invariants}
+\label{sec:ch16-contract-invariants}
+
+The proposed subsystem should enforce at least the following invariants:
+
+\begin{enumerate}
+  \item Every scheduler, authorization, monitor, and stop decision records the exact uncertainty estimate revision it consumed.
+  \item An estimate can be consumed only if its target, domain, freshness, and status satisfy the component's policy. Unknown or out-of-domain uncertainty is not silently upgraded to calibrated uncertainty.
+  \item No external action is dispatched without a valid authorization decision and a resource reservation for the required dimensions.
+  \item A model proposal cannot enlarge a budget, approve its own tool call, erase a policy denial, or override an authoritative interruption.
+  \item Concurrent reservations cannot drive any resource dimension below its limit.
+  \item A reservation is committed or reconciled exactly once, even when duplicate events or retries occur.
+  \item Interruption and cancellation requests are idempotent, but acknowledgement is not treated as proof of side-effect reversal.
+  \item A resume operation validates the checkpoint, current goal scope, authorization, uncertainty freshness, policy version, deadline, and remaining resources.
+  \item A terminal stop has an explicit reason and evidence reference. \texttt{\detokenize{COMPLETED}} requires verified postconditions; \texttt{\detokenize{STOPPED}} does not imply success.
+  \item Only verified outcome labels enter calibration feedback, and the prediction/calibrator version used for the original decision remains immutable in the audit record.
+\end{enumerate}
+
+These invariants are more important than the exact class names. An implementation in another language or framework should preserve the same boundaries.
+
+\subsection{Persistence and concurrent reservations}
+\label{sec:ch16-persistence}
+
+A scheduler often operates under concurrency. Two workers may inspect the same budget at nearly the same time. Both may see one remaining tool call and decide that they can start. Without an atomic reservation, the system overspends even though each worker's local calculation looked valid. A reservation therefore has to be committed against the authoritative budget version.
+
+A relational implementation can use a transaction that locks the relevant budget row or performs a compare-and-swap update against an expected version. The transaction validates every requested resource dimension, creates a unique reservation record, updates the reserved totals, and appends a ledger event. An alternative store can provide equivalent conditional-write semantics. The choice of database is secondary; the invariant is that no two concurrent decisions can both claim the same last unit of capacity.
+
+The external dispatch boundary is more difficult. A database transaction cannot atomically commit with an arbitrary remote tool call. The runtime can use a transactional outbox: commit the reservation and a uniquely identified dispatch event together, then let a dispatcher deliver the event. Delivery may be repeated after a crash, so the tool adapter should use an idempotency key when the remote contract supports it. If it does not, the runtime must reconcile before retrying a possibly non-idempotent operation. It must not claim universal exactly-once execution across a network boundary.
+
+Consider six failure windows:
+
+\begin{enumerate}
+  \item \textbf{Reserved but never dispatched.} A worker crashes after reserving capacity. The reservation remains visible and can be released only after a timeout or reconciliation proves that no dispatch occurred.
+  \item \textbf{Dispatched but not recorded.} The remote tool receives the request, but the worker crashes before storing the response. The ledger must show an uncertain in-flight operation, not an automatic failure that permits an unsafe duplicate.
+  \item \textbf{Interruption races with dispatch.} The governor commits an interruption while a worker is preparing a tool call. A generation or fencing token can prevent an old worker from dispatching after it has lost authority, but an already accepted remote request may still complete.
+  \item \textbf{Concurrent use of the final resource unit.} Two schedulers try to reserve the same final tool call. The conditional transaction admits one and rejects or defers the other.
+  \item \textbf{Late cancellation response.} A cancellation reply arrives after the external system may have performed the operation. The side-effect status remains unknown until authoritative reconciliation.
+  \item \textbf{Stale resume.} A suspended task is resumed after its calibration policy, permission, external world state, or deadline has changed. Resume validation must reject or replan rather than blindly continuing.
+\end{enumerate}
+
+\begin{warningbox}
+\textbf{Do not promise exactly-once side effects because the local code is idempotent.} Idempotency inside the agent database does not make a remote payment, deployment, or administrative API idempotent. Use the external service's idempotency contract where available; otherwise reconcile the actual state before repeating a possibly consequential operation.
+\end{warningbox}
+
+\subsection{Interruption and resume protocol}
+\label{sec:ch16-resume-protocol}
+
+A request to interrupt an activity should be an authoritative, versioned event. The worker receives the event, reaches its declared safe boundary, persists its checkpoint, and returns the result of the interruption attempt. If the worker cannot stop safely, it reports the in-flight operation and the reason. The governor then decides whether to wait, escalate, or invoke a tool-specific cancellation path.
+
+Resumption should begin in \texttt{\detokenize{RESUME_CHECK}}. The runtime verifies that the checkpoint belongs to the current activity generation; the goal and scope remain valid; the permission is still in force; the uncertainty lineage is fresh and applicable; the required resource reservation can be reacquired; the deadline has not expired; and no unresolved external side effect makes continuation unsafe. Only after these checks may the state transition back to \texttt{\detokenize{READY}} or \texttt{\detokenize{RUNNING}}.
+
+A resumed task must not simply replay every step from its previous prompt. It should use the execution ledger to identify what was completed, what was only requested, what remains unknown, and which side effects need reconciliation. This is the difference between recovering a durable runtime process and repeating a textual plan.
+
+\subsection{Vertical-slice implementation sequence}
+\label{sec:ch16-implementation-sequence}
+
+A team should build the mechanism in small vertical slices so that each new control edge is observable before the next one is added:
+
+\begin{enumerate}
+  \item Define target identity, uncertainty lineage, versioning, and evidence references.
+  \item Define typed resource dimensions and a budget ledger with transactional reservations.
+  \item Add a single calibrated-estimate ingestion path with explicit stale and out-of-domain states.
+  \item Propagate the estimate through one read-only diagnostic path and record the revision consumed by planning.
+  \item Add a scheduler decision between two competing diagnostics with different resource vectors.
+  \item Add authorization for one tool, ensuring that the policy gate—not the model—owns the decision.
+  \item Add monitoring and one safe interruption boundary for a cooperative local operation.
+  \item Add a non-cooperative external-tool case and preserve unknown side-effect status after cancellation timeout.
+  \item Add suspension/resumption with checkpoint and policy revalidation.
+  \item Add terminal stop reasons, outcome linking, and a calibration evaluation job that is independent of live dispatch.
+\end{enumerate}
+
+Do not start with a sophisticated learned scheduler. First establish the authoritative state, typed resources, and reliable events. A simple deterministic baseline is easier to test and provides a control against which a later adaptive policy can be compared.
+
+\section{Product X: investigate without overspending or overstepping}
+\label{sec:ch16-productx}
+
+\BookExampleLabel{} The following scenario is a teaching example created for this book. Its numeric values and event sequence are hypothetical; they are not measurements from EPIC, Sigma, Fan and Lan, or the modern systems discussed earlier.
+
+\subsection{Initial conditions}
+
+Product X's payment service is returning intermittent HTTP 500 responses. The principal authorizes read-only diagnostics, evidence collection, and reporting. A restart, rollback, configuration write, or payment mutation is outside the agent's current authority and would require a separate approval. The agent's resource budget contains limits for inference tokens, model calls, two distinct tool quotas, wall-clock time, and verification capacity. The budget reserves some time and tool capacity for a final status check.
+
+The first evidence package contains a service-health snapshot, a bounded log excerpt, and the deployment timestamp. The current hypothesis is that the recent deployment caused the errors. The estimate is marked calibrated only for the defined event ``the deployment change is associated with the observed error window'' and for the domain represented by the calibration evidence. It is not a probability that rolling back the deployment will be safe or successful.
+
+\subsection{Choosing between investigation paths}
+
+The scheduler receives three proposals: inspect the deployment diff, query a read-only dependency-health endpoint, and run a more expensive trace analysis. Each proposal carries an estimated resource vector and an expected diagnostic contribution. The dependency-health query is cheap in tokens but consumes the only remaining request to a rate-limited dependency service. The trace analysis uses more compute and wall-clock time but no external quota. The deployment diff is inexpensive and may rule out a class of configuration changes.
+
+The scheduler does not rank the options by one arbitrary scalar cost. It checks hard resource limits, deadline, and action authorization, then compares the expected contribution of feasible candidates under the task policy. It chooses the deployment diff first and retains enough capacity for one verification step. This choice is illustrative; the proposed scheduler has no source-prescribed formula.
+
+\subsection{New evidence changes allocation}
+
+The diff shows no relevant payment-path changes. The uncertainty lineage for the deployment-cause proposition is updated with a new linked revision, and the estimate is no longer the same as the first estimate. The dependency-health query becomes more valuable relative to the remaining options. The scheduler reserves the separate dependency quota and a tool call, then dispatches the read-only query.
+
+The response reports elevated latency in the payment provider's status path. That is evidence for a new proposition, not automatic proof that the provider caused the HTTP 500 responses. The system creates or updates the appropriate estimate with the new evidence references. It does not multiply the two estimates as though the log excerpt and status endpoint were independent confirmations.
+
+\subsection{A higher-priority event causes \texorpdfstring{\gls{preemption}}{preemption} of work}
+
+While a low-priority incident-summary task is running, a second alert indicates that the payment failure rate is spreading. The governor emits a preemption request for the summarizer. The summarizer is a cooperative local process and can checkpoint at a safe boundary. Its unconsumed reservation is reconciled, its current uncertainty references are preserved, and its state moves to \texttt{\detokenize{SUSPENDED}}. The newly urgent diagnostic is then scheduled.
+
+This event is not equivalent to cancelling an already dispatched remote write. The example's summarizer is pausable; the external provider request is not assumed to be cancellable. The distinction determines what can safely be promised about the result.
+
+\subsection{A restart proposal is denied}
+
+The model now proposes restarting the payment service because it believes the provider path is stuck. The estimate is not a calibrated prediction of restart safety, and the action is outside the principal's read-only authorization. The authorization gate denies the request and records the proposal, target, evidence, policy version, and reason. The uncertainty estimate may explain why the model proposed the action; it cannot grant the missing permission.
+
+\subsection{Stop with a verified result or escalate with uncertainty}
+
+Suppose the read-only evidence eventually establishes that the service's payment-provider dependency is returning delayed responses and that the application is surfacing those timeouts as HTTP 500 errors. The agent can stop the investigation as complete only if the evidence meets the authorized reporting condition. It records the verified finding, supporting observations, unresolved alternatives, the uncertainty revision used in the final decision, and the resource ledger.
+
+In a different run, the deadline may expire while the cause remains uncertain. The agent then stops with a reason such as \texttt{\detokenize{BUDGET_EXHAUSTED_INSUFFICIENT_EVIDENCE}} and reports what was and was not verified. It does not call the incident resolved, claim that the provider was the cause, or infer that the task was impossible. The result is a safe, explicit stopping decision rather than a false success.
+
+\BookDiagram[0.64\textheight]{Tex/diagrams/generated/part2/chapter16/productx-b6-incident-sequence.png}{Product X teaching sequence: evidence updates a proposal's uncertainty lineage, resource allocation changes, a lower-priority task is preempted, a write action is denied, and the investigation stops with a verified or explicitly insufficient result.}{fig:ch16-productx}
+
+\subsection{What the example demonstrates}
+
+The example uses one uncertainty lineage for each consequential proposition and makes its relationship to each control decision visible. New evidence can change the allocation. The scheduler can protect verification resources. A higher-priority event can preempt cooperative work. A tool proposal can be denied for lack of authority even when the model recommends it. The investigation can complete with evidence or stop without pretending that an unknown result is known. These are the control connections that the B6 hypothesis asks a system to make testable.
+
+\section{Evaluation: can the coupling survive strong baselines?}
+\label{sec:ch16-evaluation}
+
+A proposed runtime is not validated because its records look sensible or its diagrams form a complete architecture. The control edge must be instrumented and compared against systems that already have resource scheduling and uncertainty-conditioned action. Fan and Lan's Appendix D specifies the trace, outcomes, safety/efficiency measures, and rejection condition for B6. It also requires at least three distinct ablations. These are experimental requirements, not evidence that the proposed system has already improved performance.\FanLanCite{\S VI-C, B6; Table VI; Appendix D, Table X}
+
+\subsection{Required state trace}
+\label{sec:ch16-required-trace}
+
+The experiment must record uncertainty provenance at each stage, allocated budget, interruption events, and stop events. To evaluate the engineering proposal, the trace should also include:
+
+\begin{itemize}
+  \item estimate identity, target definition, calibration domain/version, status, and revision consumed by each decision;
+  \item evidence references and the relationship between predecessor and successor estimates;
+  \item resource limits, reservations, actual usage, releases, and reconciliation events by dimension;
+  \item candidate actions, feasibility checks, expected diagnostic contribution, and scheduler decision;
+  \item authorization request, policy version, result, reason, and human approval where applicable;
+  \item preemption/interruption request, safe-boundary acknowledgement, checkpoint identity, and resume validation;
+  \item cancellation request and result, kept separate from the external side-effect status; and
+  \item terminal stop reason, supporting evidence, and verified outcome.
+\end{itemize}
+
+A task-level success score alone cannot establish that the uncertainty propagation caused the difference. The study needs internal-state instrumentation so that an evaluator can see whether the estimate reached the scheduler or authorization gate and whether it changed the decision. This matches the paper's requirement to hold the base model, prompt, tools, environment, and task budget fixed while recording internal transitions.\FanLanCite{Appendix D}
+
+\subsection{Primary outcomes and safety/efficiency measures}
+\label{sec:ch16-outcomes}
+
+Preserve the source's primary B6 outcomes:
+
+\begin{itemize}
+  \item \textbf{\gls{selectiverisk}:} the risk among decisions the system elects to make rather than \gls{abstention} from or defer;\index{abstention}
+  \item \textbf{Calibration:} agreement between predicted uncertainty and observed outcomes for the specified prediction target and evaluation population; and
+  \item \textbf{Irreversible-action errors:} cases in which the system takes an irreversible or consequential action incorrectly or without the required authority.
+\end{itemize}
+
+The source also names three safety/efficiency outcomes: help precision, \gls{verificationcost}, and interruption latency.\index{verification cost} These should remain visible in the report. The implementation study may add resource use by dimension, correct stopping rate, false interruption rate, missed interruption rate, task completion after preemption, stale-estimate use, budget-accounting correctness, and side-effect reconciliation accuracy. Those additional measures are engineering extensions; they do not replace the required source outcomes.\FanLanCite{Appendix D, Table X, B6 row}
+
+\subsection{Closest baselines}
+\label{sec:ch16-baselines}
+
+The comparison should include strong, well-described baselines rather than intentionally weakened alternatives:
+
+\begin{enumerate}
+  \item \textbf{Uncertainty-conditioned action baseline.} Use the strongest applicable baseline for the target task, such as calibrated help seeking or cost-aware exploration. State which actions its uncertainty estimate governs.
+  \item \textbf{Resource scheduler baseline.} Use a resource manager such as AgentRM or the resource controls identified in AIOS, without adding the proposed cross-stage uncertainty lineage.
+  \item \textbf{Budget-aware search baseline.} Retain a budget-sensitive search policy where the task uses search, so the new scheduler must demonstrate value beyond budget-aware node selection.
+  \item \textbf{Fixed-budget/fixed-threshold baseline.} Use the same hard limits and a documented fixed action threshold, providing a simple reproducible control.
+  \item \textbf{Heuristic cost-sensitive orchestration baseline.} Include Utility-Guided Agent Orchestration or a faithful reproduction of its cost/uncertainty decision shape, while preserving the source's note that its uncertainty signal is heuristic.
+  \item \textbf{Full B6 proposal.} Enable the versioned uncertainty lineage, resource-vector allocation, authorization integration, monitoring, interruption, and stopping policy.
+\end{enumerate}
+
+For each baseline, report which state it consumes, which control decision it owns, whether it is calibrated, what resources it controls, and whether it can interrupt or resume work. A baseline that already supports one of the required edges should receive credit for that edge. The comparison is about the remaining coupling, not about rediscovering individual capabilities.
+
+\subsection{Three separate ablations}
+\label{sec:ch16-ablations}
+
+Fan and Lan require at least three ablations. They must not be collapsed into one generic ``remove uncertainty'' condition because they isolate different causal contributions.\FanLanCite{Appendix D, text following Table X}
+
+\begin{enumerate}
+  \item \textbf{Remove the new state object.} Keep the baseline controls but remove the propagated uncertainty-lineage object. This tests whether the added representation and continuity contribute beyond local signals already available to the baseline.
+  \item \textbf{Remove the authoritative control edge while retaining logging.} Continue to record uncertainty and budget events, but prevent the governor from using them to change scheduling, authorization, or interruption. This tests whether the uncertainty state changes execution rather than merely producing a more detailed audit log.
+  \item \textbf{Remove the learning update while retaining the runtime transition.} Keep the immediate control path but freeze calibration or adaptive-policy updates. This tests the adaptive value of learning separately from the value of the runtime transition. Because the B6 record does not prescribe a particular online learning algorithm, this ablation applies to the book's proposed learning extension and must not be misrepresented as a source-defined B6 update law.
+\end{enumerate}
+
+\BookDiagram[0.56\textheight]{Tex/diagrams/generated/part2/chapter16/b6-evaluation-ablation.png}{Evaluation design for B6: preserve the required trace and outcomes, then isolate the state object, authoritative control edge, and optional learning update in three distinct ablations.}{fig:ch16-evaluation}
+
+\subsection{Task suite and experimental controls}
+\label{sec:ch16-task-suite}
+
+The task suite should vary uncertainty quality and drift, consequence severity, reversibility, resource scarcity, task duration, parallel contention, verification cost, human-help availability, interruption timing, safe cancellation capability, and deadline pressure. It should include cases in which additional verification reduces risk, cases in which it adds cost without reducing risk, cases where help seeking is appropriate, and cases where excessive abstention prevents a correct completion. It should include both cooperative local work that can be paused at a safe boundary and external operations that may not be cancellable after dispatch.
+
+The base model, prompt, tool set, environment, and task budget should be held fixed when comparing a controller with its baseline. Use matched seeds and controlled event injection where feasible. Before execution, preregister the task population, experimental unit, model and dependency versions, stochastic replications, sample-size rule, metric formulas, equivalence or non-inferiority margin, uncertainty intervals or statistical tests, exclusion criteria, and stopping rule. A simpler baseline should count as matching only if it is non-inferior under the preregistered primary margin while using no more resources.\FanLanCite{Appendix D}
+
+\subsection{Falsification criteria}
+\label{sec:ch16-falsification}
+
+Reject or narrow the B6 proposal if any of the following occurs:
+
+\begin{itemize}
+  \item uncertainty cannot be traced across stages or becomes miscalibrated as its target/context changes;
+  \item the propagated estimate does not change resource allocation or an authoritative action decision;
+  \item the full coupling does not improve selective risk, calibration, or irreversible-action outcomes over strong simpler baselines;
+  \item verification cost increases without a corresponding reduction in relevant risk;
+  \item help seeking becomes so frequent that the system abstains from tasks it could correctly complete, or help precision becomes poor;
+  \item interruption or preemption prevents correct completion, corrupts state, or loses resource-accounting information;
+  \item a simpler scheduler or uncertainty policy is non-inferior while using no more resources; or
+  \item the mechanism adds operational complexity without measurable benefit.
+\end{itemize}
+
+The four source failure conditions remain central: sequential miscalibration, excessive abstention, verification cost without risk reduction, and interruption that prevents correct completion. A result in which the system merely logs more uncertainty without changing control is not evidence for B6. A result in which it changes control but makes more irreversible-action errors is a failure, not a successful implementation.\FanLanCite{\S VI-C, B6; Table VI; Appendix D, Table X}
+
+\section{Boundaries, dependencies and recap}
+\label{sec:ch16-boundaries-recap}
+
+B6 is not an independent plug-in that replaces the other mechanisms. Fan and Lan's dependency analysis assigns different responsibilities to the bundles. B4 supplies the commitment boundary that scopes the goal and constrains whether recovery or method changes are acceptable. B2 supplies typed failure and bounded recovery state. B1 supplies memory candidates whose accessibility and value may affect what is considered. B3 controls admission to a bounded workspace. The migrated B5 skill-governance case supplies a route/verify/repair/fallback baseline, but Chapter 17 is reserved for the separate explanation of why B5 is closed by GraSP. B6 governs risk, resource use, verification, tool authorization, interruption, and stopping across these controls.\FanLanCite{\S VI-D; Figs. 8--9}
+
+The current chapter has focused on B6 itself. It has not attempted to compose every residual mechanism into one complete architecture; that is the work reserved for Chapter 18 after the mechanism chapters are complete. Chapter 17 will examine a different kind of result: B5 is not a remaining residual hypothesis in the paper's frozen corpus, because closest-baseline screening identifies GraSP as an implemented E3/D4 convergence case. The distinction is methodological. A candidate should be closed when a reviewed baseline already implements the claimed chain, not retained simply because its historical origin is interesting.
+
+\begin{chapterrecap}
+B6 connects calibrated uncertainty to resource allocation, interruption, and stopping. EPIC contributes explicit timing, parallel pathways, and bottleneck control. Sigma contributes uncertainty-bearing state that participates in inference and decision. Modern systems already implement important partial controls: resource managers schedule and admit work, uncertainty-aware systems can guide tools or help seeking, and cost-sensitive orchestrators can choose whether to retrieve, verify, or stop. Fan and Lan's residual claim is the coupling that remains: one calibrated uncertainty lineage should accompany consequential proposals across memory, planning, authorization, execution monitoring, and stopping, while influencing resource allocation and cognitive interruption.
+
+The E3/D3 code describes the reviewed mapping on two separate axes. It is not a score for an entire system and it does not mean that B6 is almost complete. The seven-field analysis preserves explicit unknowns in persistence and learning. The engineering proposal in this chapter therefore supplies concrete records, resource vectors, authorization contracts, state transitions, persistence rules, and tests without attributing them to the source paper.
+
+A useful B6 implementation must distinguish uncertainty from permission, budget exhaustion from goal failure, preemption from cancellation, cancellation acknowledgement from side-effect reversal, and stopping from verified completion. Its value must be established through a traceable internal state, strong baselines, the three separate ablations, and the source's falsification conditions. If calibrated uncertainty does not change resource/action control or merely increases cost without reducing risk, the proposed coupling should be rejected or narrowed.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and exercises}
+\begin{enumerate}
+  \item Why is a local confidence value not enough to establish the B6 mechanism?
+  \item What does EPIC contribute that a list of parallel workers or a thread pool does not?
+  \item What does Sigma contribute that a confidence score attached to one tool response does not?
+  \item Why are resource scheduling and uncertainty-conditioned tool use not sufficient separately?
+  \item Which fields of the B6 seven-field record are supported by Appendix C-Q, and which persistence or learning details remain unspecified?
+  \item Why should a scheduler use a resource vector rather than one scalar cost when tool quotas, tokens, compute and deadlines are scarce?
+  \item Give an example where a high-confidence proposal must still be denied authorization.
+  \item Distinguish preemption, interruption, cancellation, suspension, resumption and stopping.
+  \item Why does a cancellation acknowledgement not prove that a remote side effect was reversed?
+  \item What causal contribution does each of the three required ablations isolate?
+  \item Describe one result that would falsify the claim that cross-stage uncertainty propagation adds value.
+  \item How does B6 complement B4 without taking authority to change or abandon the goal?
+\end{enumerate}
+\end{reviewquestions}
+
+\section*{Source and example note}
+
+The theoretical account in this chapter is grounded in [Fan \& Lan], principally their historical EPIC/Sigma discussion, modern resource and uncertainty mappings, B6 residual hypothesis, and experimental protocol. EPIC, Sigma, AIOS, AgentRM, budget-aware value search, UALA, KnowNo, Calibrate-Then-Act, Utility-Guided Agent Orchestration, and the runtime interfaces are discussed only in the roles in which Fan and Lan cite and analyze them. The chapter does not introduce a third formal theoretical foundation. The Java-like contracts, resource-vector schema, scheduler responsibilities, authorization record, interruption state machine, persistence protocol, and implementation sequence are engineering proposals created for this book. Product X is a book-created teaching example. All numeric values used in the example are hypothetical and are not empirical findings.
+
+\section*{Looking ahead}
+
+Chapter 17 examines the closed B5 candidate and the closest-baseline result that removes it from the residual list: GraSP. It will explain why closing a proposed gap is a substantive research result, and why the claim remains bounded by the paper's frozen corpus and the evaluated settings. Only after Chapters 9--17 have been completed and reviewed will Chapter 18 synthesize the residual mechanisms and their dependencies into a compositional research agenda.

@@ -1,0 +1,13 @@
+flowchart TB
+  accTitle: Separate action authority and interruption control
+  accDescr: The model proposes an action and supplies evidence and uncertainty, but a policy authority evaluates the exact action, scope, reversibility, and required approval. Separately, a monitor may request preemption or interruption, followed by a safe-boundary checkpoint and explicit cancellation reconciliation.
+  P[Model action proposal] --> E[Evidence and uncertainty lineage]
+  P --> G[Policy authorization gate]
+  E --> G
+  G -->|authorized within scope| X[Execute through tool contract]
+  G -->|approval or refusal| H[Human decision or safe refusal]
+  X --> M[Execution monitor]
+  M -->|continue| X
+  M -->|preempt or interrupt| S[Safe-boundary request]
+  S --> C[Checkpoint and side-effect reconciliation]
+  C --> R[Suspend or resume validation]

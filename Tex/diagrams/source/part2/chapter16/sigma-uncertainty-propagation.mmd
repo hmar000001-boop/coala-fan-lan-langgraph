@@ -1,0 +1,12 @@
+flowchart LR
+  accTitle: Sigma shared uncertainty representation
+  accDescr: Evidence updates a shared factor-graph representation. Belief distributions inform expected utility and action selection, while action outcomes can return as learning evidence. This is a high-level teaching reconstruction rather than a copy of Sigma internals.
+  E[Observations and evidence] --> F[Shared factor graph]
+  F --> B[Belief distributions]
+  B --> U[Expected utility]
+  U --> A[Action selection]
+  A --> X[Action and environment]
+  X --> R[Observed outcome]
+  R --> F
+  R --> L[Learning signal]
+  L --> F

@@ -2,8 +2,17 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+SOURCES_ONLY=false
+if [[ "${1:-}" == "--sources-only" ]]; then
+  SOURCES_ONLY=true
+elif [[ $# -gt 0 ]]; then
+  echo "Usage: bash scripts/check-diagrams.sh [--sources-only]" >&2
+  exit 2
+fi
+export SOURCES_ONLY
 python3 - <<'PY'
 from pathlib import Path
+import os
 import re
 import struct
 import sys
@@ -27,7 +36,9 @@ chapters = [
     Path('Tex/part2/chapter13/chapter.tex'),
     Path('Tex/part2/chapter14/chapter.tex'),
     Path('Tex/part2/chapter15/chapter.tex'),
+    Path('Tex/part2/chapter16/chapter.tex'),
 ]
+sources_only = os.environ.get('SOURCES_ONLY') == 'true'
 sources = sorted(src_root.rglob('*.mmd'))
 if not sources:
     sys.exit('Diagram validation failed: no Mermaid source files found.')
@@ -55,6 +66,9 @@ for rel, source in source_rel.items():
                     f'{source}:{line_number}: semicolon in sequence diagram; '
                     'use a comma or other punctuation in message text'
                 )
+
+    if sources_only:
+        continue
 
     output = out_root / (rel + '.png')
     if not output.is_file() or output.stat().st_size == 0:
@@ -121,15 +135,15 @@ for chapter in chapters:
         referenced.add(key)
         if key not in source_rel:
             errors.append(f'{chapter}: no Mermaid source for {image}')
-        if not image_path.is_file() or image_path.stat().st_size == 0:
+        if not sources_only and (not image_path.is_file() or image_path.stat().st_size == 0):
             errors.append(f'{chapter}: missing PNG: {image}')
 
 for key, source in source_rel.items():
     if key not in referenced:
-        errors.append(f'Mermaid source not referenced by Chapters 1-15: {source}')
+        errors.append(f'Mermaid source not referenced by Chapters 1-16: {source}')
 
 # Reject stale or hand-added PNGs that have no matching Mermaid source.
-generated_pngs = sorted(out_root.rglob('*.png')) if out_root.exists() else []
+generated_pngs = sorted(out_root.rglob('*.png')) if out_root.exists() and not sources_only else []
 for output in generated_pngs:
     rel = output.relative_to(out_root).with_suffix('').as_posix()
     if rel not in source_rel:
@@ -141,5 +155,8 @@ if errors:
         print(' - ' + error, file=sys.stderr)
     sys.exit(1)
 
-print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-15.')
+if sources_only:
+    print(f'Diagram source validation passed: {len(sources)} Mermaid sources, accessible descriptions, sequence syntax guard, and all Chapter 1-16 figure references.')
+else:
+    print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-16.')
 PY

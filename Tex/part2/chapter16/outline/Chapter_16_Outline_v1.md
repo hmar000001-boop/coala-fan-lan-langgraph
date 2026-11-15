@@ -4,8 +4,8 @@
 
 **Part:** II — From Cognitive Architectures to Mechanism-Level Understanding  
 **Primary source:** Fan and Lan, *From Cognitive Architectures to Language Agents: A Mechanism-Level Review of Lineage, Convergence, and Migration Gaps*, arXiv:2607.23942v1 (27 July 2026)  
-**Review status:** Proposed for author review  
-**Drafting status:** Not authorized; no chapter prose has been written  
+**Review status:** Conformance audit complete; this is the sole active review outline  
+**Drafting status:** Authorized by the author on 15 November 2026 after confirming conformance with the nine-batch Part II plan  
 **Outline format:** One canonical Markdown review file. No outline PDF or LaTeX outline wrapper/body will be generated.
 
 ---
@@ -749,8 +749,12 @@ The paper describes a bounded mechanism-level mapping review with a frozen analy
 
 ---
 
-## 21. Outline decision
+## 21. Outline decision and conformance record
 
-**Current decision:** Proposed Chapter 16 outline v1.0.  
-**Drafting authorization:** Not yet granted.  
-**Next action after approval:** Perform one final minor-issue/source-fidelity pass, then write the complete Chapter 16 prose directly in `Tex/part2/chapter16/chapter.tex` (LaTeX). Do not create additional outline versions, outline PDFs or outline LaTeX files.
+**Current decision:** Chapter 16 remains a standalone Batch 7 chapter under the author-approved nine-batch Part II plan. Its scope is B6 only; it does not absorb the closed B5 case assigned to Chapter 17 or the cross-bundle synthesis reserved for Chapter 18.
+
+**Conformance audit:** The outline conforms to the approved plan. It reconstructs EPIC and Sigma, compares the resource-side and uncertainty-side modern controls, preserves B6 as E3/D3 on independent axes, and includes a substantial theory-to-implementation bridge. It preserves the source-required B6 trace, primary outcomes, safety/efficiency outcomes, three separate ablations, baseline discipline and falsification conditions. The explicit unknowns in persistence and learning remain unknown rather than being filled with conjecture. No structural revision was required.
+
+**Drafting authorization:** The author instructed on 15 November 2026 that the outline be checked for conformance and that Chapter 16 writing begin immediately thereafter. This instruction authorizes the present draft.
+
+**Next action:** Write the complete Chapter 16 prose directly in `Tex/part2/chapter16/chapter.tex` (LaTeX). Keep this as the only active outline Markdown file; do not generate outline alternatives, outline PDFs or outline LaTeX files.

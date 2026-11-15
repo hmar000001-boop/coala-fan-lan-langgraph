@@ -1,0 +1,12 @@
+flowchart TB
+  accTitle: Typed resource vector and scheduler
+  accDescr: A proposed scheduler evaluates candidate requests against typed capacities including tokens, calls, time, memory, compute, and service slots. It reserves compatible resources transactionally, queues blocked work, and recomputes priority when evidence or uncertainty changes.
+  C[Candidate activity] --> D[Typed demand vector]
+  D --> Q[Admission and queue policy]
+  Q --> V[Capacity and deadline check]
+  V -->|fits| R[Atomic resource reservation]
+  V -->|does not fit| W[Wait, reject, or request help]
+  R --> X[Dispatch eligible activity]
+  X --> M[Monitor consumption and outcomes]
+  M --> U[Update priority and uncertainty context]
+  U --> Q

@@ -1,0 +1,20 @@
+stateDiagram-v2
+  accTitle: Proposed B6 activity lifecycle state machine
+  accDescr: A proposed lifecycle distinguishes ready, reserved, running, preemption requested, interruption requested, suspended, resume check, unsuccessful stopped, and verified completed states. Resumption is guarded by renewed evidence, permission, budget, and external-state checks.
+  [*] --> READY
+  READY --> RESERVED: capacity reserved
+  RESERVED --> RUNNING: dispatch confirmed
+  RESERVED --> READY: reservation released
+  RUNNING --> PREEMPT_REQUESTED: higher priority work
+  RUNNING --> INTERRUPT_REQUESTED: risk or policy event
+  RUNNING --> COMPLETED: verified postconditions
+  RUNNING --> STOPPED: terminal refusal or budget exhaustion
+  PREEMPT_REQUESTED --> SUSPENDED: safe checkpoint
+  INTERRUPT_REQUESTED --> SUSPENDED: safe boundary reached
+  INTERRUPT_REQUESTED --> STOPPED: cannot safely continue
+  SUSPENDED --> RESUME_CHECK: resume requested
+  RESUME_CHECK --> RUNNING: all guards pass
+  RESUME_CHECK --> SUSPENDED: resource or approval pending
+  RESUME_CHECK --> STOPPED: stale or invalid state
+  COMPLETED --> [*]
+  STOPPED --> [*]

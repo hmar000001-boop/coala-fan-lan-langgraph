@@ -1,0 +1,28 @@
+sequenceDiagram
+  accTitle: Product X uncertainty and resource control sequence
+  accDescr: A Product X incident first receives incomplete evidence. A proposal carries a linked uncertainty estimate, the scheduler reserves a read-only diagnostic slot, and policy authorizes that exact read. New telemetry revises the estimate. The monitor preempts low-priority summarization at a safe boundary. A production write is denied because the principal did not delegate that authority. The investigation stops with either a verified result or an explicit insufficient-evidence outcome.
+  participant O as Operator
+  participant R as Runtime
+  participant U as Uncertainty registry
+  participant S as Scheduler
+  participant G as Authorization gate
+  participant T as Tool service
+  participant M as Monitor
+  O->>R: Open incident investigation
+  R->>U: Attach evidence-linked estimate to diagnostic proposal
+  U-->>R: Estimate revision 1 and calibration context
+  R->>S: Request typed read-only resource vector
+  S-->>R: Reserve diagnostic slot within deadline
+  R->>G: Request authorization for exact health query
+  G-->>R: Authorized within read-only scope
+  R->>T: Execute health query
+  T-->>R: Partial result and new telemetry
+  R->>U: Create linked estimate revision 2
+  R->>M: Publish run state and active resource use
+  M->>S: Request safe preemption of low-priority work
+  S-->>M: Safe-boundary checkpoint confirmed
+  R->>G: Propose production restart
+  G-->>R: Denied because restart authority was not delegated
+  R->>U: Evaluate stopping decision using latest estimate
+  U-->>R: Risk and evidence status
+  R-->>O: Report verified diagnosis or explicit uncertainty
