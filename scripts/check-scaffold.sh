@@ -9,7 +9,7 @@ for required in \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
   Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex Tex/part2/chapter17/chapter.tex Tex/part2/chapter18/chapter.tex \
-  Tex/part3/chapter30/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex Tex/standalone/chapter18.tex \
+  Tex/part3/chapter19/chapter.tex Tex/part3/chapter20/chapter.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex Tex/standalone/chapter18.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -17,10 +17,37 @@ done
 count=$(find "$ROOT/Tex/part1" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc -l)
 count2=$(find "$ROOT/Tex/part2" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc -l)
 count3=$(find "$ROOT/Tex/part3" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc -l)
-[[ "$count" -eq 8 && "$count2" -eq 10 && "$count3" -eq 12 ]] || {
-  echo "Unexpected chapter scaffold counts: Part I=$count Part II=$count2 Part III=$count3" >&2; exit 1;
+[[ "$count" -eq 8 && "$count2" -eq 10 && "$count3" -eq 2 ]] || {
+  echo "Unexpected chapter scaffold counts: Part I=$count Part II=$count2 Part III=$count3 (expected 8, 10, and 2)" >&2; exit 1;
 }
 for n in 01 02 03 04 05 06 07 08; do test -s "$ROOT/Tex/part1/chapter$n/chapter.tex"; done
+# Part III is intentionally a single two-chapter engineering application.
+for n in 19 20; do
+  chapter="$ROOT/Tex/part3/chapter$n/chapter.tex"
+  test -s "$chapter" || {
+    echo "Missing Part III chapter scaffold: chapter$n" >&2; exit 1;
+  }
+  grep -q 'Chapter placeholder' "$chapter" || {
+    echo "Part III Chapter $n must remain a placeholder until its outline is approved." >&2; exit 1;
+  }
+done
+grep -Fq '\chapter{Engineering Foundations for Request-Driven Enterprise Agentic Systems}' "$ROOT/Tex/part3/chapter19/chapter.tex" || {
+  echo "Part III Chapter 19 title does not match the approved scope." >&2; exit 1;
+}
+grep -Fq '\chapter{Enterprise Supply-Chain Disruption Management}' "$ROOT/Tex/part3/chapter20/chapter.tex" || {
+  echo "Part III Chapter 20 title does not match the approved scope." >&2; exit 1;
+}
+for n in $(seq 21 30); do
+  if [[ -e "$ROOT/Tex/part3/chapter$n/chapter.tex" ]]; then
+    echo "Obsolete Part III case-study scaffold remains: chapter$n" >&2; exit 1;
+  fi
+done
+grep -Fq 'Tex/part3/chapter19/chapter.tex' "$ROOT/Tex/part3/content.tex" || {
+  echo "Part III does not include Chapter 19." >&2; exit 1;
+}
+grep -Fq 'Tex/part3/chapter20/chapter.tex' "$ROOT/Tex/part3/content.tex" || {
+  echo "Part III does not include Chapter 20." >&2; exit 1;
+}
 # Legacy outline artifacts for Chapters 1–2 are preserved in their chapter folders.
 test -s "$ROOT/Tex/part1/chapter01/outline/Chapter_01_Outline_Review_v2.md" || {
   echo "Missing legacy Chapter 1 outline source." >&2; exit 1;

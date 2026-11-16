@@ -1,3 +1,12 @@
 \chapter*{Preface}
 \addcontentsline{toc}{chapter}{Preface}
-This book develops a source-disciplined path from cognitive architectures for language agents to the engineering of complex agentic systems in Java. The complete preface will be written after the chapter sequence is established.
+
+Modern language agents are not simply calls to a language model. They are interactive systems that organize information, choose internal and external operations, respond to environmental feedback, and determine what should happen next. Understanding such systems requires both a vocabulary for their cognitive organization and a careful account of the mechanisms that implement their behavior.
+
+This book develops that account in three parts. Part I explains the CoALA framework on its own terms, beginning with its architectural dimensions and progressing through memory, actions, planning, evaluation, selection, and iterative decision-making. Part II examines Fan and Lan's mechanism-level analysis as a separate contribution. It reconstructs the mechanisms, evidence boundaries, and migration gaps discussed in that review without retroactively attributing its later analyses to CoALA.
+
+Part III moves from analysis to engineering through one request-driven enterprise supply-chain disruption management system implemented in Java. Chapter 19 establishes the engineering foundations; Chapter 20 develops the application. The implementation is framework-independent. Its architecture, data contracts, control flow, persistence, safety boundaries, recovery procedures, and evaluation strategy are engineering decisions made for the example system—not mechanisms prescribed by either research paper.
+
+Throughout the book, claims grounded in the two papers are distinguished from book-created examples and engineering proposals. The examples make concepts concrete; they are not evidence that a proposed production system has been deployed or empirically validated. Where a mechanism is incompletely documented, that uncertainty is preserved rather than filled with an assumed implementation.
+
+The intended reader has basic programming knowledge and an interest in the design of complex software systems. The book aims to connect conceptual understanding, mechanism-level analysis, and disciplined engineering while keeping their different kinds of claims visible.

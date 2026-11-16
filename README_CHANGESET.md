@@ -1,18 +1,20 @@
-# Phase 4 change-only package — Part II, Chapters 9–18
+# Phase 5 change-only package
 
-This ZIP contains only the files changed or added in Phase 4. It is not a full repository snapshot.
+Apply after Phase 1–4 patches, in order. The ZIP contains only files added or modified in Phase 5. Files listed as Deleted are intentionally absent from the archive and must be removed from the working repository.
 
-## Apply
+## Added
+- `review/Part_III_SCOPE_UPDATE_2026-11-16.md`
+- `CHANGELOG_PHASE_5.md`
+- `README_CHANGESET.md`
+- `CHANGE_MANIFEST.csv`
 
-Extract the archive at the root of the existing LaTeX project. The `Tex/...` paths are repository-relative and are full replacement chapter sources. The three root-level documentation files are change records; they are not LaTeX inputs.
+## Modified
+See `CHANGE_MANIFEST.csv` for the complete 15-file list and hashes. These are the current cumulative versions of the files changed in Phase 5.
 
-**Important:** retain the accepted Phase 2 and Phase 3 changes already present in your working repository. In particular, `Tex/part2/chapter12/chapter.tex` in this archive is cumulative and includes the accepted Phase 2 B1 technical corrections as well as the Phase 4 editorial changes.
+## Deleted
+See `CHANGE_MANIFEST.csv` for the ten obsolete Chapter 21–30 placeholder source files to remove.
 
-## Contents
-
-- 10 modified chapter `.tex` files: Chapters 9–18.
-- 3 added documentation files: changelog, readme, and manifest.
-- No deleted files.
-- No unchanged files, PDFs, compiled artifacts, or full repository copy.
-
-See `CHANGELOG_PHASE_4.md` for chapter-by-chapter details and `CHANGE_MANIFEST.csv` for file classification and SHA-256 values.
+## Important
+- No complete repository or unchanged source files are included.
+- Chapter 19 and 20 remain outline-gated placeholders; this package does not draft them.
+- Full illustrated-book PDF validation remains a CI release gate because the local environment lacked the TeX Gyre OpenType font and the Mermaid CLI installation timed out.

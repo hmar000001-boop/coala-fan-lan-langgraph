@@ -162,12 +162,12 @@ The sequence is illustrative, not a workflow specified by CoALA. It does not cla
 
 An action being available to an agent does not make it harmless. An external action may change a digital system, affect a person through dialogue, or cause a physical consequence. CoALA explicitly notes that some grounding actions can cause external harm. Its examples include destructive commands in a shell, harmful speech in dialogue, and dangerous physical actions. The paper also notes that safety measures in existing systems are often task-specific, such as excluding particular operations, filtering dialogue, or limiting robots to controlled environments.\CoALACite{\S 6, ``Action space: thinking beyond external tools or actions.''}
 
-This is a warning about the action space, not a complete safety architecture. CoALA does not specify a universal authorization model, approval workflow, audit-log format, rollback protocol, or production policy engine. Those are engineering concerns that will be addressed in the later Java case studies. Here the narrower lesson is that the external action space itself matters: what the agent can do influences the risks its behavior can create.
+This is a warning about the action space, not a complete safety architecture. CoALA does not specify a universal authorization model, approval workflow, audit-log format, rollback protocol, or production policy engine. Those are engineering concerns that will be addressed in the Java system developed in Part III. Here the narrower lesson is that the external action space itself matters: what the agent can do influences the risks its behavior can create.
 
 It is also useful to distinguish two questions. The first is conceptual: which operations belong to the agent's external action space? The second is operational: under what conditions should a particular operation be permitted, and what controls should surround it? CoALA helps organize the first question and highlights that the second cannot be ignored. It does not supply a complete answer to every production safety requirement.
 
 \begin{warningbox}
-Do not confuse an available grounding action with an authorized or safe action. The paper identifies the possibility of external harm and discusses task-specific safety measures; it does not prescribe a complete production authorization system. The concrete controls used in Part III will be identified as engineering decisions, not as mechanisms required by CoALA.
+Do not confuse an available grounding action with an authorized or safe action. The paper identifies the possibility of external harm and discusses task-specific safety measures; it does not prescribe a complete production authorization system. The concrete controls used by the supply-chain system in Part III will be identified as engineering decisions, not as mechanisms required by CoALA.
 \end{warningbox}
 
 \section{Common confusions and boundaries}

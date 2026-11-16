@@ -22,7 +22,7 @@ The book has two formal theoretical foundations only:
 
 Use only the two formal source labels `[CoALA]` and `[Fan & Lan]`. Use the shared `\CoALACite{...}` and `\FanLanCite{...}` footnote macros. Do not invent additional formal theory labels.
 
-Part I explains CoALA on its own terms. Never use Fan & Lan to reinterpret, extend, or retroactively change what CoALA says. Part II treats Fan & Lan as a separate paper and distinguishes its explicit claims, hypotheses, analysis, and boundaries. Part III's Java systems are engineering applications, not claims that either paper prescribes those implementations.
+Part I explains CoALA on its own terms. Never use Fan & Lan to reinterpret, extend, or retroactively change what CoALA says. Part II treats Fan & Lan as a separate paper and distinguishes its explicit claims, hypotheses, analysis, and boundaries. Part III's Java implementation is an engineering application, not a claim that either paper prescribes its architecture or implementation.
 
 Do not introduce Tree of Thoughts, RAP, or any other research framework as an additional theoretical foundation. Other works may be named only when they are examples explicitly discussed or cited within the primary paper being explained; do not turn those works into parallel theory chapters or claim their mechanisms as CoALA/Fan & Lan mechanisms.
 
@@ -52,7 +52,7 @@ For every substantive theoretical claim, identify the exact supporting paper sec
 ## 5. Shared LaTeX system and preamble
 
 - `Tex/preamble.tex` is the one shared authorial preamble. It is loaded once by `Tex/main.tex`; chapter fragments must never load it.
-- The latest author-supplied preamble supersedes earlier preferences for trim size and fonts: its current specification is a 7 × 10 inch, two-sided, open-right book using TeX Gyre Termes, TeX Gyre Heros, and TeX Gyre Cursor. The author-supplied preamble is the design baseline. It may be changed only when a demonstrable improvement is needed for consistent typography, accessibility, rendering, pagination, or figure placement. Preserve existing design intent and explain nontrivial changes in the review notes.
+- The current author-approved production specification is US Letter (8.5 × 11 inches), two-sided, open-right, with a 0.15-inch binding offset and TeX Gyre Termes, TeX Gyre Heros, and TeX Gyre Cursor. This supersedes the earlier 7 × 10 inch trim retained in historical chapter previews and the original preamble. Keep these settings centralized in the shared preamble; chapter-local geometry or typography overrides are not permitted. Explain any further nontrivial change in the review notes.
 - Use the `book` class, XeLaTeX, `fontspec`, the author's selected fonts and page layout, shared colors, heading styles, headers/footers, `listings`, `graphicx`, captions, and reusable teaching environments from the preamble.
 - Use `Tex/shared-macros.tex` for book-wide commands, citations, glossary, index, and reusable macros/environments. Do not create chapter-local versions of shared commands or boxes.
 - Shared environments include `learningbox`, `tipbox`, `warningbox`, `notebox`, `takeawaybox`, `chapterrecap`, and `reviewquestions`. Use them consistently and selectively. All chapters must follow the same semantic box policy. Chapters 1–4 establish the visual baseline: a chapter-at-a-glance orientation, selective learning/tip/note/warning/takeaway boxes where they serve a pedagogical purpose, a chapter recap, and review questions. Do not force boxes around ordinary prose. Boxes are for learning objectives, genuinely useful tips, important cautions, clarifications, takeaways, recaps, and questions—not decoration or wrapping ordinary paragraphs.
@@ -158,3 +158,16 @@ Part II uses the author's dynamic nine-batch plan, not a fixed two-chapter caden
 9. Batch 9 — Chapter 18: synthesis of the mechanisms after Chapters 9–17 are complete and reviewed.
 
 The author explicitly selected this grouping on 15 November 2026. Do not change the approved Part II table of contents, force unrelated chapters into pairs, or start Chapter 18 before Chapters 9–17 are completed and reviewed. Chapter 18 is now drafted and integrated; it closes Part II without claiming that the composed runtime has been empirically validated. Chapters 16–18 follow the Markdown-only outline review convention in §1; their authored chapter sources remain LaTeX.
+
+
+## 12. Author-approved Part III scope (effective 16 November 2026)
+
+This section supersedes every earlier Part III proposal or status note where they conflict.
+
+- Part III consists of exactly two chapters: **Chapter 19 — Engineering Foundations for Request-Driven Enterprise Agentic Systems** and **Chapter 20 — Enterprise Supply-Chain Disruption Management**.
+- The chapters develop one coherent, request-driven enterprise supply-chain disruption management system. Do not introduce additional application case studies, parallel domains, or a catalogue of unrelated systems.
+- The implementation language is Java. The architecture is framework-independent: do not introduce LangGraph4j, LangChain4j, another agent framework, or framework-specific runtime abstractions as dependencies of the reference system.
+- CoALA and Fan & Lan remain the book's only overarching theoretical foundations. Part III is an engineering application and must not be presented as a new cognitive theory.
+- Clearly distinguish source-described mechanisms, book-authored examples, and engineering proposals. Architecture, contracts, control flow, persistence, authorization, recovery, and evaluation choices must be labelled as engineering decisions where appropriate.
+- Chapter 19 establishes the engineering foundations. Chapter 20 develops the single supply-chain application. Each chapter still requires its own detailed outline and explicit author approval before prose drafting begins.
+- The former ten-system/case-study proposal and its framework-specific implementation direction are superseded. Obsolete Chapter 21–30 placeholders must not remain in the active Part III table of contents or scaffold.

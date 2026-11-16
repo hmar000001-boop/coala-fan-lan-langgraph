@@ -35,6 +35,15 @@ pdftotext -layout "$PDF" "$TEXT_FILE" || fail "pdftotext could not extract text 
 require_file "$INFO_FILE"
 require_file "$TEXT_FILE"
 
+PAGE_SIZE_LINE="$(grep -m1 '^Page size:' "$INFO_FILE" || true)"
+case "$PAGE_SIZE_LINE" in
+  *"612 x 792 pts"*|*"612.0 x 792.0 pts"*) ;;
+  *)
+    printf 'Observed PDF page size: %s\n' "$PAGE_SIZE_LINE" >&2
+    fail 'compiled PDF page size must be US Letter (8.5 x 11 inches)'
+    ;;
+esac
+
 TITLE_LINE="$(grep -m1 '^Title:' "$INFO_FILE" || true)"
 case "$TITLE_LINE" in
   *"From Cognitive Architectures to Production Agentic Systems"*) ;;
@@ -64,7 +73,9 @@ for expected in \
   'Persistent Intentions, Reconsideration and Method Authority: B4' \
   'Uncertainty, Resources, Interruption and Stopping: B6' \
   'The Closed Candidate B5 and GraSP' \
-  'How the Mechanisms Work Together'; do
+  'How the Mechanisms Work Together' \
+  'Engineering Foundations for Request-Driven Enterprise Agentic Systems' \
+  'Enterprise Supply-Chain Disruption Management'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;
