@@ -147,10 +147,6 @@ The value of this reading is not that it gives ACT-R a score. It makes a mechani
 
 The fields also constrain one another. A trigger should be connected to a control operation over identifiable state. A persistence statement should specify which state survives. A learning statement should identify what outcome changes future behavior. A resource statement should describe a real constraint on the operation. If one of those connections cannot be supported, it should remain an open question rather than be completed by inference.
 
-\begin{takeawaybox}[What the ACT-R reading demonstrates]
-A seven-field record is a compact explanation of one mechanism. It shows the state involved, the control process, the trigger, the lifetime of state, the meaning of failure, the learning effect, and the operational constraints. It is a source-grounded analysis, not a claim that every mechanism must have the same structure.
-\end{takeawaybox}
-
 \section{The fields are related, but they are not a universal sequence}
 \label{sec:field-relationships}
 
@@ -199,17 +195,9 @@ The next chapter will apply this method across the ten historical architecture f
 \section{Common misreadings and the handoff to Chapter 11}
 \label{sec:chapter10-common-misreadings}
 
-\begin{description}
-  \item[State and control are interchangeable.] State identifies the operative information or structure. Control identifies the process or authority that governs the relevant transition.
-  \item[A trigger is just a timestamp.] A trigger is an identifiable event or condition connected to the control operation.
-  \item[Persistence means every object is durable.] One mechanism can contain transient and persistent state with different boundaries.
-  \item[Failure means an exception was logged.] Failure semantics concern how the condition is represented and how it participates in the mechanism's response.
-  \item[Learning means writing a note.] The learning field asks whether an outcome changes later behavior or control, not merely whether information is stored.
-  \item[Resources mean token budget only.] The field can include capacity, timing, scheduling, bottlenecks, competition, and governance constraints where documented.
-  \item[The seven fields are the E/D codes.] No. The tuple reconstructs a mechanism. E1--E4 classify the evidence relation, and D0--D4 classify the implementation depth of a particular correspondence.
-\end{description}
+The seven fields reconstruct one documented mechanism; they do not classify its historical relationship to a modern implementation. E1--E4 and D0--D4 are separate comparison axes applied only after the mechanism and its evidence have been reconstructed. The fields must therefore not be mistaken for additional codes or a maturity score.
 
-Chapter 10 has supplied a common representation for the anatomy of a documented mechanism. Chapter 11 will use that representation to reconstruct the historical architecture catalog and compare it with modern runtimes and mechanism-focused systems. It will also teach the precise evidence-relation and migration-depth coding rules. The five remaining residual mechanism bundles and the closed B5 case will be studied only after that mapping foundation is established.
+Chapter 11 applies the representation across the historical architecture catalog and modern system landscape, then explains the evidence-relation and migration-depth rules.
 
 \begin{chapterrecap}
 Fan and Lan represent a documented mechanism with seven analytical fields: state substrate (S), control locus (C), transition trigger (T), persistence boundary (P), failure semantics (F), learning operator (L), and resource or governance policy (R). The tuple \(K=\langle S,C,T,P,F,L,R\rangle\) is not a software architecture, a score, or a mandatory component checklist. Each field asks a different question about one operation. The ACT-R example shows how the fields complement one another while preserving the source's limits. Unknown information must remain unknown rather than be inferred. The tuple supports mechanism reconstruction; the E1--E4 and D0--D4 axes separately classify evidence relation and migration depth. Chapter 11 will apply the method across the reviewed architectures and runtimes.

@@ -1,19 +1,18 @@
-# Phase 3 change-only package
+# Phase 4 change-only package — Part II, Chapters 9–18
 
-This ZIP contains only files modified or added in Phase 3. It is not a full repository archive.
+This ZIP contains only the files changed or added in Phase 4. It is not a full repository snapshot.
 
 ## Apply
 
-1. Start from the accepted Phase 2 source tree.
-2. Extract this archive at the repository root, preserving the `Tex/...` paths.
-3. The eight modified chapter source files replace their corresponding files.
-4. Review `CHANGELOG_PHASE_3.md` and `CHANGE_MANIFEST.csv` for the exact scope.
+Extract the archive at the root of the existing LaTeX project. The `Tex/...` paths are repository-relative and are full replacement chapter sources. The three root-level documentation files are change records; they are not LaTeX inputs.
 
-The Chapter 2, 3, 4, and 7 source files are cumulative versions and preserve the accepted Phase 2 corrections already made in those files.
+**Important:** retain the accepted Phase 2 and Phase 3 changes already present in your working repository. In particular, `Tex/part2/chapter12/chapter.tex` in this archive is cumulative and includes the accepted Phase 2 B1 technical corrections as well as the Phase 4 editorial changes.
 
-## Classification
+## Contents
 
-- Modified: 8 chapter source files.
-- Added: 3 change-documentation files.
-- Deleted: none.
-- Unchanged files: not included.
+- 10 modified chapter `.tex` files: Chapters 9–18.
+- 3 added documentation files: changelog, readme, and manifest.
+- No deleted files.
+- No unchanged files, PDFs, compiled artifacts, or full repository copy.
+
+See `CHANGELOG_PHASE_4.md` for chapter-by-chapter details and `CHANGE_MANIFEST.csv` for file classification and SHA-256 values.

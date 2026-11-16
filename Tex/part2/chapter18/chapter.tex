@@ -1,6 +1,12 @@
 \chapter{How the Mechanisms Work Together}
 \label{ch:mechanism-composition}
 
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+This chapter synthesizes the five residual mechanism hypotheses and the closed B5/GraSP case. It examines cross-bundle dependencies, authority conflicts, implementation order, typed runtime contracts, a composed Product X trace, and the experiments needed to determine whether composition adds value.
+
 \begin{learningbox}
 This final chapter of Part II explains how the five residual control bundles identified by Fan and Lan can be composed around an existing skill-governance capability. You will learn to distinguish shared runtime state from shared authority, reconstruct the dependencies among B1, B2, B3, B4, B6, and GraSP, design typed boundaries between them, and evaluate the composition without assuming that connected components automatically cooperate. The proposed Java-oriented contracts and Product X trace are engineering examples, not mechanisms claimed to have been implemented or validated by the source paper.
 \end{learningbox}
@@ -8,18 +14,12 @@ This final chapter of Part II explains how the five residual control bundles ide
 \section{From mechanism studies to composition}\index{mechanism composition}
 \label{sec:ch18-from-mechanisms-to-composition}
 
-Part II has moved from a broad question about cognitive architectures to a much narrower question about the control semantics of individual mechanisms. Chapter~\ref{ch:activation-latency-utility} examined memory accessibility, retrieval latency, downstream value, and maintenance cost. Chapter~\ref{ch:typed-impasses-substates-compilation} examined typed failure and bounded recovery. Chapter~\ref{ch:b3-workspace} examined competition for a bounded workspace and the consequences of broadcast. Chapter~\ref{ch:persistent-intentions-b4} examined durable commitment and authority to reconsider a method without silently replacing the goal. Chapter~\ref{ch:uncertainty-resources-b6} examined uncertainty, resource allocation, interruption, and stopping. Chapter~\ref{ch:closed-b5-grasp} examined the candidate that did not remain a residual hypothesis: GraSP already composes an important skill-governance chain.
-
-These chapters do not describe six independent plug-ins. They describe mechanisms that can change one another's inputs, expose one another's failures, constrain one another's actions, and learn from outcomes produced by the wider runtime. A memory selector may return useful evidence, but that evidence still has to compete for a bounded inference workspace. A recovery process may solve a local failure, but it must preserve the intention and parent task that gave the recovery its purpose. A skill graph may be executable, but its invocation still consumes resources and may perform actions whose authorization belongs elsewhere. An interruption may be justified by risk or budget pressure, but the runtime must preserve enough state to resume or terminate correctly.
-
-A component inventory is therefore not an architecture. A drawing that connects components is not yet a control contract. To understand a composition, we must ask which state each component owns, which transition it may authorize, which evidence crosses a boundary, what remains stable during failure, and which later policy is allowed to learn from the outcome. These are the same questions that made a mechanism more informative than a feature label in Chapter~9, now applied across mechanisms rather than within one.
+Part II has moved from broad architecture labels to the control semantics of individual mechanisms. This chapter asks how those mechanisms can affect one another across state, authority, evidence, failure, and learning boundaries. Connecting components is not enough: the composition must preserve each mechanism's ownership and justify every cross-bundle transition.
 
 \subsection{Five residual bundles and one closed case}\index{residual control bundles}
 \label{subsec:ch18-five-and-one}
 
-Fan and Lan's review leaves five residual bundles after closest-baseline screening. B1 concerns activation, retrieval latency, downstream action utility, and memory maintenance cost. B2 concerns typed impasse identification, a protected recovery substate, typed resolution, and safe compilation of reusable recovery knowledge. B3 concerns competition among typed content candidates, bounded workspace admission, cycle-scoped broadcast, and outcome-dependent admission learning. B4 concerns persistent intention, explicit reconsideration, and method-switch authority that remains separate from the committed goal. B6 concerns calibrated uncertainty propagating across stages to influence resource allocation, authorization, interruption, and stopping. These are residual control hypotheses, not validated components or a universal minimum architecture.\FanLanCite{\S VI-B--VI-C; Table V; Table VI}
-
-B5 must be displayed differently. The candidate proposed a chain connecting calibrated skill selection, typed execution, verification, bounded local repair, and planner fallback. GraSP already composes that chain in the reviewed corpus. Fan and Lan therefore close B5 as an E3/D4 convergence case and retain GraSP as a baseline and implementation dependency, not as a sixth residual. This closure is conditional on the paper's frozen corpus and coding; it is not a claim that every form of skill governance is solved or that GraSP transfers universally.\FanLanCite{\S II-E; \S VI-B; \S VI-C, B5; Appendix C-O; \S VII-C}
+The table summarizes the five residual control hypotheses and the distinct role of B5/GraSP. The bundle descriptions are compact here; their source mechanisms and engineering bridges remain in the preceding chapters.
 
 \begin{table}[htbp]
 \centering
@@ -733,15 +733,11 @@ The conclusions remain bounded by the source paper's corpus and methods: the rev
 
 The chapter's contracts and Product X trace do not remove these limits. They make a proposed implementation inspectable and testable. A future Java system would still require implementation, independent review of the source mapping, controlled experiments, and explicit reports of negative or inconclusive results. The composite architecture may add latency, costs, race conditions, and new failure modes. More mechanisms are not automatically a better agent.
 
-\begin{takeawaybox}[The result of Part II]
-The useful output of this part is not a universal cognitive architecture to install around every language model. It is a mechanism-level way to ask who owns state, what triggers a transition, what survives failure, which evidence is learned from, and how resources and authority are governed. The five residual bundles are falsifiable hypotheses about missing couplings; GraSP is a closed candidate that demonstrates the importance of closest-baseline screening. Whether the bundles compose beneficially remains an empirical question.
-\end{takeawaybox}
-
 \section{Chapter recap}\index{compositional limits}
 \label{sec:ch18-recap}
 
+\begin{chapterrecap}
 Five conclusions close Part II:
-
 \begin{enumerate}
   \item Mechanisms compose through state, authority, transition, persistence, failure, learning, and resource boundaries, not merely because their components can be connected.
   \item B1 and existing skills can supply candidates to B3, but memory accessibility, skill invocation, and workspace admission remain different decisions.
@@ -749,6 +745,7 @@ Five conclusions close Part II:
   \item GraSP closes B5 and can participate as an existing skill-governance dependency, but its closure does not validate the remaining composition.
   \item Only controlled compositional experiments can establish whether the combined runtime is worth its additional state, control, learning, and resource costs.
 \end{enumerate}
+\end{chapterrecap}
 
 \section{Review questions and practical exercise}
 \label{sec:ch18-review-questions}

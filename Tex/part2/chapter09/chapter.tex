@@ -119,10 +119,6 @@ A mechanism comparison should therefore identify at least three things:
 
 An invariant here means a property of the operation that remains true across the compared descriptions. For example, both systems may preserve a commitment record until an explicit release condition occurs. If the sources establish that state and that control rule, a meaningful comparison may be possible. If they only share the word \emph{intention}, the comparison remains at the level of terminology.
 
-\begin{takeawaybox}[The control question]
-Do not ask only whether a component exists. Ask which state it uses, what activates it, and who or what has authority to perform the consequential transition. Without those relationships, a feature description is not yet a mechanism explanation.
-\end{takeawaybox}
-
 \section{Similarity, lineage, and implementation depth are different questions}
 \label{sec:similarity-lineage-depth}
 
@@ -189,10 +185,6 @@ The authors also disclose that the mapping remains interpretive. The seven field
 
 Finally, the review does not establish that historical mechanisms cause improvements in reliability, efficiency, or generality when transferred to modern agents. Historical architectures and modern task-specific runtimes were designed for different purposes. Similar behavior can emerge from different internal processes, and a mechanism that is meaningful for cognitive modeling may introduce unnecessary engineering overhead in a particular application. Fan and Lan therefore frame residual mechanisms as hypotheses that need controlled interventions, not as guaranteed upgrades.\FanLanCite{§VII-C; §VIII}
 
-\begin{warningbox}
-Do not turn a bounded review into a field-wide leaderboard. Corpus counts do not estimate prevalence; the highest reviewed migration depth is not a universal ceiling; and a mechanism mapping is not a causal performance result. The paper's limitations are part of the evidence, not a footnote to ignore.
-\end{warningbox}
-
 \section{A worked reading: unpacking the word memory}
 \label{sec:worked-reading-memory}
 
@@ -217,18 +209,7 @@ A careful reviewer stops where the evidence stops. The correct result may be a p
 \section{Common misreadings and the handoff to Chapter 10}
 \label{sec:chapter9-common-misreadings}
 
-Several tempting conclusions must be avoided.
-
-\begin{description}
-  \item[A feature label is a mechanism.] A feature label is a starting point. The mechanism requires documented state, trigger, control, transition, and possible later consequences.
-  \item[The same output proves the same mechanism.] Similar outputs can result from materially different internal organizations. The state and control path must be compared.
-  \item[Similarity implies historical inheritance.] Lineage requires explicit evidence. Structural or functional similarity alone does not demonstrate transfer.
-  \item[Implementation depth proves lineage.] Depth and evidence relation are separate axes. A highly developed mechanism may have converged independently.
-  \item[A bounded review is a universal ranking.] The paper's corpus and coding are bounded and interpretive. They do not establish prevalence or causal performance.
-  \item[An unknown field can be filled from architecture lore.] A familiar architecture name does not authorize the reviewer to invent missing evidence for a particular mechanism record.
-\end{description}
-
-Chapter 9 has moved the unit of comparison from a broad feature label to a documented operation. But the questions are still spread across the explanation. Chapter 10 will organize them into a single seven-field representation. It will show how state, control, trigger, persistence, failure, learning, and resources can be recorded for one mechanism without turning the representation into a mandatory software design or a maturity score.
+The distinctions in this chapter should be applied at the level of one documented operation. Do not infer an unreported state, trigger, or control edge from an architecture label; record the evidence that is available and leave the rest open. Chapter 10 turns these questions into a seven-field representation that makes such gaps visible.
 
 \begin{chapterrecap}
 A feature label is useful for orientation but too coarse to explain how an agent operates. Fan and Lan make a documented mechanism the unit of analysis: an operation that consumes explicit state, is activated by an identifiable trigger, exercises control over a transition, and may change later behavior. The paper distinguishes evidence relation from migration depth because lineage and implementation depth answer different questions. A comparison requires node and edge correspondence and at least one preserved invariant, while also recording what is missing. The review is bounded and interpretive; it does not claim exhaustive coverage, prevalence, or causal performance gains. The next chapter introduces the seven-field representation used to make mechanism anatomy inspectable.

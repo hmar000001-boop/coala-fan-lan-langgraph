@@ -12,10 +12,6 @@ The practical question is how to implement this as a real runtime subsystem. We 
 
 By the end of the chapter, you should be able to explain the LIDA competition/broadcast chain; distinguish a workspace from a message bus, blackboard, agent team, or communication topology; reconstruct B3 through the seven fields; design and test a bounded, cycle-scoped workspace; distinguish selection, broadcast, consumption, use, and helpfulness; and evaluate the proposed coupling against simpler baselines.
 
-\begin{notebox}
-\textbf{The central question.} When different kinds of information compete for limited shared context, what should be admitted, who should receive it, how long should it remain active, and what evidence should change the next admission decision?
-\end{notebox}
-
 \section{A busy context is not yet a workspace}
 \label{sec:ch14-opening}
 
@@ -83,10 +79,6 @@ The source account motivates these relationships; it does not establish a univer
 \subsection{What persists, and what is temporary}
 
 The workspace opportunity is bounded by the cycle. That does not mean that every item in the broadcast becomes a permanent memory, nor that all longer-lived memory is deleted when the workspace cycle ends. The distinction is between active availability now and durable retention for later tasks. A modern system must make the lifetime boundary explicit: workspace state can expire while provenance, decision records, and outcome evidence remain available for audit or future policy learning.
-
-\begin{takeawaybox}[What LIDA contributes]
-LIDA supplies a historical mechanism in which related contributions form coalitions, compete for limited workspace access, and a winning coalition is broadcast to downstream processes. The modern B3 proposal changes the candidate objects and asks how typed content admission should learn from downstream utility.
-\end{takeawaybox}
 
 \section{Blackboard control is a neighbor, not a synonym}
 \label{sec:ch14-blackboard}
@@ -649,7 +641,8 @@ Fan and Lan's dependency analysis treats B1 and migrated skills as candidate sup
 A global workspace is not merely a shared transcript or database. In the LIDA mechanism reconstructed by Fan and Lan, codelet coalitions compete for limited access and a winner is broadcast to downstream processes. The modern B3 residual changes the candidate object to typed content coalitions from memory, agents, tools, monitors, and plans, and asks whether outcomes can improve later admission within the same bounded broadcast cycle. GWA is the closest structural baseline; DyLAN and adaptive graph pruning demonstrate learned admission over agents and communication edges, not content-level workspace admission. A practical implementation must make candidates, coalitions, cycles, snapshots, consumers, outcomes, and policy versions explicit—and it must prove that the added control is better than simpler baselines.
 \end{chapterrecap}
 
-\begin{reviewquestions}{Review questions}
+\begin{reviewquestions}{Review questions and practical exercises}
+\paragraph{Review questions.}
 \begin{enumerate}
   \item Why is a message bus insufficient to establish a global-workspace mechanism?
   \item What is the difference between LIDA's codelet coalitions and the typed content coalitions proposed in B3?
@@ -661,9 +654,7 @@ A global workspace is not merely a shared transcript or database. In the LIDA me
   \item What evidence would justify changing a later admission policy, and what evidence is too weak?
   \item Under what result should B3 be rejected in favor of top-$k$ or GWA-style selection?
 \end{enumerate}
-\end{reviewquestions}
-
-\begin{reviewquestions}{Practical exercises}
+\paragraph{Practical exercises.}
 \begin{enumerate}
   \item Classify eight candidate records from a multi-agent task. For each, specify type, provenance, task scope, validity, sensitivity, estimated token cost, and dependencies.
   \item Build two competing content coalitions. Show which relations justify grouping their members and preserve at least one unresolved contradiction.

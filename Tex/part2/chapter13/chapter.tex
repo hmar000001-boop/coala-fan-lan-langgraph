@@ -15,10 +15,6 @@ The practical question is not whether a language agent should retry more intelli
 By the end of this chapter, you should be able to explain Soar's operator-selection impasses and subgoal processing; distinguish tie, conflict, constraint-failure, and no-change impasses; describe superstates, substates, results, the Goal Dependency Set\index{Goal Dependency Set}, and chunking; reconstruct B2's four residual invariants; distinguish partial modern baselines from the full proposed coupling; design a typed recovery subsystem with explicit parent/child authority and safe result return; and evaluate the mechanism through state traces, safety metrics, controlled baselines, and ablations.
 \end{learningbox}
 
-\begin{takeawaybox}[The B2 control chain]
-A useful recovery mechanism does more than notice an error and try again. It classifies why progress is blocked, scopes a child problem without surrendering the parent task, returns a typed result tied to its evidence and dependencies, validates that result before the parent changes, and only then considers compiling a guarded reusable rule. Fan and Lan propose this coupling as a falsifiable research hypothesis; they do not report it as a completed, validated production standard.
-\end{takeawaybox}
-
 \section{Failure is not yet a recovery policy}
 \label{sec:ch13-failure-policy}
 
@@ -217,27 +213,7 @@ The E and D codes are interpreted as in Chapter 11: evidence relation and migrat
 \section{B2 as a composed runtime hypothesis}
 \label{sec:ch13-b2-hypothesis}
 
-Fan and Lan express B2 as a practical sequence. An execution ledger classifies a failure; the relevant parent state is frozen; a bounded recovery subgraph is opened; a typed resolution is returned; and a reusable recovery rule is compiled. The sequence is simple to state, but each verb implies a contract and a control decision.\FanLanCite{\S VI-C, B2}
-
-\subsection{Classify the failure}
-
-The runtime should preserve the raw event and distinguish symptom from attribution. A timeout is an observation; ``provider accepted request but response was lost'' is a possible attributed cause. If the evidence cannot distinguish outcomes, the classification should preserve uncertainty rather than invent certainty. A type should guide recovery, not merely decorate the log.
-
-\subsection{Preserve the parent state}
-
-The parent view\index{parent state!snapshot} should identify the goal, its invariants, verified facts, completed work, pending operation, current version, and relevant dependencies. A versioned snapshot is one practical implementation. It should be labelled as an engineering translation, not as a literal claim about Soar's superstate. Fan and Lan's formulation says to freeze the relevant parent state; the precise snapshot format and persistence policy are left to the implementation.\FanLanCite{\S VI-C, B2}
-
-\subsection{Open a bounded recovery subgraph}
-
-The child receives the reason for recovery, the parent reference, evidence, and an explicit set of permitted operations. It owns local working state but cannot directly rewrite the parent's verified facts or goal. A bounded attempt count and local operation policy prevent recursive retries. More general resource allocation, uncertainty propagation, interruption, and stopping belong to B6 in Chapter 16; B2 still needs local bounds to ensure its recovery branch terminates.
-
-\subsection{Return a typed resolution}
-
-The child should return an outcome type\index{typed resolution}, evidence references, parent version, dependency set, postconditions, proposed state delta, and an explicit account of any side effects. It may report \code{RESOLVED}, \code{STILL\_UNKNOWN}, \code{BLOCKED}, \code{PARENT\_STALE}, or \code{ESCALATE}. These names are a proposed engineering vocabulary, not Fan and Lan's prescribed enumeration. The parent must verify that the result applies to the same task state and that its evidence supports the claimed postconditions.
-
-\subsection{Compile only the conditions that made the resolution valid}
-
-A compiled recovery rule should carry the guard conditions, the reusable action or plan reference, provenance, dependencies, tool/environment version, validation evidence, and invalidation conditions. A recovery that succeeds once does not automatically justify compilation. It may depend on a one-off external condition, an uncertain diagnosis, or a manual intervention that cannot safely be automated. Rule creation and rule promotion should therefore be separate events.
+Fan and Lan state B2 as five linked operations: classify the failure, preserve the relevant parent state, open a bounded recovery subgraph, return a typed resolution, and compile only the conditions that made the resolution valid. The chain is a source-level residual hypothesis, not a prescribed software pipeline. The key boundaries are that diagnosis does not grant action authority, a child does not own the parent goal, a returned result remains subject to validation, and a successful episode does not automatically justify a reusable rule. The detailed responsibilities, records, state transitions, persistence rules, and validation contracts follow in the implementation design below.\FanLanCite{\S VI-C, B2}
 
 \section{From B2 to an implementable recovery subsystem}
 \label{sec:ch13-implementation}

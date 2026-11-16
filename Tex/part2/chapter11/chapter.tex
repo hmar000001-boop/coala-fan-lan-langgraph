@@ -30,10 +30,6 @@ which provides a common set of analytical questions about operative state, contr
 
 The central question of this chapter is therefore narrower than ``Which architecture is better?'' It is: when a historical mechanism and a modern system appear to address a similar problem, what evidence shows that they are related, what part of the mechanism is actually represented, and which control properties are preserved or missing?
 
-\begin{takeawaybox}[The unit of comparison]
-Compare documented operations, not labels. A useful comparison identifies the state involved, the trigger, the authority that controls a transition, at least one preserved invariant, and any important invariant that is not preserved. Only then is it meaningful to discuss lineage, approximation, convergence, or implementation depth.
-\end{takeawaybox}
-
 Fan and Lan frame their work as a bounded mechanism-level mapping review. They do not rank historical architectures on a shared benchmark, estimate pooled performance effects, or claim that the reviewed corpus contains every relevant agent system. Their contribution is a structured catalog, an auditable evidence-and-depth coding method, and a set of residual control hypotheses derived from the comparison. Those boundaries matter because the rest of the chapter describes the paper's reviewed evidence, not an unrestricted census of the field.\FanLanCite{Abstract; \S I; \S II-A; \S II-E}
 
 \section{The corpus has layers, not one flat list}
@@ -518,16 +514,13 @@ The five residual bundles are conditional on the paper's frozen corpus, its docu
 \section{Common misreadings and boundaries}
 \label{sec:ch11-common-misreadings}
 
+The catalog should be read with five boundaries in mind:
 \begin{enumerate}
-  \item \textbf{The ten historical architectures form one lineage.} The catalog groups distinctive architectures; it does not establish a direct evolutionary chain among all ten families.
-  \item \textbf{The eight general runtimes are eight modern cognitive architectures.} They are runtime families used to locate engineering boundaries. Their interfaces do not automatically implement historical cognitive mechanisms.
-  \item \textbf{The corpus layers are mutually exclusive.} They are analytical roles. AIOS and hybrid BDI--LLM are deliberately cross-indexed.
-  \item \textbf{Magentic-One and Agent Spec increase the eight-family count.} They are supporting cases in the paper, not additions to M-A.
-  \item \textbf{E1 through E4 are ordered maturity levels.} They describe evidence relations. They are not a low-to-high ladder.
-  \item \textbf{D4 means that a historical architecture has been rebuilt.} D4 applies to an outcome-dependent update in a specific mapped mechanism.
-  \item \textbf{A framework interface proves a control law.} A state, message, handoff, or approval API can be a substrate without controlling the historical transition being compared.
-  \item \textbf{A high-depth result proves prevalence or completeness.} The paper reports the highest-depth admitted instance under its bounded screening, not the frequency of that mechanism across all systems.
-  \item \textbf{The review proves the five residual bundles are useful.} It proposes falsifiable interventions and boundaries; it does not report completed comparative experiments validating them.
+  \item The ten historical families are distinct architectures, not one established evolutionary lineage.
+  \item H, M-A, M-B, and explicit bridge cases are analytical roles; a system may appear in more than one role without representing multiple independent systems.
+  \item A general runtime family identifies an engineering boundary, not proof that its interface implements a historical cognitive mechanism.
+  \item E1--E4 and D0--D4 are independent axes: evidence relation is not implementation depth.
+  \item Supporting cases do not silently change the eight-family M-A count or the forty-two-record M-B count.
 \end{enumerate}
 
 \section{Chapter recap, review questions, and handoff}

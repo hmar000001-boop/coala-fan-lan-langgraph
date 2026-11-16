@@ -1,8 +1,14 @@
 \chapter{The Closed Candidate B5 and GraSP}
 \label{ch:closed-b5-grasp}
 
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+A research review must close a proposed gap when a strong existing system already implements the claimed control relationship. This chapter reconstructs B5, explains why closest-baseline screening removes it from the residual list, and studies GraSP's selection, verification, repair, and fallback chain. The Java-oriented bridge is a faithful reconstruction map, not a claim that this book has reproduced GraSP.
+
 \begin{learningbox}
-\textbf{Chapter at a glance.} A research review should be capable of closing a proposed gap when a strong existing system already implements the control relationship that the gap was meant to capture. This chapter follows that process for B5. It reconstructs the original candidate, explains the closest-baseline decision that removed it from Fan and Lan's residual list, and studies GraSP as the system that supplies the relevant selection, verification, repair, and fallback chain. A practical bridge then maps the published design into Java-like contracts and tests, while keeping that reconstruction distinct from both GraSP's implementation and the papers' theoretical claims.
+By the end of this chapter, you should be able to explain why a flat skill list is different from an executable skill graph; reconstruct GraSP's retrieval, compilation, verification, repair, and routing stages; distinguish the five local repair operators; interpret E3 and D4 independently; and identify the evidence supporting B5's closure and the limits of that evidence. You should also be able to describe how the published design can be represented in Java-like types and tested without claiming that the book has reproduced GraSP's code or experiments.
 \end{learningbox}
 
 \section{The candidate gap that disappeared}
@@ -19,10 +25,6 @@ The result is important for a reason that is easy to miss. A research agenda is 
 \begin{notebox}
 \textbf{The scope of the negative case.} B5 is closed within the frozen analytical corpus and the provisional coding rules reported by Fan and Lan. This does not prove that GraSP is universally applicable, that every skill-governance problem has been solved, or that the wider literature contains no alternative system. The conclusion is bounded by the evidence the review examined.
 \end{notebox}
-
-\subsection{What the chapter will establish}
-
-By the end of the chapter, the reader should be able to explain why a flat skill list is different from an executable skill graph; reconstruct GraSP's retrieval, compilation, verification, repair, and routing stages; distinguish the five local repair operators; interpret the E3 and D4 codes independently; and identify both the evidence supporting B5's closure and the limits of that evidence. The reader will also see how the published system can be represented in Java-like types and tested without pretending that the book has reproduced GraSP's code or experiments.
 
 The practical bridge has a different purpose from the implementation bridges in the preceding mechanism chapters. Those chapters considered residual hypotheses and proposed testable runtime couplings. This chapter studies a candidate that the source review says is already closed. Its engineering work is therefore a faithful reconstruction and reproducibility map. The code contracts and additional production checks below are book-created representations, not GraSP source code and not features prescribed by Fan and Lan.
 
@@ -839,9 +841,7 @@ The example has not demonstrated that any one repair will succeed. It demonstrat
 
 \subsection{What the example does and does not show}
 
-The worked example shows how typed dependencies and typed failure events make a local repair decision explicit. It illustrates the difference between changing arguments, adding a prerequisite, replacing a skill, editing local dependencies, and bypassing already-satisfied work. It also shows how the escalation path protects the runtime from unbounded local patching.
-
-It does not establish an empirical success rate, demonstrate the exact ALFWorld experimental trace, or validate a particular Java implementation. Those would require an executable reproduction, a version-pinned environment, controlled experiments, and a report of results. The example is a teaching reconstruction only.
+The worked example makes the five repair decisions and the escalation path explicit. It is a teaching reconstruction, not an empirical success-rate claim, an exact ALFWorld trace, or a validation of the proposed Java implementation; those claims require a version-pinned reproduction and controlled experiments.
 
 \section{Evaluating the closed case and reproducing the mechanism}
 \label{sec:ch17-evaluation-method}
@@ -904,14 +904,14 @@ Chapter 11 already teaches the historical-to-modern landscape, the ICARUS mappin
 
 The cross-bundle analysis in Fan and Lan treats B5 as an implementation dependency for future compositions, not as a sixth residual control hypothesis. B4 scopes recovery and the goal boundary; B2 can supply typed recovery state and verified resolutions; B1 and reusable skills can supply candidates; B3 controls what content enters a bounded workspace; and B6 governs uncertainty, resources, authorization, interruption, and stopping. GraSP's closed skill-governance chain can therefore appear as a baseline or dependency in the future synthesis, while remaining distinct from the five open bundles.\FanLanCite{\S VI-D; Figs. 8--9}
 
-Chapter 18 will examine how B1, B2, B3, B4, and B6 might compose and how the closed GraSP capability fits into that composition. It must not infer that the residual mechanisms have already been validated simply because they can be connected to a GraSP-like skill governor. Each remaining bundle still has its own baseline, insertion point, falsifier, and experimental conditions. The synthesis must therefore end with compositional hypotheses and limits, not a claim that the combined architecture has already been proven.
+Chapter 18 examines how B1, B2, B3, B4, and B6 might compose around the existing GraSP capability. Their individual baselines and falsifiers remain separate, and connection alone does not validate the proposed composition.
 
 \begin{chapterrecap}
 B5 began as a candidate coupling calibrated multi-skill routing, typed verification, bounded repair, and planner fallback. Fan and Lan's closest-baseline screening identifies GraSP as already composing that chain. GraSP retrieves candidate skills using both direct task relevance and successful episodic experience, computes a retrieval-confidence value, compiles selected skills into a typed DAG, executes each node with precondition and postcondition checks, and repairs failures locally through five operators before escalating to global replanning or ReAct fallback.
 
 The graph's state and data edges are hard dependencies; its order edges are soft precedence constraints. The five repair operators—Rebind, InsertPrereq, Substitute, Rewire, and Bypass—encode different diagnoses rather than interchangeable retries. A patch must preserve DAG validity, valid skill nodes and bindings, verifiers, unaffected verified ancestors, and the configured node/edge limits. Entry confidence routing and post-failure escalation are separate control decisions.
 
-Fan and Lan assign the GraSP correspondence E3/D4. E3 describes functional approximation through a materially different organization, not documented historical lineage. D4 describes experience-dependent adaptation of future control, not complete migration of ICARUS or universal correctness. The code is specific to the mapped skill-governance mechanism and remains conditional on the review's frozen corpus and provisional coding.
+Fan and Lan assign the GraSP correspondence E3/D4. E3 describes functional approximation through a materially different organization, not documented historical lineage. D4 describes experience-dependent adaptation of future control, not complete migration of ICARUS or universal correctness. The validity section below records the evidence boundary for that classification.
 
 GraSP reports positive results across four interactive benchmarks and eight model backbones. Its main comparison, selected component table, and five Appendix C.2 ablations must be described with their distinct scope. The experiments support the reported task and efficiency results, but the paper's limitations on DAG expressiveness and evaluated domains remain important.
 

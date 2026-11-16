@@ -15,10 +15,6 @@ Each mechanism is treated through five questions: what the original source says;
 By the end of this chapter, you should be able to explain ACT-R activation and retrieval time; distinguish production utility from memory value; classify memory admission, retention, and retrieval mechanisms; compare selected modern systems without conflating their purposes; derive a bounded B1-oriented context selector; design event records that distinguish retrieval from actual use; and evaluate the resulting policy under quality, latency, cost, and reliability constraints.
 \end{learningbox}
 
-\begin{takeawaybox}[The chapter's organizing distinction]
-A memory system makes at least three different lifecycle decisions: whether a memory enters persistent storage, whether it remains there or changes, and whether it is retrieved and inserted into a particular working context. B1 is primarily about the third decision and its feedback into future accessibility and utility. It should not be collapsed into a generic memory-admission or forgetting score.
-\end{takeawaybox}
-
 \section{What B1 claims—and what it leaves open}
 \label{sec:ch12-b1}
 
@@ -156,10 +152,6 @@ where \(RT_i\) is predicted retrieval time, \(F\) is a latency scaling factor, a
 A production agent must distinguish this \emph{cognitive prediction} from \emph{infrastructure latency}. The latter is the wall-clock time consumed by embedding lookup, database access, graph traversal, network I/O, reranking, serialization, or prompt construction. One is predicted from a cognitive model; the other is measured from software execution. They can both matter, but neither should be silently substituted for the other.
 
 There is also a double-counting trap. If a selector rewards high ACT-R activation and separately rewards low \(RT_i\) from Equation~\ref{eq:ch12-actr-latency}, it may reward the same activation advantage twice. One defensible design uses activation as the cognitive accessibility signal and treats ACT-R latency as a derived prediction. Another uses activation together with independently measured infrastructure latency. An evaluation can compare these choices through ablation; a selector should not include both as independent bonuses without explaining the intended interpretation.
-
-\begin{takeawaybox}[What ACT-R contributes to B1]
-ACT-R supplies a principled account of why a memory becomes accessible and how activation relates to retrieval time. It does not, by itself, tell an agent how valuable that memory will be for a particular downstream action, how much infrastructure cost its retrieval will incur, or whether it deserves space in the next prompt.
-\end{takeawaybox}
 
 \subsection{Sidebar: Rational Analysis and future demand}
 \label{subsec:ch12-rational-analysis}

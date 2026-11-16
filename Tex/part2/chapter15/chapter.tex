@@ -1,6 +1,12 @@
 \chapter{Persistent Intentions, Reconsideration and Method Authority: B4}
 \label{ch:persistent-intentions-b4}
 
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+This chapter explains how a long-running agent preserves an authorized goal while reconsidering the method used to pursue it. It moves from BDI commitment and MIDCA meta-control to the authority boundaries, persistent records, guarded transitions, and tests of a proposed B4 runtime.
+
 \begin{learningbox}
 By the end of this chapter, you will be able to explain why a long-running agent needs more than a task string or an execution log to preserve a commitment; distinguish BDI commitment policies from reconsideration schedules; explain how a meta-level controller can change an operating method; and design a persistent intention subsystem that makes goal authority, method authority, and model proposals explicit. You will also be able to evaluate whether such a subsystem improves long-horizon behavior rather than merely adding state and deliberation.
 \end{learningbox}
@@ -8,24 +14,15 @@ By the end of this chapter, you will be able to explain why a long-running agent
 \section{The agent that remembers the task but forgets why it is committed}
 \label{sec:ch15-opening}
 
-Imagine that a software agent has been asked to investigate a payment incident affecting Product X. The authorized objective is not simply to issue another payment request. It is to establish the authoritative status of the existing payment attempt, preserve the rule that the customer must not be charged twice, and report what happened. The agent chooses a method: submit a payment request with a provider-supported idempotency key, then poll for a result.
+A long-running agent can retain a task string and execution log yet lose the authorized goal, its rationale, the constraints that must remain true, and the authority governing changes. Conversely, it may preserve the goal but continue using a method that new evidence has made unsafe or ineffective. A payment timeout illustrates the distinction: the outcome may be unknown, while the goal and the no-duplicate-charge constraint remain valid; the method may need to change from submission to read-only reconciliation.
 
-The submission call times out. The agent has not received a response, but the payment provider may have processed the request. The agent now faces two different questions:
-
-\begin{enumerate}
-  \item \textbf{Does the original objective remain valid?} Yes. The payment status is still unknown, and the no-duplicate-charge constraint still applies.
-  \item \textbf{Is the original method still the right way to pursue it?} Not necessarily. Repeating the same request may be unsafe or uninformative. A read-only status lookup or reconciliation procedure may be better.
-\end{enumerate}
-
-A fragile agent can confuse these questions. It may treat the timeout as proof that the goal failed, abandon the task, or retry the payment with a new identifier. Another agent may retain the words of the task in its prompt but lose the rationale and safety invariant that made the task important. A third may produce a thoughtful reflection recommending a safer method, yet have no authorized component capable of applying that change to the running process.
-
-These are not merely memory failures. They concern the persistence of a commitment and the authority to reconsider how that commitment is pursued. A task label says what the agent is doing now. An execution log says what it has attempted. Neither, by itself, establishes which goal remains authorized, what would count as success, under which conditions the commitment should continue, who may change it, or how a method change is recorded.
+The central distinction is therefore between preserving the authorized end and reconsidering the means. A method change must not silently amend the goal; goal amendment remains with the authority that owns that goal.
 
 \begin{notebox}
-\textbf{The central distinction.} A system can remain committed to an authorized end while changing the means used to pursue it. Conversely, a method change must not silently become a change in the end. The first is a reconsideration of method; the second is a change to the goal and therefore requires the authority that owns that goal.
+\textbf{The central distinction.} A system can remain committed to an authorized end while changing the means used to pursue it. Conversely, a method change must not silently become a change in the end. The first is a reconsideration of method; the second is a change to the goal and therefore requires the authority that owns the goal.
 \end{notebox}
 
-This chapter studies that distinction through B4, the fourth residual mechanism bundle in Fan and Lan's review. It first explains the historical ideas that make the problem intelligible, then examines the modern correspondences and omissions identified by the review, and finally develops a concrete reference design. The design is a book-level engineering proposal. It is not a claim that BDI, MIDCA, or the reviewed language-agent systems already provide the complete subsystem described here.
+The full Product X execution trace appears later in the chapter. Here, the problem is the mechanism: preserving commitment and making reconsideration an authorized control operation, rather than a recommendation written to a log.
 
 \section{B4 in the mechanism-level review}
 \label{sec:ch15-b4-review}
@@ -975,11 +972,8 @@ The reference design in this chapter proposes typed records, versioned goals and
 
 Finally, B4 must be evaluated as a control mechanism, not as a collection of classes. The experiment needs an internal trace, matched baselines, primary outcomes for goal drift, completion, and correct stopping, separate safety and efficiency measures, the three source-required ablations, and clear falsification criteria. A system that logs a problem but cannot change the active method has not yet demonstrated method authority.
 
-\begin{takeawaybox}
-\textbf{The design principle.} Preserve the authorized end; reconsider the means when evidence justifies it; and make the authority for each change explicit, durable, and testable.
-\end{takeawaybox}
-
-\begin{reviewquestions}{Review questions}
+\begin{reviewquestions}{Review questions and practical exercises}
+\paragraph{Review questions.}
 \begin{enumerate}
   \item Why is a task description or conversation transcript insufficient as the only representation of a persistent intention?
   \item How do beliefs, desires, and intentions differ in the BDI account?
@@ -993,9 +987,7 @@ Finally, B4 must be evaluated as a control mechanism, not as a collection of cla
   \item What does each of the three B4 ablations isolate?
   \item Which evidence would justify rejecting the B4 design in favor of a simpler baseline?
 \end{enumerate}
-\end{reviewquestions}
-
-\begin{reviewquestions}{Practical exercises}
+\paragraph{Practical exercises.}
 \begin{enumerate}
   \item Design an intention record for a travel-booking request. Separate the authorized destination and constraints from the current booking method. Show which fields remain unchanged after a method switch.
   \item Write a transition table for method change, delegation, suspension, satisfaction, impossibility, abandonment, and goal amendment. For each transition, state the required authority and evidence.
