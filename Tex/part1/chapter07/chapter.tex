@@ -141,6 +141,15 @@ The qualification about comparability matters. If two values are produced on inc
 
 \gls{softmax} is another value-dependent selection method named in the paper. At an intuitive level, instead of always treating the largest value as the only possible outcome, a softmax-based rule can use the values to determine a distribution over candidates. A higher value can receive greater selection weight, while other candidates may remain possible.
 
+For a finite candidate set \(\mathcal C\), one standard mathematical illustration is
+\begin{equation}
+  P(a_i\mid\mathcal C)=
+  \frac{\exp(v_i/\tau)}{\sum_{a_j\in\mathcal C}\exp(v_j/\tau)},
+  \qquad \tau>0,
+  \label{eq:ch7-softmax}
+\end{equation}
+where \(v_i\) is the value assigned to candidate \(a_i\), and \(\tau\) is a temperature parameter. A lower temperature concentrates more weight on higher-valued candidates; a higher temperature produces a flatter distribution. This equation makes the weighting behavior explicit, but it is an explanatory mathematical form used by this book, not a claim that CoALA mandates this exact parameterization.
+
 The CoALA discussion does not prescribe a particular temperature, calibration method, or probability interpretation for every use of softmax. The chapter therefore uses the term to identify a family of value-sensitive selection behavior, not to promise that the resulting probabilities are calibrated estimates of real-world success.
 
 \subsection{Majority vote}
@@ -178,6 +187,8 @@ Ask the on-call engineer & 0.45 & A still lower illustrative value under the sam
 \end{center}
 
 These values are not from the CoALA paper, are not estimates of real incident outcomes, and are not probabilities that an action will succeed. They are numbers chosen for one book-created example so the reader can see how a selection method might consume values. A different criterion or evaluation procedure could assign different values.
+
+To illustrate softmax without changing the meaning of those values, choose \(\tau=0.2\) for this example. Applying Equation~\ref{eq:ch7-softmax} to the values \(0.80\), \(0.60\), and \(0.45\) gives approximate selection weights of \(0.6486\), \(0.2386\), and \(0.1127\), respectively, for inspecting deployment metadata, querying database connectivity, and asking the on-call engineer. These are normalized selection weights under the chosen temperature. They are not calibrated probabilities that the actions will succeed, nor estimates of the incident's cause. The temperature is an illustrative parameter selected for the walkthrough, not a CoALA requirement.
 
 If the selection method is argmax, it carries forward the candidate with the largest represented value: inspecting deployment metadata. This does not prove that the deployment caused the issue. It means only that, under the invented evaluation rule and the illustrated values, argmax returns that candidate. Another selection method could behave differently, and a procedure may instead reject the current set and return to proposal.
 

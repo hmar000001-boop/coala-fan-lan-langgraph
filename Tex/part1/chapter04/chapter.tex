@@ -16,7 +16,7 @@ By the end of this chapter, you should be able to define retrieval, reasoning, a
 \section{From memory stores to internal actions}
 \label{sec:from-memory-to-actions}
 
-Return to Product X. The agent has the current incident goal and an observation that the error rate increased shortly after deployment 4.7. It may need to consult a record of an earlier incident, look up a dependency fact, interpret the evidence, and later preserve something useful from the investigation.
+Return to Product X. The agent has the current incident goal and an observation that the error rate increased shortly after deployment v4.7. It may need to consult a record of an earlier incident, look up a dependency fact, interpret the evidence, and later preserve something useful from the investigation.
 
 These activities all involve information, but they are not the same operation. Looking up a previous incident is not the same as interpreting what that incident means for today's symptoms. Forming a hypothesis is not the same as preserving that hypothesis for use in a future cycle. If we call all three activities ``memory,'' we lose the distinctions that explain how the agent operates.
 
@@ -92,7 +92,7 @@ A reasoning action therefore operates on information that is already active. It 
 
 The paper describes two broad ways reasoning results may be used. They can support learning by providing material that is later written into long-term memory. They can also support decision-making by providing additional context for subsequent LLM calls.\CoALACite{\S 4.4, p. 11.}
 
-For the Product X example, imagine that the agent has the current observation, a deployment record, and a prior incident episode in working memory. A reasoning action might compare their timing and content, then produce a working hypothesis: ``The increase began shortly after deployment 4.7, but the available observations do not yet distinguish a deployment regression from a coincident dependency problem.'' This is an illustrative statement created for the book, not a result reported by CoALA.
+For the Product X example, imagine that the agent has the current observation, a deployment record, and a prior incident episode in working memory. A reasoning action might compare their timing and content, then produce a working hypothesis: ``The increase began shortly after deployment v4.7, but the available observations do not yet distinguish a deployment regression from a coincident dependency problem.'' This is an illustrative statement created for the book, not a result reported by CoALA.
 
 The hypothesis is now active information. It may guide a later decision, influence which information the system retrieves, or be refined after another observation. It has not necessarily been stored in long-term memory. The act of generating a new working-memory result is reasoning; writing selected information into long-term memory is learning.
 

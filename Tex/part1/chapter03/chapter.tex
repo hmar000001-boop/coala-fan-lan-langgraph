@@ -16,7 +16,7 @@ By the end of this chapter, you should be able to explain why a prompt is not th
 \section{Why one context window is not the whole memory story}
 \label{sec:memory-beyond-context}
 
-Return to Product X. The payment service is returning HTTP 500 errors. The agent begins with an incident report and an observation from monitoring: the error rate increased shortly after deployment 4.7. That timing is relevant, but it does not prove that the deployment caused the failure. The agent may need to inspect other observations, compare the current incident with an earlier one, consult facts about the service, and keep its investigation goal active while it makes several model calls.
+Return to Product X. The payment service is returning HTTP 500 errors. The agent begins with an incident report and an observation from monitoring: the error rate increased shortly after deployment v4.7. That timing is relevant, but it does not prove that the deployment caused the failure. The agent may need to inspect other observations, compare the current incident with an earlier one, consult facts about the service, and keep its investigation goal active while it makes several model calls.
 
 Now ask a simple question: where does the information from one step go before the next step begins?
 
@@ -83,7 +83,7 @@ Consider the Product X example. Before a diagnostic call, working memory might c
 
 \begin{itemize}
   \item the active goal: investigate the payment-service errors and provide a supported recommendation;
-  \item the latest observation: the error rate increased shortly after deployment 4.7;
+  \item the latest observation: the error rate increased shortly after deployment v4.7;
   \item the current uncertainty: the deployment is temporally associated with the increase, but causation has not been established;
   \item the information already checked: a list of observations and results relevant to the current investigation.
 \end{itemize}

@@ -102,7 +102,7 @@ Chapter 3 will explore the memory categories, their relationships, and the impli
 
 \subsection{The environment and the two-way connection}
 
-The agent is not isolated inside its memory modules. \gls{grounding} procedures execute external actions and process environmental feedback into working memory. The CoALA paper describes physical environments, dialogue with humans or other agents, and digital environments as examples of external settings.\CoALACite{Section 4.2}
+The agent is not isolated inside its memory modules. \Gls{grounding} procedures execute external actions and process environmental feedback into working memory. The CoALA paper describes physical environments, dialogue with humans or other agents, and digital environments as examples of external settings.\CoALACite{Section 4.2}
 
 In Product X, a digital environment may expose service health, log records, deployment history, and database metrics. A dialogue environment may include an operator who can clarify whether a change was authorized. A physical environment is less central to this incident, but the same conceptual boundary applies to a robot receiving sensor data and issuing motor commands. The environment differs, while the architectural role of grounding remains recognizable.
 
@@ -154,7 +154,7 @@ These definitions are deliberately brief. Chapter 4 will explain retrieval, reas
 
 \subsection{External action: grounding}
 
-\gls{grounding} procedures execute external actions and process feedback from the environment into working memory. The paper groups external interaction into physical environments, dialogue with humans or other agents, and digital environments. A robot may receive visual and tactile observations and issue motor commands. A dialogue agent may ask a person a question or communicate with another agent. A digital agent may navigate a website, interact with an API, play a game, or execute code.\CoALACite{Section 4.2}
+\Gls{grounding} procedures execute external actions and process feedback from the environment into working memory. The paper groups external interaction into physical environments, dialogue with humans or other agents, and digital environments. A robot may receive visual and tactile observations and issue motor commands. A dialogue agent may ask a person a question or communicate with another agent. A digital agent may navigate a website, interact with an API, play a game, or execute code.\CoALACite{Section 4.2}
 
 In each case, the action is more than a sentence describing an intention. It is an operation performed through an interface to the external world. The system must interpret the result as an observation that can inform later decisions. The agent's environment therefore forms part of the architecture's boundary: it is outside the agent's internal memory, but it is connected to the agent through grounding.
 
@@ -177,7 +177,7 @@ A structural map tells us which elements exist and how they relate, but it does 
 
 Think of an ordinary software application. A program may contain functions for reading input, validating data, writing a file, and returning a result. The existence of those functions does not explain when they run. A top-level procedure determines the control flow: which functions are called, in what context, and what happens after they return.
 
-CoALA's decision procedure plays a comparable organizing role for the agent. It coordinates action procedures and repeats the interaction with the environment. This comparison is a teaching analogy based on the paper's description; it does not mean that every implementation must contain a method literally named `main`, nor that the full decision process is a single fixed code listing.
+CoALA's decision procedure plays a comparable organizing role for the agent. It coordinates action procedures and repeats the interaction with the environment. This comparison is a teaching analogy based on the paper's description; it does not mean that every implementation must contain a method literally named \texttt{main}, nor that the full decision process is a single fixed code listing.
 
 \subsection{Planning and execution at a glance}
 
@@ -200,7 +200,7 @@ At the same time, the diagram should not be mistaken for a universal, mandatory 
 
 We can now return to the payment incident and read it through the architecture. The following scenario is created for this book. Its purpose is to apply CoALA's distinctions, not to claim that the paper presents this incident or prescribes the specific operational steps.
 
-The payment service is returning HTTP 500 errors. The agent's goal is to investigate the incident and provide a supported recommendation. It begins with an observation from the monitoring system: the error rate increased shortly after deployment 4.7. The agent does not yet know whether the deployment caused the failure.
+The payment service is returning HTTP 500 errors. The agent's goal is to investigate the incident and provide a supported recommendation. It begins with an observation from the monitoring system: the error rate increased shortly after deployment v4.7. The agent does not yet know whether the deployment caused the failure.
 
 \subsection{Information storage}
 

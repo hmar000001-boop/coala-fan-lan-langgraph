@@ -73,7 +73,7 @@ This example will recur throughout the chapter. It illustrates why memory age, f
 \section{ACT-R: from declarative chunks to predicted retrieval}
 \label{sec:ch12-actr}
 
-\gls{actr} provides a foundational account of declarative memory.\index{ACT-R} Information is represented as chunks with typed slots. The current cognitive state and task provide retrieval cues; a retrieval request attempts to find a chunk matching those cues. The model assigns activation to candidate chunks. A sufficiently activated candidate can be retrieved, and activation is related to the predicted time required for retrieval. This is more specific than saying that an agent searches a vector database: the account defines a cognitive quantity and a relationship between that quantity and retrieval behavior \autocite{anderson2007actr,actr7manual}.
+\gls{actr} provides a foundational account of declarative memory.\index{ACT-R} Information is represented as chunks with typed slots. The current cognitive state and task provide retrieval cues; a retrieval request attempts to find a chunk matching those cues. The model assigns activation to candidate chunks. A sufficiently activated candidate can be retrieved, and activation is related to the predicted time required for retrieval. This is more specific than saying that an agent searches a vector database: the account defines a cognitive quantity and a relationship between that quantity and retrieval behavior \autocite{anderson2007actr}\autocite[pp. 262--267]{actr7manual}.
 
 \subsection{Activation has several components}
 \label{subsec:ch12-activation-components}
@@ -92,7 +92,7 @@ where \(A_i\) is the activation of candidate chunk \(i\), \(B_i\) is its base-le
   \item \textbf{Noise} captures stochastic variation rather than a deterministic rank that always returns the same winner.
 \end{itemize}
 
-These components should not be collapsed into a single embedding-similarity score. Cosine similarity can be one retrieval feature in an agent system, but it is not automatically ACT-R \gls{baselevelactivation}, \gls{spreadingactivation}, \gls{partialmatching}, or total activation. The ACT-R decomposition is a model of accessibility with defined sources of contribution, not a new name for every modern relevance score \autocite{actr7manual}.
+These components should not be collapsed into a single embedding-similarity score. Cosine similarity can be one retrieval feature in an agent system, but it is not automatically ACT-R \gls{baselevelactivation}, \gls{spreadingactivation}, \gls{partialmatching}, or total activation. The ACT-R decomposition is a model of accessibility with defined sources of contribution, not a new name for every modern relevance score \autocite[pp. 263--267]{actr7manual}.
 
 \subsection{Base-level activation: frequency and recency}\index{base-level activation}
 \label{subsec:ch12-base-level}
@@ -102,9 +102,9 @@ The base-level equation accumulates the influence of the chunk's presentation ev
   B_i = \ln\left(\sum_{j=1}^{n} t_j^{-d}\right)+\beta_i.
   \label{eq:ch12-base-level}
 \end{equation}
-Here, \(n\) is the number of relevant presentations, \(t_j\) is the elapsed time since presentation \(j\), \(d\) is the decay parameter, and \(\beta_i\) is a chunk-specific or model-specified base-level contribution. The logarithm compresses the sum. Each presentation adds a time-decayed contribution: many presentations can raise activation, while the influence of any one presentation declines as its elapsed time grows \autocite{actr7manual}.
+Here, \(n\) is the number of relevant presentations, \(t_j\) is the elapsed time since presentation \(j\), \(d\) is the decay parameter, and \(\beta_i\) is a chunk-specific or model-specified base-level contribution. The logarithm compresses the sum. Each presentation adds a time-decayed contribution: many presentations can raise activation, while the influence of any one presentation declines as its elapsed time grows \autocite[p. 263]{actr7manual}.
 
-The event semantics are important. In the ACT-R 7 reference manual consulted for this chapter, a presentation is associated with a chunk entering declarative memory or with a chunk being merged with an already existing declarative-memory chunk. It is therefore incorrect to state as a universal ACT-R rule that every database-style read or every unsuccessful retrieval attempt increments the presentation history. A model may define additional rehearsal or re-presentation behavior, but an implementation must state exactly which event changes the history \autocite{actr7manual}.
+The event semantics are important. In the ACT-R 7 reference manual consulted for this chapter, a presentation is associated with a chunk entering declarative memory or with a chunk being merged with an already existing declarative-memory chunk. It is therefore incorrect to state as a universal ACT-R rule that every database-style read or every unsuccessful retrieval attempt increments the presentation history. A model may define additional rehearsal or re-presentation behavior, but an implementation must state exactly which event changes the history \autocite[p. 263]{actr7manual}.
 
 For an agent, at least six events should be distinguished: a memory is created or stored; retrieval is requested; retrieval succeeds; the memory is included in the prompt; the model actually uses it; and an outcome is observed. These events may happen close together, but they are not interchangeable. Refreshing recency on every read can create a positive feedback loop: once a memory is retrieved, it becomes more recent, which makes it more likely to be retrieved again even if it did not help.
 
@@ -113,7 +113,7 @@ ACT-R also describes an optimized approximation when the full presentation histo
   B_i \approx \ln\left(\frac{n}{1-d}\right)-d\ln(L)+\beta_i,
   \label{eq:ch12-base-level-approx}
 \end{equation}
-where \(L\) is the chunk's lifetime since creation. The approximation replaces the full sum over event timestamps with a compact expression based on presentation count and lifetime. It can reduce bookkeeping, but it loses information about the exact spacing of individual presentations. If an agent needs reproducible, event-level analysis, retaining timestamps is more informative than storing only a precomputed activation number. If memory volume makes that too expensive, the approximation should be recorded as the selected model rather than mistaken for the full-history calculation \autocite{actr7manual}.
+where \(L\) is the chunk's lifetime since creation. The approximation replaces the full sum over event timestamps with a compact expression based on presentation count and lifetime. It can reduce bookkeeping, but it loses information about the exact spacing of individual presentations. If an agent needs reproducible, event-level analysis, retaining timestamps is more informative than storing only a precomputed activation number. If memory volume makes that too expensive, the approximation should be recorded as the selected model rather than mistaken for the full-history calculation \autocite[pp. 263--264]{actr7manual}.
 
 \begin{notebox}
 The base-level equation is a cognitive activation mechanism, not a universal retention rule. An agent may separately decide that a record must be deleted for privacy, invalidated because its facts changed, or retained because it is legally or operationally required. Those decisions are not resolved by substituting a different decay parameter into Equation~\ref{eq:ch12-base-level}.
@@ -132,7 +132,7 @@ where \(k\) indexes source buffers, \(j\) indexes source chunks in a buffer, \(W
   S_{ji}=S-\ln(\operatorname{fan}_{j}),
   \label{eq:ch12-spreading-fan}
 \end{equation}
-where \(S\) is an association-strength parameter and \(\operatorname{fan}_{j}\) counts the chunks associated with source chunk \(j\). A cue connected to many chunks distributes its influence more broadly; a more selective association can provide stronger support to a particular candidate. The exact treatment of unrelated chunks and fan is defined by the ACT-R model and its parameters \autocite{actr7manual}.
+where \(S\) is an association-strength parameter and \(\operatorname{fan}_{j}\) counts the chunks associated with source chunk \(j\). A cue connected to many chunks distributes its influence more broadly; a more selective association can provide stronger support to a particular candidate. The exact treatment of unrelated chunks and fan is defined by the ACT-R model and its parameters \autocite[p. 264]{actr7manual}.
 
 This mechanism offers a useful comparison with graph-based retrieval. A query may activate entities or nodes, and relevance may propagate through known relationships. That is conceptually related to contextual activation, but a graph algorithm such as Personalized PageRank is not ACT-R spreading activation. They have different mathematical update rules and should be compared as alternative mechanisms, not treated as equivalent implementations.
 
@@ -151,7 +151,7 @@ ACT-R relates a chunk's activation to retrieval latency:
   RT_i = F e^{-fA_i},
   \label{eq:ch12-actr-latency}
 \end{equation}
-where \(RT_i\) is predicted retrieval time, \(F\) is a latency scaling factor, and \(f\) controls the effect of activation. Higher activation predicts shorter retrieval time under the model's parameters. A failed retrieval has a corresponding latency determined by the threshold rather than by the activation of a successfully retrieved chunk \autocite{actr7manual}. Fan and Lan use this ACT-R memory structure as the historical reference point for their adaptive-memory mapping, while noting that modern memory policies can change the decision semantics from an accessibility law to a policy action.\FanLanCite{§ III-A; § V-A, ACT-R to adaptive memory control; § V-B, Memory changes from accessibility law to policy action; Appendix B}
+where \(RT_i\) is predicted retrieval time, \(F\) is a latency scaling factor, and \(f\) controls the effect of activation. Higher activation predicts shorter retrieval time under the model's parameters. A failed retrieval has a corresponding latency determined by the threshold rather than by the activation of a successfully retrieved chunk \autocite[p. 267]{actr7manual}. Fan and Lan use this ACT-R memory structure as the historical reference point for their adaptive-memory mapping, while noting that modern memory policies can change the decision semantics from an accessibility law to a policy action.\FanLanCite{§ III-A; § V-A, ACT-R to adaptive memory control; § V-B, Memory changes from accessibility law to policy action; Appendix B}
 
 A production agent must distinguish this \emph{cognitive prediction} from \emph{infrastructure latency}. The latter is the wall-clock time consumed by embedding lookup, database access, graph traversal, network I/O, reranking, serialization, or prompt construction. One is predicted from a cognitive model; the other is measured from software execution. They can both matter, but neither should be silently substituted for the other.
 
@@ -183,7 +183,7 @@ The ACT-R \gls{productionutility} learning update is a separate statement:\index
   U_i(n)=U_i(n-1)+\alpha\left[R_i(n)-U_i(n-1)\right],
   \label{eq:ch12-production-learning}
 \end{equation}
-where \(\alpha\) is a learning rate and \(R_i(n)\) is the reward associated with the production's \(n\)-th use, with time-related cost accounted for in the reward definition. The update moves the previous utility estimate toward the newly observed reward. It is a learning rule for a production, not a formula for the value of a declarative-memory chunk \autocite{anderson2007actr,actr7manual}.
+where \(\alpha\) is a learning rate and \(R_i(n)\) is the reward associated with the production's \(n\)-th use, with time-related cost accounted for in the reward definition. The update moves the previous utility estimate toward the newly observed reward. It is a learning rule for a production, not a formula for the value of a declarative-memory chunk \autocite{anderson2007actr}\autocite[pp. 235--237]{actr7manual}.
 
 The distinction should be reflected in the data model. A production has an identity, an applicability condition, and an action outcome. A memory has content, provenance, a temporal validity interval, and a context-dependent contribution to some task or action. A field named simply \texttt{utility} is ambiguous unless its owner and update process are explicit.
 
@@ -209,6 +209,10 @@ Lifecycle & Learned policy state for a production & Context-dependent estimate p
 \label{sec:ch12-modern-systems}
 
 Modern agent memory research contains many useful formulas, but not every formula answers the same question. The following systems are best understood by locating their primary operation in the memory lifecycle.
+
+\begin{notebox}
+\textbf{Scope of the comparisons.} This section also uses selected systems as supplementary technical comparators because they clarify neighboring decisions such as query-time relevance, retention, tier management, graph retrieval, or redundancy control. Their appearance here does not automatically place them in the frozen B1 baseline set identified by Fan and Lan. The exact systems and status classifications attributed to the paper's B1 comparison are listed separately in Table~\ref{tab:ch12-b1-baselines}; a system is treated as part of that set only where the paper's classification supports it.
+\end{notebox}
 
 \subsection{Generative Agents: a query-time relevance score}\index{Generative Agents}
 \label{subsec:ch12-generative-agents}
@@ -379,10 +383,10 @@ The fourth item is not a single timeless cost, and should be distinguished from 
   \item[Retrieval and reranking.] Query execution, vector search, BM25, graph expansion, filtering, and reranker computation.
   \item[Context cost.] Tokens consumed by the memory and the associated inference/input-token cost or lost opportunity to include other context.
   \item[Latency cost.] Wall-clock time, including serial dependencies, queueing, and tail latency.
-  \item[Maintenance cost.] Validation, temporal refresh, deduplication, source re-checking, deletion, and privacy-compliance work.
+  \item[Maintenance cost.] Work required to keep records valid and governable, including validation, temporal refresh, deduplication, source re-checking, deletion, and privacy-compliance work. For a query-time selector, distinguish incremental work caused by the current selection from background lifecycle work.
 \end{description}
 
-A persistent storage cost is usually incurred when the memory is admitted or maintained. It is not automatically a fresh marginal cost every time the memory is considered for a prompt. Subtracting the full historical embedding or storage cost from every prompt would repeatedly charge a sunk cost. It can enter a prompt-time objective if the system explicitly amortizes it over expected uses, assigns a marginal refresh cost, or converts limited storage into a shadow price. The accounting rule must be stated.
+A persistent storage cost is usually incurred when the memory is admitted or maintained. It is not automatically a fresh marginal cost every time the memory is considered for a prompt. Subtracting the full historical embedding or storage cost from every prompt would repeatedly charge a sunk cost. It can enter a prompt-time objective if the system explicitly amortizes it over expected uses, assigns a marginal refresh cost, or converts limited storage into a shadow price. The accounting rule must be stated. In the query-time formulation below, \(C_{\mathrm{maintenance}}^{q}(S)\) denotes only the incremental work triggered by the current selection—for example, a freshness check, source re-validation, or query-triggered deduplication. Periodic retention sweeps, privacy cleanup, compaction, and other background work belong to a separate long-horizon lifecycle budget unless the system deliberately allocates an amortized share to each use. A given maintenance operation must be charged through one path, not both.
 
 \subsection{Latency depends on execution structure}
 \label{subsec:ch12-latency-structure}
@@ -407,27 +411,38 @@ where \(D\) is a task-specific deadline. The predicted cognitive latency from AC
 \subsection{A set-aware, budget-constrained context objective}
 \label{subsec:ch12-context-objective}
 
-For a query \(q\), candidate action \(a\), and selected memory set \(S\), an illustrative objective is
+For a query \(q\), candidate action \(a\), current cue context \(c\), and selected memory set \(S\), define the candidate activation vector
+\[
+  \mathbf A_q=\bigl(A_m(q,c)\bigr)_{m\in\mathcal M_q}
+\]
+and the corresponding cognitive retrieval-time predictions
+\(\widehat{\mathbf T}_{\mathrm{cog},q}\), derived from activation under the selected cognitive model. An illustrative, book-level selection objective is
 \begin{equation}
-  \max_{S\subseteq\mathcal{M}_{q}}
-  \quad \widehat{V}(S\mid q,a)
-  -\lambda_r C_{\mathrm{retrieval}}(S)
-  -\lambda_c C_{\mathrm{context}}(S)
-  -\lambda_l C_{\mathrm{latency}}(S),
+  \begin{split}
+  \max_{S\subseteq\mathcal{M}_{q}}\quad
+  &\widehat{V}\!\left(S\mid q,a,\mathbf A_q|_S,
+       \widehat{\mathbf T}_{\mathrm{cog},q}|_S\right)\\
+  &-\lambda_r C_{\mathrm{retrieval}}(S)
+   -\lambda_c C_{\mathrm{context}}(S)
+   -\lambda_l C_{\mathrm{latency}}^{\mathrm{wall}}(S)
+   -\lambda_m C_{\mathrm{maintenance}}^{q}(S),
+  \end{split}
   \label{eq:ch12-b1-objective}
 \end{equation}
 subject to
 \begin{align}
   \operatorname{Tokens}(S)&\leq B,\\
-  T_{\mathrm{observed}}(S)&\leq D,\\
+  T_{\mathrm{observed}}^{\mathrm{wall}}(S)&\leq D,\\
   m\in S&\Rightarrow \operatorname{Valid}(m)\land\operatorname{Allowed}(m),
   \label{eq:ch12-b1-constraints}
 \end{align}
-where \(\mathcal{M}_q\) is the candidate set after query-time retrieval and hard filtering, \(\widehat{V}\) estimates set-level downstream value, \(B\) is the context-token budget, and \(D\) is the latency deadline. The \(\lambda\) terms convert the relevant resource costs into comparable units or shadow prices. Their values must be calibrated to the deployment objective, not chosen as universal constants.
+where \(\mathcal M_q\) is the candidate set after query-time retrieval and hard eligibility filtering, \(\mathbf A_q|_S\) and \(\widehat{\mathbf T}_{\mathrm{cog},q}|_S\) are the activation and cognitive-latency features for the selected candidates, \(\widehat V\) estimates their set-level downstream contribution, \(B\) is the context-token budget, and \(D\) is a hard wall-clock deadline. The \(\lambda\) terms convert the respective resource costs into comparable units or shadow prices; their values must be calibrated to the deployment objective, not treated as universal constants.
 
-The objective intentionally does not subtract total historical storage cost by default. Persistent costs belong in the admission and maintenance budgets unless the design assigns them an explicit amortized marginal cost. If an application has a strict memory-store capacity, storage can be managed by a separate lifecycle policy or represented as a long-horizon constraint rather than repeatedly charged as a per-prompt penalty.
+This makes activation an explicit input rather than an informal optional signal. The ACT-R-style cognitive retrieval-time estimate is derived from activation and can help characterize accessibility; it is not the same measurement as infrastructure wall-clock latency. The estimator may use activation and its derived latency as structured features, but should not award them two independent additive bonuses without evidence that this does not double-count the same accessibility signal. The soft wall-clock cost \(C_{\mathrm{latency}}^{\mathrm{wall}}\) ranks otherwise feasible sets. The hard constraint \(T_{\mathrm{observed}}^{\mathrm{wall}}(S)\leq D\) excludes a set that misses the deadline. These are different roles: the penalty orders feasible candidates, while the constraint defines feasibility.
 
-A selector may use activation to estimate accessibility, with ACT-R's latency model as a derived prediction. Or it may combine activation with separately measured infrastructure latency. In either case, the accounting should avoid counting the same activation signal twice. The formulation also values the selected set, not just a sum of independent item values. A simple implementation can approximate set value using MMR or another redundancy penalty; a stronger implementation can estimate marginal outcome contribution from controlled experiments.
+The maintenance term \(C_{\mathrm{maintenance}}^{q}(S)\) charges only incremental maintenance work caused by this selection, such as a freshness check, source re-validation, or query-triggered deduplication. It does not re-charge background retention sweeps or historical storage costs on every prompt. A system may instead use a declared amortized per-use allocation for long-horizon work, but it must choose one accounting path and avoid charging the same operation both as query-time maintenance and against the lifecycle budget. If an application has a strict memory-store capacity, storage can also be governed by a separate lifecycle constraint or shadow price.
+
+The formulation also values the selected set, not just a sum of independent item values. A simple implementation can approximate set value using MMR or another redundancy penalty; a stronger implementation can estimate marginal outcome contribution from controlled experiments. It is an engineering synthesis for this book, not a control law asserted to be fully specified or experimentally validated by Fan and Lan.
 
 \subsection{A bounded selection procedure}
 \label{subsec:ch12-selection-procedure}
@@ -445,6 +460,33 @@ A selector may use activation to estimate accessibility, with ACT-R's latency mo
 \end{enumerate}
 
 The policy should preserve a no-result state. A system that always inserts the highest-scoring record will eventually insert a misleading one when every candidate is stale, unsupported, or irrelevant. Selective retrieval includes the ability to say that no candidate passes the required threshold.
+
+\subsection{B1 reconstructed through the seven-field rubric}
+\label{subsec:ch12-b1-seven-fields}
+
+The following table applies this book's seven-field state/control rubric to the B1 hypothesis. It is an analytical reconstruction of the mechanism-level description, not a claim that Fan and Lan publish a complete runtime schema or state machine. The table deliberately records where the review leaves implementation detail open.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Seven-field reconstruction of the B1 activation--latency--value--maintenance hypothesis.}
+\label{tab:ch12-b1-seven-fields}
+\begin{tabularx}{\linewidth}{@{}p{0.07\linewidth}p{0.20\linewidth}X@{}}
+\toprule
+\textbf{Field} & \textbf{B1 reconstruction} & \textbf{What the reviewed paper specifies} \\
+\midrule
+\textbf{S} & Existing memory candidates carry activation, predicted retrieval latency, downstream value, and maintenance cost; selected candidates enter the active task context. & These four quantities and context entry are described. A canonical persistent-record schema and exact field lifecycle are not specified. \\
+\textbf{C} & A context-assembly selector compares eligible candidates under a fixed resource budget. & The decision point and competition are identified; the exact controller owner, optimizer, and allocation algorithm are not specified. \\
+\textbf{T} & Context assembly triggers candidate competition; observed use and outcome provide feedback for later estimates. & The trigger and feedback direction are described. Event taxonomy, timing, and attribution procedure are not specified. \\
+\textbf{P} & The mechanism crosses the boundary from stored memory candidates to task-specific working context, with feedback affecting later accessibility/value estimates. & The storage-to-context boundary is implied; retention schema, context expiry, and rollback semantics are not specified. \\
+\textbf{F} & A policy can fail by reducing relevant recall or adding overhead without downstream use. These are evaluation falsifiers, not a runtime exception taxonomy. & These outcome concerns are identified; operational recovery and degradation semantics are not specified. \\
+\textbf{L} & Observed use and outcome update future accessibility and utility/value estimates. & The learning direction is described; exact update equations, attribution, and update schedule are not specified. \\
+\textbf{R} & Competition is resource-bounded and explicitly considers predicted latency and maintenance cost. & The resource dimensions and fixed-budget setting are identified; units, budget semantics, and trade-off weights are not specified. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Here, ``not specified'' describes the level of detail in the reviewed account; it does not prove that a detail is absent from every cited system or implementation. Unknown, absent, and not applicable remain different states and should not be collapsed during an implementation audit. The seven-field mapping is the book's analytical lens applied to B1, not a seven-field schema claimed by the paper.
 
 \BookDiagram[0.58\textheight]{Tex/diagrams/generated/part2/chapter12/b1-context-assembly-feedback.png}{A B1-oriented context assembly path: hard eligibility gates precede value and cost comparison; the selected set is constrained by token and elapsed-time budgets, while outcomes update future estimates.}{fig:ch12-b1-control-loop}
 
@@ -639,7 +681,7 @@ Honda and colleagues' ACT-R-inspired agent-memory work is relevant as an impleme
 \section*{Source and example note}
 \addcontentsline{toc}{section}{Source and example note}
 
-The historical cognitive mechanism in this chapter is grounded in the ACT-R literature and the ACT-R 7.30+ reference manual. The B1 residual hypothesis, its distinction from B3, the selected modern memory baselines, and the proposed experimental boundary are taken from Fan and Lan's mechanism-level review, especially the ACT-R mapping, the translation analysis of memory from accessibility law to policy action, § VI-C (B1), Tables V--VI, Appendix B, Appendix C-A (R1), Appendix D, and Appendix F-B. The reviewed paper is a bounded mapping review; this chapter does not treat its proposed B1 coupling as an experimentally validated algorithm.\\FanLanCite{§ V-A; § V-B; § VI-C, B1; Tables V--VI; Appendices B, C-A, D, and F-B}
+The historical cognitive mechanism in this chapter is grounded in the ACT-R literature and the ACT-R 7.30+ reference manual. The B1 residual hypothesis, its distinction from B3, the selected modern memory baselines, and the proposed experimental boundary are taken from Fan and Lan's mechanism-level review, especially the ACT-R mapping, the translation analysis of memory from accessibility law to policy action, § VI-C (B1), Tables V--VI, Appendix B, Appendix C-A (R1), Appendix D, and Appendix F-B. The reviewed paper is a bounded mapping review; this chapter does not treat its proposed B1 coupling as an experimentally validated algorithm.\FanLanCite{§ V-A; § V-B; § VI-C, B1; Tables V--VI; Appendices B, C-A, D, and F-B}
 
 Product X, its support incident, example records, event names, schema, and selector procedure are teaching and engineering examples created for this book. They are not implementations reported by Fan and Lan or by ACT-R. The set-value objective and operational contracts are the book's proposed synthesis and must be evaluated against the named baselines before any effectiveness claim is made.
 

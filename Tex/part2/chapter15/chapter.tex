@@ -32,7 +32,7 @@ This chapter studies that distinction through B4, the fourth residual mechanism 
 
 Fan and Lan describe B4 as a persistent intention and reconsideration mechanism with authority over the method used to pursue a goal. Their proposed intention record retains the committed goal, its rationale, the current plan, the conditions under which the commitment should continue, reconsideration triggers, authority, and termination status. A governor can then decide whether to continue, delegate, suspend, abandon, or change the method. The review identifies stale commitment, oscillation, premature stopping, and method changes without diagnostic value as failure conditions.\FanLanCite{\S VI-C, B4; Table VI; Appendix D, Table X}
 
-That description is deliberately more specific than a generic instruction to "remember the goal" or "reflect before acting." It connects a durable state object to a control operation. The intention record supplies the state against which a new observation is interpreted. A trigger makes reconsideration eligible. Diagnosis asks what the evidence means for the current goal and method. The governor then exercises a bounded authority to select a response. If it only writes a reflection to a log, the decision has not controlled the active process.
+That description is deliberately more specific than a generic instruction to ``remember the goal'' or ``reflect before acting.'' It connects a durable state object to a control operation. The intention record supplies the state against which a new observation is interpreted. A trigger makes reconsideration eligible. Diagnosis asks what the evidence means for the current goal and method. The governor then exercises a bounded authority to select a response. If it only writes a reflection to a log, the decision has not controlled the active process.
 
 \subsection{What must persist}
 
@@ -73,11 +73,11 @@ Fan and Lan use two independent dimensions to describe a historical-to-modern ma
 \section{Historical foundation I: intention in BDI}
 \label{sec:ch15-bdi}
 
-The letters BDI stand for \emph{beliefs}, \emph{desires}, and \emph{intentions}. They describe different kinds of mental attitudes in an agent model; they are not three interchangeable labels for prompt content. \glspl{belief} represent what the agent takes to be true about the world. \Glspl{desire} represent states of affairs the agent would like to bring about. \Glspl{intention} are commitments selected from among the agent's possibilities and carried into practical reasoning and action.\index{belief}\index{desire}\index{intention} Rao and Georgeff formalized BDI agents and later described a practical architecture in which beliefs, goals, plans, and commitment interact.\autocite{rao1991modelingbdi,rao1995bdi}
+The letters BDI stand for \emph{beliefs}, \emph{desires}, and \emph{intentions}. They describe different kinds of mental attitudes in an agent model; they are not three interchangeable labels for prompt content. \Glspl{belief} represent what the agent takes to be true about the world. \Glspl{desire} represent states of affairs the agent would like to bring about. \Glspl{intention} are commitments selected from among the agent's possibilities and carried into practical reasoning and action.\index{belief}\index{desire}\index{intention} Rao and Georgeff formalized BDI agents and later described a practical architecture in which beliefs, goals, plans, and commitment interact.\autocite{rao1991modelingbdi,rao1995bdi}
 
 \subsection{Beliefs: what the agent currently takes to be true}
 
-A \gls{belief} can be correct or incorrect.\index{belief} It is the agent's current representation of the world, not a guarantee about reality. In Product X, examples include: "the payment request was submitted," "the provider response timed out," "the payment status is unknown," and "the provider's read-only status endpoint reports settlement." These statements have different evidential strength. A timeout is evidence about the communication attempt; it is not evidence that the payment failed.
+A \gls{belief} can be correct or incorrect.\index{belief} It is the agent's current representation of the world, not a guarantee about reality. In Product X, examples include: ``the payment request was submitted,'' ``the provider response timed out,'' ``the payment status is unknown,'' and ``the provider's read-only status endpoint reports settlement.'' These statements have different evidential strength. A timeout is evidence about the communication attempt; it is not evidence that the payment failed.
 
 A practical system should attach provenance, observation time, validity, and confidence or verification status to important beliefs. That is an engineering elaboration rather than a requirement of every classical BDI formulation. Its purpose is to prevent the intention controller from treating stale or unverified information as a decisive fact.
 
@@ -213,7 +213,7 @@ A method governor should not be able to redefine the principal's objective just 
 
 \subsection{Monitoring is not method authority}
 
-Consider a system that records: "The current method has failed three times. A read-only lookup would be safer." This is valuable diagnostic information. But if the runtime has no control edge from that diagnosis to the active method assignment, nothing has changed. The agent may continue executing the same failing method.
+Consider a system that records: ``The current method has failed three times. A read-only lookup would be safer.'' This is valuable diagnostic information. But if the runtime has no control edge from that diagnosis to the active method assignment, nothing has changed. The agent may continue executing the same failing method.
 
 To make method reconsideration real, the system needs a guarded transition. The transition must establish that the event belongs to the active intention version, that the diagnostic evidence is sufficient, that the proposed method is within the allowed capability and risk boundary, and that the new assignment can be committed without changing the authorized goal. It must also prevent an old asynchronous response from overwriting a newer decision.
 
@@ -378,7 +378,7 @@ If the status is pending, the agent can continue within the provider's supported
 
 \subsection{Counterexamples}
 
-The method switch would be invalid if it silently replaced the goal with "make a payment succeed at any cost," removed the no-duplicate-charge constraint, or used a write operation outside the governor's authority. It would also be invalid to mark the intention satisfied because a model generated a plausible explanation, because a delegated worker returned an unverified statement, or because the timeout window expired. Satisfaction requires the goal's actual success condition to be verified.
+The method switch would be invalid if it silently replaced the goal with ``make a payment succeed at any cost,'' removed the no-duplicate-charge constraint, or used a write operation outside the governor's authority. It would also be invalid to mark the intention satisfied because a model generated a plausible explanation, because a delegated worker returned an unverified statement, or because the timeout window expired. Satisfaction requires the goal's actual success condition to be verified.
 
 \section{A reference subsystem for intention and method governance}
 \label{sec:ch15-reference-design}
@@ -940,7 +940,7 @@ Keep the three source-specified ablations separate:
   \item \textbf{Remove the learning update but retain the runtime transition.} This tests whether feedback that changes later behavior adds value beyond the immediate reconsideration and method-switch mechanism.
 \end{enumerate}
 
-These ablations isolate state, control, and learning. They must not be collapsed into one generic "remove memory" condition.\FanLanCite{Appendix D, Table X}
+These ablations isolate state, control, and learning. They must not be collapsed into one generic ``remove memory'' condition.\FanLanCite{Appendix D, Table X}
 
 \subsection{Controlled tasks and preregistration}
 
