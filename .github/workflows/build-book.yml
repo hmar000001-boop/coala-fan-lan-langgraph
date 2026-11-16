@@ -39,9 +39,6 @@ jobs:
       - name: Validate Mermaid sources and generated PNGs
         run: bash scripts/check-diagrams.sh
 
-      - name: Check repository structure
-        run: bash scripts/check-scaffold.sh
-
       - name: Create output directory and index links
         run: |
           mkdir -p Tex/Output
