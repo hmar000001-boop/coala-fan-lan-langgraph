@@ -34,10 +34,6 @@ The planning stage is therefore not just a synonym for generating a sentence tha
   {Proposal within the broader decision cycle. The diagram locates proposal and marks evaluation, selection, and execution as later responsibilities; it is not a complete account of their mechanisms or a rigid one-pass ordering.}
   {fig:proposal-in-cycle}
 
-\begin{notebox}
-This chapter uses the decision cycle only to locate proposal. It does not explain how candidates receive values, how one is selected, what happens when candidates are rejected, or how planning sub-stages can interleave and iterate. Those questions belong to Chapters 7 and 8.
-\end{notebox}
-
 \section{What is an action candidate?}
 \label{sec:action-candidate}
 
@@ -70,10 +66,6 @@ The paper explicitly allows proposal to generate one or more candidates. A narro
 
 This is important because the number of candidates should not be confused with the sophistication of the overall decision procedure. A procedure that produces one candidate has still performed proposal. A procedure that produces several candidates has not necessarily performed evaluation or selection. The later stages may have more work to do when multiple alternatives are present, but that does not mean proposal itself has made a comparison.
 
-\begin{tipbox}
-When you see a list of actions, do not assume it is a ranked list or a set of recommendations. At the proposal stage, it is a set of possibilities. The word ``candidate'' is deliberately modest: it says that an action has been generated for consideration, not that the action is correct, safe, or chosen.
-\end{tipbox}
-
 \section{Using reasoning and retrieval to generate candidates}
 \label{sec:reasoning-retrieval-proposal}
 
@@ -102,15 +94,7 @@ The proposal mechanism is also not identical to the language model's raw output.
 
 \subsection{What the Product X candidates do and do not say}
 
-\BookExampleLabel\ Given the current HTTP 500 observation, the agent might generate three possibilities:
-
-\begin{enumerate}
-  \item Inspect recent deployment metadata.
-  \item Query the payment service's database connectivity status.
-  \item Ask the on-call engineer whether a relevant configuration change occurred.
-\end{enumerate}
-
-Each candidate is an action description that can be related to the action space. The first two are digital grounding candidates. The third is a dialogue grounding candidate. The agent has not yet established that any of them will reveal the cause, and the list does not express an order or preference. The proposal stage has created possibilities, not a diagnosis.
+\BookExampleLabel\ In Product X, the proposal procedure may generate candidates from several categories: inspecting deployment metadata, querying database connectivity, or asking the on-call engineer about a possible configuration change. The first two are digital grounding candidates; the third is a dialogue grounding candidate. The full unranked set is traced in Section~\ref{sec:productx-proposal}.
 
 \section{When the action set is small: proposing all available actions}
 \label{sec:enumerating-action-set}
@@ -169,23 +153,20 @@ Notice how little the candidate set tells us about the underlying incident. The 
 If the action space were narrower, the candidate set might look different. If it offered only a health query and an operator question, the proposal procedure could generate only those possibilities. If a relevant prior service fact were retrieved, reasoning might produce a more focused candidate. These variations alter the possibilities that are proposed; they do not change the boundary between proposal and later evaluation or selection.
 
 \begin{warningbox}
-A plausible candidate is not necessarily a good candidate, a safe candidate, or the action that will eventually be selected. Proposal creates possibilities. Avoid describing its output as ``the best action,'' ``the preferred action,'' or ``the approved action.'' Those phrases imply later judgments that have not yet occurred.
+A candidate is a possibility for later consideration, not an evaluated recommendation, a selected action, an approval, or an execution. Proposal does not establish that an action is good, safe, or likely to resolve the incident; those judgments belong to later decision stages and application-specific controls.
 \end{warningbox}
 
 \section{Common confusions and boundaries}
 \label{sec:proposal-boundaries}
 
 \begin{itemize}
-  \item \textbf{Proposal is not the whole planning stage.} It is one named sub-stage within planning.
-  \item \textbf{A candidate is not an evaluated option.} Evaluation assigns values when multiple actions are proposed; that work belongs to Chapter 7.
-  \item \textbf{A candidate is not a selected action.} Selection decides what to do with the candidate set; that work also belongs to Chapter 7.
-  \item \textbf{A candidate is not an executed action.} Execution applies an action by invoking the relevant procedure in the agent's code.
-  \item \textbf{Retrieval is optional support, not a mandatory gate.} CoALA describes reasoning and optionally retrieval for the usual LLM-based proposal approach.
-  \item \textbf{Proposal is not always open-ended generation.} A limited action space may be enumerated; program structures or structured simulators may also generate possibilities.
-  \item \textbf{The chapter does not define a rigid one-pass order.} CoALA's flexibility to interleave or iterate planning sub-stages is treated in Chapter 8.
+  \item \textbf{Proposal is one sub-stage, not the whole planning stage.} Evaluation, selection, and execution remain separate responsibilities.
+  \item \textbf{Retrieval is optional support.} CoALA describes reasoning and optionally retrieval for the usual LLM-based proposal approach.
+  \item \textbf{Proposal is broader than open-ended LLM generation.} A limited action set may be enumerated; code structures and structured simulators may also generate possibilities.
+  \item \textbf{No universal schedule is prescribed.} The flexibility to interleave or iterate planning sub-stages is treated in Chapter 8.
 \end{itemize}
 
-One further boundary concerns the role of examples. The SayCan discussion appears in CoALA as an example of a domain with a limited set of grounding actions. We mention it only to illustrate the possibility of enumerating a limited action set. We do not introduce it as an additional theory or tutorial. Similarly, the reference to structured simulators is kept at the level at which CoALA uses it in the proposal discussion; detailed simulation-based evaluation belongs elsewhere.
+SayCan is mentioned only as CoALA's example of enumerating a limited action set, and structured simulators are retained at the level of the paper's proposal discussion rather than expanded into additional theories or algorithms.
 
 \section{Chapter recap}
 \label{sec:proposal-recap}

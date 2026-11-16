@@ -61,10 +61,6 @@ The phrase does not mean that the external world is literally text, or that ever
 
 Nor does the definition promise that every action succeeds or produces a useful observation. A service may be unavailable. A person may not reply. A physical action may not produce the expected result. A request may return an error, a partial result, or no result at all. The procedure's responsibility is to execute the external interaction and process whatever feedback is available; the framework does not guarantee the outcome.
 
-\begin{notebox}
-Keep four things separate when reading a grounding example: the environment is where the interaction takes place; the procedure is how the agent interacts with it; the action is what the agent does; and the observation is what becomes known from the environment. An observation may be absent, delayed, incomplete, or unexpected. It is not the action itself.
-\end{notebox}
-
 \section{Physical environments: acting and perceiving in the physical world}
 \label{sec:physical-environments}
 
@@ -177,24 +173,23 @@ Do not confuse an available grounding action with an authorized or safe action. 
 \section{Common confusions and boundaries}
 \label{sec:grounding-boundaries}
 
-Several misunderstandings disappear once we keep the roles separate.
+The most useful boundaries are these:
 
 \begin{itemize}
-  \item \textbf{Grounding is not retrieval.} Grounding interacts with an external environment. Retrieval reads from the agent's long-term memory into working memory.
-  \item \textbf{An environment is not a tool wrapper.} A wrapper is part of the agent's procedure; the environment is the external setting reached through it.
-  \item \textbf{An action is not an observation.} The action is what the agent does. The observation is information obtained from the environment, if feedback is available.
-  \item \textbf{Dialogue is not always internal reasoning.} Sending a question to a person or another agent is external grounding. Interpreting the reply is internal reasoning.
-  \item \textbf{Not every digital environment is stateless.} CoALA identifies stateless APIs as special single-use digital environments; games, websites, and other digital settings may have ongoing state.
-  \item \textbf{Grounding does not decide what should be done.} It describes an external action and its feedback. The decision procedure that organizes planning and execution is treated in Chapters 6--8.
+  \item \textbf{Grounding is not retrieval.} Grounding interacts with an external environment; retrieval reads from long-term memory into working memory.
+  \item \textbf{An environment is not its tool wrapper.} The wrapper belongs to the agent's procedure; the environment is the external setting reached through it.
+  \item \textbf{An action is not an observation.} The action is what the agent does; the observation is whatever information the environment returns, if any.
+  \item \textbf{Dialogue can cross the grounding boundary.} Sending a question to a person or another agent is external grounding; interpreting the reply is internal reasoning.
+  \item \textbf{Digital environments are not all stateless.} CoALA treats stateless APIs as a special case; games, websites, and other digital settings may preserve state.
 \end{itemize}
 
-A reliable way to classify an operation is to ask what it interacts with and what role the result plays. If it reads an item from the agent's long-term memory, it is retrieval. If it processes working-memory contents to generate new active information, it is reasoning. If it writes information into long-term memory, it is learning. If it interacts with an external environment, it is grounding. A single larger task can contain several of these operations, but that does not make them interchangeable.
+A larger task may combine retrieval, reasoning, learning, and grounding. Classify each operation by what it interacts with and what information it reads or changes.
 
 \section{Chapter recap}
 \label{sec:grounding-recap}
 
 \begin{chapterrecap}
-CoALA distinguishes external grounding from internal memory actions. A grounding procedure executes an external action and processes environmental feedback so that it can become available in working memory as text. The external environment is the setting of the interaction; the grounding procedure is how the agent carries it out; the action is what the agent does; and an observation is information obtained from the environment. CoALA discusses physical environments, dialogue with humans or other agents, and digital environments. These categories share a conceptual grounding role, but the raw inputs and actions can differ. The framework highlights that external actions can cause harm, while leaving complete production safety controls to the system designer.
+CoALA distinguishes external grounding from internal memory actions. A grounding procedure executes an external action and processes environmental feedback so that it can become available in working memory as text. The external environment is the setting of the interaction; the grounding procedure is how the agent carries it out; the action is what the agent does; and an observation is information obtained from the environment. CoALA discusses physical environments, dialogue with humans or other agents, and digital environments. These categories share a conceptual grounding role, but the raw inputs and actions can differ.
 \end{chapterrecap}
 
 \begin{center}

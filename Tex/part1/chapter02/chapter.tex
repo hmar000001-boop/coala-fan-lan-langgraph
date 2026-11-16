@@ -37,7 +37,7 @@ Decision-making procedure & How does the agent choose and coordinate actions ove
 \end{tabularx}
 \end{center}
 
-These are three views of one system, not three independent products that happen to be installed side by side. Information storage describes what the agent can draw on. The action space describes how the agent can use internal information and interact with its environment. The decision-making procedure coordinates the use of those capabilities. A description that omits one of the three dimensions leaves an important architectural question unanswered.
+These are three views of one system, not independent products. Storage describes what information is available, the action space describes what the agent can do, and the decision procedure coordinates those capabilities. The following sections develop each dimension before showing how the components connect.
 
 \subsection{Information storage: what information is maintained?}
 
@@ -56,10 +56,6 @@ At the level of this chapter, the distinctions are simple. Retrieval reads from 
 If an agent has information and operations, we still need to know how it determines what to do. CoALA describes decision-making as a repeated process involving planning and execution. During a decision cycle, the agent can use retrieval and reasoning to support planning. Planning proposes and evaluates candidate learning or grounding actions; a selected action is then executed. An observation may follow, and the next cycle begins.\CoALACite{Section 4.6 and Figure 4B}
 
 This high-level description is enough to understand why the decision-making procedure is a separate architectural dimension. The action space tells us which operations are available. The decision procedure tells us how the agent coordinates them. We will separate planning, evaluation, selection, and execution in Chapters 6--8; this chapter establishes only the overall relationship.
-
-\begin{takeawaybox}[The architecture in one sentence]
-CoALA organizes a language agent by asking what information it maintains, what internal and external actions it can perform, and what decision procedure coordinates those actions in a repeated interaction with the world.
-\end{takeawaybox}
 
 \section{The structural map: components and relationships}
 
@@ -94,11 +90,11 @@ The term “working memory” is used here in CoALA's architectural sense. Do no
 
 \subsection{Long-term memory at the architectural level}
 
-CoALA differentiates long-term memory into \gls{episodicmemory}, \gls{semanticmemory}, and procedural forms. The categories answer different questions: what happened in prior experiences, what the agent knows about the world and itself, and how the agent performs actions and decision procedures. The paper discusses both implicit procedural knowledge in model weights and explicit procedural knowledge in code.\CoALACite{Section 4.1}
+CoALA differentiates long-term memory into \gls{episodicmemory}, \gls{semanticmemory}, and procedural forms: experience, knowledge about the world and the agent, and knowledge about how the agent operates. Procedural knowledge may be implicit in model weights or explicit in agent code. Chapter 3 examines these categories in detail; here they establish that long-term memory is organized by the role of information, not merely by the product that stores it.\CoALACite{Section 4.1}
 
-This chapter does not attempt to define every category in full. It is enough to understand why the architecture distinguishes them. If the agent keeps an incident history, stores facts about the payment service, and contains executable procedures for checking the service, those are not the same kind of information. The design question is not simply “where is the memory database?” It is “what kind of information is this, what role does it play, and how does the agent access or update it?”
-
-Chapter 3 will explore the memory categories, their relationships, and the implications of treating memory as organized information rather than as one transcript. Here the only point is architectural: long-term memory is connected to working memory through internal actions, and the decision procedure determines when those actions are used.
+\begin{warningbox}
+Do not infer from the diagram that CoALA mandates a particular storage product, schema, vector database, file format, persistence layer, or retention policy. Those are implementation decisions. CoALA provides the conceptual memory distinctions; engineering choices must be justified separately.
+\end{warningbox}
 
 \subsection{The environment and the two-way connection}
 
@@ -121,20 +117,6 @@ An architecture diagram can be misleading when a reader treats it as an inventor
 \end{itemize}
 
 A single component may participate in several relationships. The LLM can help reason over working information, but it does not by itself decide how every operation is executed. Working memory may be the active information hub, but it is not the only memory store. Agent code implements procedures, but it is the decision procedure that coordinates how they are used over time. The environment contributes observations and receives actions, but it does not belong to the agent's internal memory architecture.
-
-\section{Memory's place in the architecture}
-
-It is useful to pause on memory because the structural diagram places it at the centre of several connections. A reader who thinks of memory as a single database may miss why CoALA separates working memory from long-term memory and then differentiates long-term memory into subtypes. The purpose of this section is not to teach those subtypes in full; it is to clarify their place in the architecture.
-
-Working memory supports the current decision cycle. It holds relevant observations, active goals, knowledge retrieved from long-term memory, and results generated during reasoning. Long-term memory allows the agent to maintain information beyond the current cycle. Retrieval can bring relevant information into working memory; learning can write information from working memory into long-term memory. These connections make memory part of the agent's ongoing activity rather than a passive archive.
-
-The categories also show that “remembering” is not one operation. Reading an earlier incident, retaining a fact about a service, and using an executable procedure are different roles. An architecture that labels all of them merely “memory” may hide important design differences. Conversely, the names of the categories do not require separate physical databases. The conceptual distinctions can be represented in different ways in software, provided the implementation makes their responsibilities clear.
-
-\begin{warningbox}
-Do not infer from the diagram that CoALA mandates a particular storage product, schema, vector database, file format, persistence layer, or retention policy. Those are implementation decisions. CoALA provides the conceptual memory distinctions; engineering choices must be justified separately.
-\end{warningbox}
-
-Chapter 3 will unpack working memory and the long-term memory categories. The current chapter only establishes the links: memory makes information available, actions read or write it, and the decision procedure determines when those operations are used.
 
 \section{The action space: internal capabilities and external interaction}
 
@@ -198,29 +180,21 @@ At the same time, the diagram should not be mistaken for a universal, mandatory 
 
 \section{A complete architectural reading of Product X}
 
-We can now return to the payment incident and read it through the architecture. The following scenario is created for this book. Its purpose is to apply CoALA's distinctions, not to claim that the paper presents this incident or prescribes the specific operational steps.
+We can now map the book-created Product X incident to the three dimensions. The payment service is returning HTTP 500 errors, and monitoring shows that the error rate increased shortly after deployment v4.7. The timing is an observation, not proof that the deployment caused the failure.
 
-The payment service is returning HTTP 500 errors. The agent's goal is to investigate the incident and provide a supported recommendation. It begins with an observation from the monitoring system: the error rate increased shortly after deployment v4.7. The agent does not yet know whether the deployment caused the failure.
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.22\textwidth} X}
+\toprule
+Dimension & Product X illustration \\
+\midrule
+Information storage & Working memory holds the incident goal, latest observations, and current investigation state. Long-term memory may hold earlier incidents, service facts, and health-check procedures. \\
+Action space & Internal actions may retrieve earlier incidents, reason over the deployment timing, or later write a justified experience to memory. External grounding may request a health check, inspect logs, or ask an operator for clarification. \\
+Decision-making procedure & Planning can propose a connectivity query or deployment comparison, evaluate candidates, and select an action. Execution invokes its procedure; any resulting observation may update working memory for a later cycle. \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-\subsection{Information storage}
-
-Working memory contains the active incident goal, the latest observations, relevant facts already in hand, and the current state of the investigation. Long-term memory may contain records of earlier incidents, facts about the payment service, and procedures for checking its health. The architecture distinguishes the role of active information from information retained for future use.
-
-\subsection{Action space}
-
-The agent may retrieve previous incidents or service facts from long-term memory. It may reason over the deployment timestamp and the error increase to formulate candidate explanations. It may learn by writing a new experience or fact to long-term memory when the procedure calls for it. It may ground by requesting a health check, reading logs through an external interface, or asking an operator for clarification.
-
-These operations are different even when they are triggered by the same investigation. Retrieving a runbook does not itself inspect the service. Reasoning about a possible database failure does not query the database. A grounding procedure performs the external interaction and processes the result as an observation.
-
-\subsection{Decision-making procedure}
-
-The decision procedure coordinates what happens next. It can use retrieval and reasoning to support planning. It can propose candidate actions such as inspect database connectivity or compare the recent deployment with the error timeline. It can evaluate the candidates and select one for execution. Once the selected operation is carried out, an observation may update working memory. The next cycle can then take the new information into account.
-
-The exact investigation strategy, authorization process, rollback policy, and operational safety controls are not defined by the CoALA architecture map itself. They would be engineering choices for a real incident-response system. CoALA helps us describe the cognitive organization of the agent; it does not automatically make the system safe to execute production changes.
-
-\begin{takeawaybox}[What the example demonstrates]
-A single incident can involve every architectural dimension. The agent maintains active and retained information, uses internal and external actions, and relies on a decision procedure to coordinate them. The example makes the architecture concrete without adding new CoALA mechanisms.
-\end{takeawaybox}
+These are illustrative operations, not a diagnosis or prescribed incident-response sequence. The architecture map does not specify the investigation strategy, authorization process, rollback policy, or production safety controls; those require separate engineering decisions.
 
 \section{One framework, different agent configurations}
 
@@ -234,16 +208,14 @@ This is also why a framework should not be confused with a product specification
 
 \section{Common misreadings and architectural boundaries}
 
-Several misunderstandings can arise when the architecture is reduced to a few memorable labels. It is worth correcting them before moving to the detailed chapters.
+The architecture becomes misleading if its conceptual roles are treated as interchangeable or as a deployment specification. Keep five boundaries in view:
 
 \begin{enumerate}
-  \item \textbf{The LLM is the agent.} The LLM is central, but the architecture also includes agent code, memory, action procedures, and a decision procedure.
-  \item \textbf{Working memory is just the prompt.} The prompt is synthesized from a relevant subset of working memory. Working memory is the active information structure that can persist across model calls.
-  \item \textbf{All actions are tool calls.} CoALA includes internal memory actions as well as external grounding actions. Retrieval, reasoning, and learning are not interchangeable with external tool execution.
-  \item \textbf{Planning is the whole action space.} Planning uses reasoning and retrieval to support candidate generation and evaluation. Learning is also an internal action, and grounding is an external action.
-  \item \textbf{The diagram is a deployment plan.} The boxes are conceptual roles. They do not require one service, process, class, or database per box.
-  \item \textbf{The decision cycle is a rigid one-pass script.} The cycle is a high-level view of repeated decision-making. Chapters 6--8 will examine the roles and revisiting of planning sub-stages carefully.
-  \item \textbf{A CoALA description proves production readiness.} The framework is not a substitute for authorization, testing, security, reliability, observability, or domain validation.\index{architecture!cognitive} \index{memory!working} \index{memory!long-term} \index{grounding} \index{decision procedure}
+  \item \textbf{The LLM is not the whole agent.} Agent code, memory, action procedures, and decision control also contribute to the system.
+  \item \textbf{Planning is not the whole action space.} Internal learning and external grounding are actions too.
+  \item \textbf{The diagram is conceptual, not a deployment plan.} Its boxes do not require separate services, processes, classes, or databases.
+  \item \textbf{The decision procedure coordinates capabilities over time.} The availability of memory and tools alone does not explain which operation occurs next.
+  \item \textbf{A CoALA description does not prove production readiness.} Reliability, authorization, security, observability, and domain validation require separate engineering work.\index{architecture!cognitive} \index{memory!working} \index{memory!long-term} \index{grounding} \index{decision procedure}
 \end{enumerate}
 
 \begin{warningbox}
@@ -263,7 +235,7 @@ This chapter has provided the map. The next chapters will zoom in on individual 
   \item \textbf{Chapter 8 --- Interleaving, Iteration and the Complete CoALA Decision Process.} How the planning stages can be revisited and interleaved, and how the complete decision process operates.
 \end{itemize}
 
-The order matters pedagogically. We first need the whole map, then we can inspect its components and processes in more detail. The chapters will return to the same Product X example so that the reader can see how a single incident draws on memory, actions, and decision-making. The example remains a teaching aid, not a source claim.
+The following chapters move from the architectural map to memory (Chapter 3), internal actions (Chapter 4), grounding (Chapter 5), and the planning and decision process (Chapters 6--8). Product X remains a book-created teaching example.
 
 \section{Chapter recap}
 

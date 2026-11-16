@@ -1,0 +1,11 @@
+status,path,sha256,notes
+modified,Tex/part1/chapter01/chapter-body.tex,112fa00ae1a2e5755618b9f19dbde587dac9ffda8bee1bf8bf70d333cc9427c6,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter02/chapter.tex,36e421ecf3c75aca271763b582829dbc9c005fd0a7078f3d4222cae7e52413c7,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter03/chapter.tex,4b4db0eb4b83468649617ca6139bb62df5a93d002d7c382548fb1e8033f8a67a,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter04/chapter.tex,ce3bea5f67845e99d323f3228986059d661949ff07445e3a75c4fefb94e244e5,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter05/chapter.tex,cb47c9dda4043b405624b5cf483b69c7180b1f7a6e4e2c6bf13d00996620756f,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter06/chapter.tex,11077de2053c4141662d93e6d12731b13f1307080869684ded5ce0db3961d762,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter07/chapter.tex,a19d7ad899a29303bf69287d29e5a39849d543c704ec3b290cf365d72d677155,Part I selective compression; current cumulative chapter source
+modified,Tex/part1/chapter08/chapter.tex,2726ed55ddce2ceb40cdebccb42b64c4c2527ecdc6cf4577e6dc013f7e78e34f,Part I selective compression; current cumulative chapter source
+added,CHANGELOG_PHASE_3.md,5a2776f360080c64d207ef7aa8f19aa90434739ecbc3e296f87f91c86960367b,Change documentation
+added,README_CHANGESET.md,757da6841cabc21020bf594cd15c0683193acb862924c582af59c7112c985919,Change documentation

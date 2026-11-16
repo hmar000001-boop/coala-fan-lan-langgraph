@@ -32,12 +32,6 @@ Suppose the Product X agent has already received the initial incident report, re
 
 A program can therefore assemble a prompt from selected information. That prompt is a view of what the model needs now; it is not necessarily the whole information structure from which the selection was made. After the model responds, the surrounding program may parse the response and place useful values back into the agent's active state. The next model call can then use a different subset.
 
-This is the first important distinction of the chapter:
-
-\begin{takeawaybox}[The prompt is not the memory]
-The prompt is the input prepared for one model call. CoALA's working memory is a broader data structure that persists across calls and can interact with long-term memory and grounding interfaces. A prompt may be synthesized from a subset of working memory; it should not be treated as an exact synonym for it.
-\end{takeawaybox}
-
 \section{The memory map: working memory and three long-term types}
 \label{sec:coala-memory-map}
 
@@ -211,22 +205,7 @@ This table is a teaching classification, not a claim that each item must be stor
 \section{What the memory taxonomy does not decide}
 \label{sec:memory-taxonomy-boundaries}
 
-A conceptual framework becomes misleading when its categories are mistaken for a complete implementation specification. CoALA's memory taxonomy is deliberately more general than that. It helps us describe the forms of information an agent may maintain, but it does not settle every engineering question.
-
-The taxonomy does not decide:
-
-\begin{itemize}
-  \item which database engine, file format, vector index, knowledge graph, or serialization method should be used;
-  \item whether the four conceptual categories must be represented in four physically separate stores;
-  \item how a system should segment, summarize, index, expire, or version an episode;
-  \item which retention, privacy, access-control, or deletion policy should govern each memory;
-  \item which embedding model, retrieval ranking, or query expansion method should be selected;
-  \item how confidence, provenance, or disagreement should be recorded for a particular application.
-\end{itemize}
-
-These are important design questions, especially in production systems, but they are not answered by simply naming a memory category. When we later engineer concrete applications, we will make those decisions explicit and evaluate them as engineering choices. They should not be retroactively attributed to CoALA.
-
-The taxonomy also does not say that every agent must contain the same amount of information in every category. One agent may have little or no episodic memory. Another may depend heavily on a read-only semantic corpus. A system may have a relatively small set of explicit procedures and rely substantially on its pretrained model weights. CoALA gives us a way to describe these differences rather than requiring uniformity.
+CoALA's memory taxonomy is a conceptual classification, not a complete implementation specification. It does not choose a database, file format, vector index, knowledge graph, or serialization method; require four separate physical stores; or prescribe how episodes are segmented, summarized, indexed, expired, or versioned. Retention, privacy, access-control, deletion, embedding, retrieval-ranking, confidence, provenance, and disagreement policies also remain engineering decisions. Nor must every agent populate all four categories equally: one may use little episodic memory, while another may rely heavily on a read-only semantic corpus. These choices should be justified for the application rather than attributed to CoALA.
 
 \section{Chapter recap}
 

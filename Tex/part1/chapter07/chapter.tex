@@ -30,10 +30,6 @@ A reader might ask why the agent cannot simply take the first item. It could, if
 
 The distinction matters because a system can evaluate candidates and still need a separate method to decide what to do with the results. A value does not select itself. Equally, a selection method cannot compare values that have not been made available to it, unless the procedure uses some other basis for selection. CoALA's vocabulary helps us describe those responsibilities without treating them as one vague act of ``choosing.''
 
-\begin{takeawaybox}[Two different questions]
-Evaluation asks what value the procedure assigns to each proposed action. Selection asks what the procedure does with the proposed actions and their values. Evaluation produces information for a decision; selection makes the control decision.
-\end{takeawaybox}
-
 \CoALACite{\S 4.6, ``Evaluation'' and ``Selection,'' pp. 12--13}
 
 \section{Evaluation: assigning values to proposed actions}\index{evaluation}
@@ -48,7 +44,7 @@ Notice what is being evaluated. The object is a proposed action. If the agent is
 Evaluation also differs from execution. Assigning a value to a proposed action does not perform that action. If a procedure estimates that inspecting deployment metadata is useful, the metadata has not thereby been inspected. The action remains a candidate until the selection and execution responsibilities are addressed.
 
 \begin{notebox}
-CoALA names the role of evaluation and gives examples of possible value sources. It does not define a universal unit, range, normalization method, calibration guarantee, or domain-independent formula for the values. Do not infer those properties simply because an example uses numbers.
+CoALA names the role of evaluation and gives examples of possible value sources, but it does not define a universal unit, range, normalization method, calibration guarantee, or domain-independent formula. In particular, the largest value in an illustrative example does not mean that an action is safest, most accurate, or certain to solve the incident; that interpretation depends on the invented criterion and values used in the example.
 \end{notebox}
 
 \section{Where evaluation values can come from}\index{evaluation value}\index{heuristic rules}\index{learned values}
@@ -121,10 +117,6 @@ Given a set of proposed actions and their values, CoALA describes selection as t
 Selection is not execution. Selecting an action means that the decision procedure has identified which action is to be carried forward. Execution applies the action by invoking the relevant procedure from the agent's source code. If the selected action is an API call, the selection step does not itself send the request. If the selected action is a learning action, selection does not itself write the information to long-term memory. Those applications belong to the execution stage, which Chapter 8 examines as part of the complete decision process.
 
 Selection is also not the same as human authorization, access control, or a production safety gate. A particular application may require human approval before a high-impact action is executed. That can be an important engineering requirement, but it is not what the CoALA passage means by the selection sub-stage. In this chapter, selection names the procedure's decision over the proposed candidate set and its values. It should not be used as a substitute for every other form of permission or oversight.
-
-\begin{notebox}
-A selection outcome has two broad possibilities in the paper: carry one action forward for execution, or reject the proposed set and return to proposal. The paper does not prescribe a universal rejection threshold, maximum retry count, timeout, or reason code.
-\end{notebox}
 
 \section{Selection methods named by CoALA}\index{argmax}\index{softmax}\index{majority vote}
 \label{sec:selection-methods}
@@ -199,23 +191,14 @@ If the selection method is argmax, it carries forward the candidate with the lar
 
 The example demonstrates the division of responsibility. Evaluation supplies values under a chosen method. Selection determines what to do with the proposed set. Execution has not yet occurred, and the incident's root cause remains unknown.
 
-\begin{warningbox}
-Do not turn the largest illustrative value into a factual claim that an action is safest, most accurate, or certain to solve the incident. The example uses an invented criterion and invented values. CoALA does not prescribe this scale.
-\end{warningbox}
-
 \section{Common confusions and chapter boundaries}
 \label{sec:evaluation-boundaries}
 
-The following distinctions are useful when reading agent descriptions:
+Two boundaries deserve emphasis beyond the distinctions developed above:
 
 \begin{itemize}
-  \item \textbf{Proposal is not evaluation.} Proposal generates candidates. Evaluation assigns values to proposed candidates when multiple actions are considered.
-  \item \textbf{Evaluation is not selection.} Evaluation produces values; selection uses the candidates and values to decide what happens next.
-  \item \textbf{Selection is not execution.} Selection identifies an action for execution or rejects the current set. Execution applies the selected action.
-  \item \textbf{A value is not automatically a probability.} Its meaning depends on the evaluation procedure. The paper does not define one universal calibration standard.
-  \item \textbf{Simulation is not observation.} An internally imagined grounding consequence is not information received from the external environment.
-  \item \textbf{Selection is not a complete safety architecture.} Human authorization, policy checks, access control, and operational safeguards may be required by an application, but they are not defined by the CoALA selection passage.
-  \item \textbf{Rejection is not the end of the decision process.} Selection may reject the proposed set and return to proposal. Chapter 8 will place this option within the flexible planning process.
+  \item \textbf{Simulation is not observation.} An internally imagined consequence is not feedback from the external environment; the grounding interaction must occur before such feedback is available.
+  \item \textbf{Selection is not a complete safety architecture.} Human authorization, policy checks, access control, and operational safeguards may be required by an application, but they are not defined by CoALA's selection passage.
 \end{itemize}
 
 \section{Chapter recap}

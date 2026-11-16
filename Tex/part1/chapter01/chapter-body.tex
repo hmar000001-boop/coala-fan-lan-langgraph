@@ -22,9 +22,7 @@ The model might return a useful list of possibilities: a recent deployment, a da
 
 The model has received text and generated text. It has not inspected the service's logs. It has not checked whether a deployment occurred. It has not queried the database. It has not changed a configuration or restarted a process. Unless the relevant observations were included in the input, the model has no direct access to those facts in this interaction.
 
-This is not a defect in the answer. It is a boundary of the interaction we have described. The model call has an input and an output. The surrounding software determines what information is supplied, what happens to the output, and whether another operation follows.
-
-A \textbf{model call} is one invocation of a model with a particular input, producing an output. For a language model, that input is commonly a sequence of tokens representing a prompt, and the output is a continuation generated from it. A model call may be useful on its own. It may answer a question, summarize a passage, or draft a message. But a single call does not, by itself, describe a system that continuously observes and acts in the world.
+This is not a defect in the answer; it is a boundary of the interaction we have described. A \textbf{model call} is one invocation of a model with a particular input, producing an output. For a language model, the input is commonly a prompt represented as tokens and the output is a generated continuation. The surrounding software determines what information is supplied, what happens to the output, and whether another operation follows. A single call may answer, summarize, or draft effectively, but it does not by itself describe a system that repeatedly observes and acts in the world.
 
 Now change the task. Instead of asking only for possible causes, the engineer asks a software system to investigate the incident. The system is expected to gather relevant evidence, decide which question to investigate next, perform permitted checks, interpret the results, and report what it recommends. It may need to repeat this process because the first observation does not settle the matter.
 
@@ -68,9 +66,7 @@ The simplest pattern is familiar: provide text to a language model and receive t
   {A simple model call: supplied text is transformed into generated text. The surrounding application is not shown.}
   {fig:chapter01-model-call}
 
-The model uses the supplied context to generate an output. The application may display the output, store it, or pass it somewhere else, but those surrounding operations are not visible in this simple picture.
-
-This pattern is enough for many tasks. A system that translates a sentence, drafts a paragraph, or answers a question from supplied text may not need an elaborate agent architecture. The important point is not that a basic model call is inadequate. It is that its description is incomplete when the intended system must repeatedly interact with an environment.
+The application may display, store, or pass on the generated output, but those surrounding operations are outside the model call shown here. This pattern is sufficient for many tasks; it becomes an incomplete system description only when the intended behavior requires repeated interaction with an environment.
 
 \subsection{Adding a sequence of model calls}\label{adding-a-sequence-of-model-calls}
 
@@ -88,7 +84,7 @@ However, a predefined sequence of calls is not the same as an agent that decides
 
 A \textbf{language agent}, in the sense used by CoALA, is a system that uses a large language model as a core computation unit to reason, plan, and act \CoALACite{§2.4}. The key distinction in the paper's Figure 1 is that the model is placed in a feedback loop with an external environment \CoALACite{Fig. 1B and §3.3}.
 
-The environment provides an observation. The system represents that observation in a form the model can process. The model helps determine an action. The system carries out the action, and the environment may then provide another observation.
+The system makes an observation available to the model, uses the model's output to determine an action, and invokes the relevant procedure. The environment may then provide further feedback.
 
 \BookDiagram[0.62\textheight]
   {Tex/diagrams/generated/part1/chapter01/language-agent-loop.png}
@@ -354,62 +350,26 @@ This is the point of the running example. It gives us a practical reason to care
 
 CoALA stands for \textbf{Cognitive Architectures for Language Agents}. The original paper proposes it as a conceptual framework for characterizing and designing general-purpose language agents \CoALACite{§4}. The framework positions the language model as the core component of a larger cognitive architecture, not as the complete agent by itself.
 
-CoALA organizes agents along three dimensions. We will introduce each one briefly here and devote later chapters to understanding it in detail.
+CoALA organizes agents along three dimensions. The table is a preview; Chapters 2--8 develop the distinctions and their relationships.
 
 \BookDiagram[0.52\textheight]
   {Tex/diagrams/generated/part1/chapter01/coala-three-dimensions.png}
-  {The three dimensions CoALA uses to organize a language agent. The detailed chapters will examine each dimension and the relationships among them.}
+  {The three dimensions CoALA uses to organize a language agent. The detailed chapters examine each dimension and the relationships among them.}
   {fig:chapter01-coala-three-dimensions}
 
-\subsection{Information storage: what information is maintained?}\label{information-storage-what-information-is-maintained}
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\bfseries}p{0.23\textwidth} X p{0.18\textwidth}}
+\toprule
+Dimension & Architectural question & Developed in \\
+\midrule
+Information storage & What information is active now, and what is retained for later use? & Chapter 3 \\
+Action space & What internal operations and external interactions are available? & Chapters 4--5 \\
+Decision-making procedure & How are candidate actions proposed, evaluated, selected, and executed over time? & Chapters 6--8 \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-The first dimension concerns how the agent organizes information. CoALA distinguishes \textbf{working memory} from \textbf{long-term memory} \CoALACite{§4.1}.
-
-Working memory contains information that is active and readily available for the current decision cycle. It can include incoming observations, goals, information retrieved from long-term memory, and results produced during intermediate reasoning. Long-term memory is organized into different forms, including episodic, semantic, and procedural memory.
-
-For this chapter, the distinction is enough: the agent may need information that is active now, information retained from earlier experiences, factual knowledge, or knowledge about how to perform tasks. These are not simply different names for a single undifferentiated conversation history.
-
-We will study the types of memory and their roles in Chapter 3. Here, remember the architectural question: \textbf{what information does the agent maintain, and how is it organized?}
-
-\subsection{Action space: what operations are available?}\label{action-space-what-operations-are-available}
-
-The second dimension concerns the actions the agent can take. CoALA separates actions into external and internal actions \CoALACite{§§4.2--4.5}.
-
-\textbf{External actions} interact with an environment. Examples discussed by the paper include controlling a robot, communicating with a human, or navigating a website. The paper uses the term \textbf{grounding} for this interaction with the external environment \CoALACite{§4.2}.
-
-\textbf{Internal actions} interact with the agent's own memories. CoALA distinguishes three kinds \CoALACite{§§4.3--4.5}:
-
-\begin{itemize}
-\tightlist
-\item
-  \textbf{Retrieval} reads information from long-term memory.
-\item
-  \textbf{Reasoning} uses the LLM to update short-term working memory.
-\item
-  \textbf{Learning} writes information to long-term memory.
-\end{itemize}
-
-These terms describe different roles in the architecture. Retrieval is not simply any search operation, reasoning is not merely the production of a final answer, and learning does not necessarily mean changing the model's neural-network weights. In CoALA's framework, learning includes writing information to long-term memory. The exact details will be developed in Chapters 4 and 5.
-
-For now, remember the question: \textbf{what can the agent do to its own information, and what can it do through interaction with the outside world?}
-
-\subsection{Decision-making procedure: how is the next action chosen?}\label{decision-making-procedure-how-is-the-next-action-chosen}
-
-The third dimension concerns how the agent determines what to do. CoALA describes a repeated decision-making cycle with planning and execution \CoALACite{§4.6}.
-
-During a cycle, the agent can use retrieval and reasoning to support planning. Planning proposes and evaluates candidate learning or grounding actions. The best action is selected and executed. An observation may then be made, and the cycle begins again.
-
-The process is not simply ``think once, then act once.'' New observations can change what the system should consider next. Internal actions can contribute to planning, and the selected operation may affect either the external environment or the agent's long-term memory.
-
-We will study the exact roles of planning, proposal, evaluation, selection, and execution in Chapters 6--8. For this introduction, the central question is: \textbf{how does the agent determine what to do next, execute that operation, and continue in light of what happens?}
-
-\subsection{The three dimensions belong together}\label{the-three-dimensions-belong-together}
-
-It is tempting to think of the three dimensions as separate modules that can be understood in isolation. They are distinct questions, but an agent's behavior emerges from their interaction.
-
-The decision procedure uses information maintained in memory. It selects from the operations available in the action space. An action may produce an observation or update information that later becomes relevant to another decision. If we understand only the memory stores, we do not yet know how the agent uses them. If we know the tools, we do not yet know how the system selects among them. If we know the decision loop, we still need to understand what information and operations it can access.
-
-CoALA offers a common vocabulary for examining these relationships. Its purpose is not to force every agent into one fixed implementation. It gives researchers and developers a shared way to characterize the organization of different systems and to think about how new systems might be designed.
+The dimensions are distinct but interdependent: decisions draw on maintained information and available operations, while the results of actions can change what information is available in later cycles. CoALA supplies a shared vocabulary for describing those relationships without requiring one fixed implementation.
 
 \section{What CoALA is---and what it is not}\label{what-coala-isand-what-it-is-not}
 
@@ -436,11 +396,7 @@ CoALA is therefore more than a diagram of memory boxes. The decision-making proc
 
 \subsection{What CoALA does not prescribe}\label{what-coala-does-not-prescribe}
 
-CoALA is not a ready-to-run software library, agent runtime, or deployment architecture. It does not require an implementation to use Java, LangGraph4j, LangChain4j, Maven, a particular database, or a particular model provider. Those are engineering choices that must be evaluated separately.
-
-The framework also does not imply that every agent must use every memory type or every possible action in an identical way. It provides distinctions that help describe and design agents. The way a particular system instantiates those distinctions depends on the task and its implementation.
-
-Likewise, mapping a program to CoALA does not prove that the program is reliable, safe, or production-ready. A conceptual architecture helps us ask the right design questions; it does not replace requirements analysis, testing, security engineering, or operational evaluation.
+CoALA is a conceptual framework, not a ready-to-run library, runtime, or deployment architecture. It does not mandate a programming language, framework, database, model provider, or identical memory and action configuration for every agent. Those choices depend on the task and must be justified separately. Nor does mapping a program to CoALA prove that it is reliable, safe, or production-ready; requirements analysis, testing, security engineering, and operational evaluation remain necessary.
 
 This separation will matter in Part III. When we build production-oriented Java systems, we will identify which ideas come from CoALA, which come from Fan \& Lan, and which are engineering decisions made for the example system. The papers will remain the theoretical foundations. Framework APIs, build tools, and implementation libraries will be consulted only to write correct code, not treated as additional cognitive theories.
 
@@ -454,13 +410,7 @@ In Part III, we will apply the concepts while building ten complex systems with 
 
 \section{Where we go next}\label{where-we-go-next}
 
-We began with a question about a failing payment service. A language model can suggest possible causes, but a system expected to investigate the incident must do more than generate a plausible response. It needs information, operations through which it can interact with its environment, and a procedure for deciding what happens next.
-
-We then followed the progression from simple model calls to language agents and cognitive language agents. We saw why prompt construction and prompt chaining add structure, why an external feedback loop is a further step, and why internal processes such as reasoning and learning introduce additional architectural questions.
-
-The history of production systems showed that rules alone do not explain a complete agent. A system also needs control over which operations are selected and how the process continues. Cognitive architectures emerged as a way to organize information, processes, and control. CoALA draws on that history to provide a framework for language agents.
-
-The next chapter will turn the three dimensions into a complete architectural picture. We will examine how information storage, action space, and decision-making fit together before studying each in depth. The questions from Product X will remain with us: what information is available, what can the system do, and how does it decide what to do next?
+The Product X incident shows why a model's generated answer is only one part of an interactive system: the agent also needs organized information, available operations, and control over what happens next. The historical bridge from production systems to cognitive architectures explains why these concerns belong together. CoALA brings them into one framework through information storage, action space, and decision-making procedure. Chapter 2 develops that architectural map before the later chapters examine its components and processes.
 
 \begin{chapterrecap}
 A language model call describes text generation, not the full behavior of an interactive system. A language agent places model use in a feedback loop with an environment; a cognitive language agent also uses internal processes to manage information and behavior. CoALA draws on the history of cognitive architectures to organize language agents through information storage, action space, and decision-making procedure. Those dimensions give us a shared vocabulary without prescribing one implementation or proving that a system is production-ready.

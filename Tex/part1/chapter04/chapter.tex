@@ -86,7 +86,7 @@ Retrieval can make relevant information available, but the agent may still need 
 
 CoALA describes reasoning as an internal action that allows a language agent to process the contents of working memory and generate new information. Unlike retrieval, which reads from long-term memory into working memory, reasoning reads from and writes to working memory. It can summarize or distill information about a recent observation, a recent trajectory, or information retrieved from long-term memory.\CoALACite{\S 4.4, p. 11.}
 
-A reasoning action therefore operates on information that is already active. It may generate a summary, identify a pattern, formulate a hypothesis, or produce another result that can be stored as working-memory content. The output is new information for the current state, even if it was produced by interpreting existing material.
+A reasoning action therefore operates on information that is already active. It may generate a summary, identify a pattern, formulate a hypothesis, or produce another result in working memory. That result remains active information; it becomes a long-term memory item only if a separate learning action writes it there.
 
 \subsection{Reasoning can support more than one purpose}
 
@@ -101,10 +101,6 @@ The hypothesis is now active information. It may guide a later decision, influen
 It is tempting to equate reasoning with a particular visible prompt pattern: a chain of intermediate steps, a critique prompt, a self-reflection template, or a sequence of calls. CoALA's category is more general. It describes the architectural role of processing working-memory contents with the LLM and generating new information in working memory.
 
 A particular system may implement reasoning with one model call, several calls, structured outputs, or other code around the model. Those are implementation patterns. They can be useful, but they are not the definition of reasoning in the framework. The important question is what information the operation reads and where its result is written.
-
-\begin{notebox}
-\textbf{Reasoning does not automatically persist its result.} A hypothesis or summary created in working memory is available to the current agent, but it is not thereby a long-term memory item. A separate learning action is needed if the result is to be written into long-term memory.
-\end{notebox}
 
 \section{Learning: writing information to long-term memory}
 \label{sec:learning}
@@ -182,18 +178,22 @@ The sequence highlights the difference between the source of information and the
 \section{Common confusions and boundaries}
 \label{sec:internal-action-boundaries}
 
-The distinctions become clearer when we test common statements:
+The most useful diagnostic distinctions can be summarized by the information each operation moves:
 
-\begin{itemize}
-  \item \textbf{``The agent searched its memory, so it reasoned.''} Not necessarily. If it read an existing item from long-term memory into working memory, that was retrieval. Reasoning concerns processing working-memory contents to generate new information.
-  \item \textbf{``The model produced a useful hypothesis, so the agent learned it.''} Not necessarily. The hypothesis may exist only in working memory. A learning action is the write to long-term memory.
-  \item \textbf{``Learning means fine-tuning the LLM.''} Too narrow. CoALA includes writing experience to episodic memory, knowledge to semantic memory, and changes to procedural memory.
-  \item \textbf{``Every model output is a reasoning action.''} Not automatically. The architectural category depends on the operation's role and its effect on working memory, not merely on the presence of a model call.
-  \item \textbf{``Calling an API is an internal action.''} No. External interactions with the environment are grounding actions and belong to Chapter 5.
-  \item \textbf{``Retrieval, reasoning, and learning are the full decision procedure.''} No. They are internal action types. The top-level procedure that organizes the agent's decision cycles, planning stages, and execution is covered in Chapters 6--8.
-\end{itemize}
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.24\linewidth}X@{}}
+\toprule
+Distinction & Diagnostic question \\
+\midrule
+Retrieval vs. reasoning & Was existing long-term information brought into working memory, or was active information processed to generate something new? \\
+Reasoning vs. learning & Did the result remain in working memory, or was it written into long-term memory by a separate learning action? \\
+Learning vs. fine-tuning & Was experience or knowledge stored, or were model parameters changed? CoALA includes several forms of learning, not only weight updates. \\
+Internal action vs. grounding or decision control & Did the operation work on the agent's memory, interact with an external environment, or coordinate the overall decision cycle? These are different architectural roles. \\
+\bottomrule
+\end{tabularx}
+\end{center}
 
-A useful way to classify a proposed operation is to ask three questions: Was information already stored in long-term memory and brought into working memory? Was active information processed to generate new active information? Or was information written into long-term memory? The answers point toward retrieval, reasoning, and learning respectively. Some larger tasks contain more than one of these operations, but that does not make the categories interchangeable.
+A larger task may contain several of these operations in sequence or interleaved, but their different information effects do not make the categories interchangeable.
 
 \section{Chapter recap}
 
