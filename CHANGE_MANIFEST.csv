@@ -1,30 +1,17 @@
-Status,Path,Description,SHA256
-Modified,BOOK_WRITING_AND_PRODUCTION_RULES.md,Updated in Phase 5; see CHANGELOG_PHASE_5.md,d0c603674b6bc2e3a66de285a6f9eec04586127d0daeafbb942c386112b92139
-Modified,README.md,Updated in Phase 5; see CHANGELOG_PHASE_5.md,4f080c7ef1102fda3155b4295bf3bebd7fd48a18c41343832d2c72e133572ecd
-Modified,Tex/appendices/content.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,f1ef24815eea56f51cc8447eb5f3ba17bb0a660d59a534060979b5c52b3c442c
-Modified,Tex/part0/frontmatter/preface.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,6a86a055344e668b0ff7e139dcff30afb820900d688e4f10d623d386d3ca57e9
-Modified,Tex/part0/frontmatter/reading-guide.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,3360015dc532a8d8666e936008cdc4bba077051a83dec6691e0f32ffff4002a3
-Modified,Tex/part1/chapter01/chapter-body.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,5013cdc11a312dcb85c7c5faec17165fd8cbd31d524012ff882dde4dd3334c57
-Modified,Tex/part1/chapter05/chapter.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,1b16cb18a6fa5168f04ab82589b5d76b721793ca689b26358e682e775a54df3b
-Modified,Tex/part2/chapter18/chapter.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,210f7732c99b5f519ba9853ac3fa84e1d3c37ebd6112055b1eb344d14571edee
-Modified,Tex/part3/content.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,21951e4eaf6eb61e281dcc1710f2e8960d7368c902b35efd69c2c8e07f285944
-Modified,Tex/part3/chapter19/chapter.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,72acaebbb42c247a78af517069f4f14e45045e30c9c361570cc18a4933a5f4ca
-Modified,Tex/part3/chapter20/chapter.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,86387d06031d9fa86398cf4b65086e57e3dd9d9fdfdd8a73df7037b46e3be491
-Modified,Tex/preamble.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,c62aa7064625af35ce816e2d13642a04f13eb4ae04edf6015c33a3b89e015777
-Modified,Tex/shared-macros.tex,Updated in Phase 5; see CHANGELOG_PHASE_5.md,01a33ab2f9f7f09e469e257e2289ebd51f39aa049a8a5d112dd2ee0a2be09f22
-Modified,scripts/check-scaffold.sh,Updated in Phase 5; see CHANGELOG_PHASE_5.md,1f30b59aea5efe6287f50dc5654ca569a44779a08df7a29ae3efd87f35c5f3d0
-Modified,scripts/quality-checks.sh,Updated in Phase 5; see CHANGELOG_PHASE_5.md,2b2738b67186177dbb4a42c48cbee627dd4fcf11ee244a825532e5f0362f6f96
-Added,review/Part_III_SCOPE_UPDATE_2026-11-16.md,Authoritative Part III scope decision record,d3d763a01ad1ea6762243a26e53ed0d4cad892cf0796f3696ca6bcfb4df215d4
-Deleted,Tex/part3/chapter21/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter22/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter23/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter24/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter25/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter26/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter27/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter28/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter29/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Deleted,Tex/part3/chapter30/chapter.tex,Obsolete placeholder from superseded ten-system structure,
-Added,CHANGELOG_PHASE_5.md,Phase summary and validation status,
-Added,README_CHANGESET.md,Patch application instructions,
-Added,CHANGE_MANIFEST.csv,Complete Added/Modified/Deleted manifest,
+status,path,reason,sha256
+Modified,Tex/appendices/content.tex,Corrected review finding(s); retained prior approved content and changes.,ae4558411785a8e449ca29cd6d3850909b7eaa3cbd00edcfa8beb05f9b31d8b6
+Modified,Tex/diagrams/source/part2/chapter15/b4-intention-lifecycle.mmd,Corrected review finding(s); retained prior approved content and changes.,9c27e5d05439280f4b069e2768a622e5e6ab4c3e5d26b96aaaabf3f93ca134cb
+Modified,Tex/part0/content.tex,Corrected review finding(s); retained prior approved content and changes.,7b3f487f0964ba13513b984975140b59b8ebb21af2f270245ab4948dc07e3e02
+Modified,Tex/part2/chapter10/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,368b99068cdf32a4e2c564a09ecb3494be460813b856dd0451b891e9681e8340
+Modified,Tex/part2/chapter11/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,d23c054678e9382d48d1c29c7419f4d5e8dd07b42f755d6b0644f6a5e2960aa2
+Modified,Tex/part2/chapter13/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,ea7e625c347daa0eaccc91613f98f4dd1f5bdf8e5f59b3d4be29abf34b80468a
+Modified,Tex/part2/chapter14/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,191859b7299e4236785dacffe1836b2d7461332ce2534eb3dc2854a8b64ac0a7
+Modified,Tex/part2/chapter15/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,c326f3e4407d70fd236100608597b5abea9a27a60f7b26af8ae0bdcfa9274f66
+Modified,Tex/part2/chapter16/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,1760c601456f35bfc5829e02ae5016daa3e1c6612c673f982ae29cc50464ed4a
+Modified,Tex/part2/chapter17/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,929ee4ed137b0afcba670328d088a375aa33871597e6b61feaef8501ce4fda2f
+Modified,Tex/part2/chapter18/chapter.tex,Corrected review finding(s); retained prior approved content and changes.,6b7637a12f0392cf13ac84f27d8a98ddb1e317a886c07d2bb51341ca82c751bb
+Deleted,Tex/part0/frontmatter/dedication.tex,Unfilled dedication placeholder only; no author-written content.,
+Added,CHANGELOG_REVIEW_FIXES.md,Detailed file-by-file account of the changes.,4ec5868dd95578c2ef0ad8a322544ff97686180daedd7141f60de35bb775ddba
+Added,REVIEW_FINDINGS_DISPOSITION.md,Correct/Partial/Error classification and rationale for every finding.,2935d94cbe91a7dac937d79800cd50fee144b87f49f62bd952f55ddd4949e47e
+Added,README_CHANGESET.md,Application instructions and package scope.,cb70d6102f9209e9e7657276e1bce7989912d6fc9450f06a839c977d55cb9b17
+Added,CHANGE_MANIFEST.csv,Self-manifest; hash omitted to avoid recursive hashing.,

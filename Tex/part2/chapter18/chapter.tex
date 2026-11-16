@@ -351,7 +351,7 @@ The runtime-wide identity answers which task and causal sequence the event belon
 \subsection{Illustrative Java-like contracts}
 \label{subsec:ch18-java-contracts}
 
-The following types show how the boundaries could be represented in Java. They are not copied from Fan and Lan or from a single runtime framework. The important feature is not the exact class names. It is that every decision is typed, scoped, versioned, and attributable.
+The following types show how the boundaries could be represented in Java. They are not copied from Fan and Lan or from a single runtime framework. The important feature is not the exact class names. It is that every decision is typed, scoped, versioned, and attributable. The listings are compositional interface and record fragments, not a complete compilable application; framework adapters, imports, and the internal implementations of domain value types are intentionally outside this synthesis chapter. The contracts needed to reason about authority, idempotency, versions, and evidence are shown explicitly, while Part III provides the end-to-end Java implementation.
 
 \begin{lstlisting}[language=Java,caption={A common event envelope and version reference}]
 record VersionRef(String aggregateId, long version) {}
@@ -773,7 +773,7 @@ Five conclusions close Part II:
 \paragraph{Practical exercise.} Using the Product X timeout trace, draw the state and authority boundary for each mechanism. Label every proposal, decision, authorization, transition, verification result, and learning update. Then remove one dependency at a time and predict which invariant or outcome should change. Identify the strongest simpler baseline and state a result that would falsify the proposed composition.
 
 \section*{Source and example note}
-The theoretical synthesis in this chapter is grounded in Fan and Lan's 2026 review, especially §§ VI-A--VI-E and Appendix D. The Product X sequence, Java-like contracts, four-plane teaching view, coordinator protocol, persistence model, and implementation roadmap are book-level engineering proposals and teaching examples. The source paper does not claim that this exact runtime has been built or experimentally validated. The prior chapters remain the detailed treatments of B1, B2, B3, B4, B6, and the closed B5/GraSP case.
+The theoretical synthesis in this chapter is grounded in Fan and Lan's 2026 review, especially §§ VI-A--VI-E and Appendix D. The Product X sequence, Java-like contracts, four-plane teaching view, coordinator protocol, persistence model, and implementation roadmap are book-level engineering proposals and teaching examples. The source paper does not claim that this exact runtime has been built or experimentally validated. The prior chapters remain the detailed treatments of B1, B2, B3, B4, B6, and the closed B5/GraSP case.\FanLanCite{\S VI-A--VI-E; Appendix D}
 
 \section*{Looking ahead}
 Part II is complete. Part III applies the mechanism-level insights to one request-driven enterprise supply-chain disruption management system in Java. That system must preserve the distinctions developed here: state is not authority, visibility is not permission, recovery is not goal replacement, a verified skill is not a universal guarantee, and learning must be tied to attributable outcomes.

@@ -247,7 +247,7 @@ The model can help interpret events, propose a diagnosis, or suggest a recovery 
 \subsection{Typed contracts}
 \label{subsec:ch13-contracts}
 
-The following records are \EngineeringLabel{} proposals. They are not native Soar objects and are not schemas supplied by Fan and Lan. Their purpose is to make each handoff explicit enough to implement, validate, and audit.
+The following records are \EngineeringLabel{} proposals. They are not native Soar objects and are not schemas supplied by Fan and Lan. Their purpose is to make each handoff explicit enough to implement, validate, and audit. The Java listings in this chapter are illustrative contract fragments and method bodies, not a single standalone compilation unit. JDK imports, transport boilerplate, and supporting value-object implementations are omitted where they do not affect the control boundary; the types material to the recovery contract are described in the surrounding text. Part III is where the selected contracts are assembled into a complete Java application.
 
 \paragraph{ExecutionFailure.}
 

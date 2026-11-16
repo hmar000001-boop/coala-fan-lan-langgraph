@@ -547,10 +547,11 @@ The components exchange explicit records. The language model may propose nodes, 
 
 \subsection{Proposed type model}
 
-The following Java-like definitions are a book-created representation. They expose the fields and boundaries described by GraSP without pretending to reproduce its internal classes.
+The following Java-like definitions are a book-created representation. They expose the fields and boundaries described by GraSP without pretending to reproduce its internal classes. All Java listings in this chapter are illustrative type contracts, method fragments, or pseudocode—not a single standalone compilation unit. Imports, adapters, and supporting domain value types are omitted where they are not part of the mechanism boundary; the five repair operators, validation rules, state transitions, and failure semantics remain explicitly described.
 
 \begin{lstlisting}[language=Java,caption={Book-created Java-like records for the typed skill graph}]
 enum EdgeType { STATE, DATA, ORDER }
+record Condition(String expression, String verificationRef) {}
 enum NodeStatus { PROPOSED, READY, RUNNING, VERIFIED, FAILED, INVALIDATED }
 enum FailureType { PRECONDITION, EXECUTION, POSTCONDITION, TIMEOUT }
 
@@ -942,7 +943,7 @@ The practical bridge in this chapter is a faithful Java-oriented reconstruction 
 
 \section*{Source and example note}
 
-The theoretical account in this chapter is grounded in [Fan \& Lan], principally their ICARUS reconstruction, modern skill-system mapping, evidence/depth framework, B5 closure decision, and validity discussion. GraSP is treated through its own primary paper for the architecture, graph definition, algorithms, experiments, ablations, and stated limitations. Choi and Langley are used only as a historical reference for ICARUS because that work is part of the source context used by Fan and Lan. The chapter does not introduce a third formal theory foundation. The Java-like records, interfaces, validation gates, lifecycle labels, persistence model, observability trace, and test plan are engineering representations created for this book. The heating-a-potato example is a book-created illustrative trace motivated by the title of GraSP's Appendix E; its detailed node sequence is not claimed as an exact experimental trajectory.
+The theoretical account in this chapter is grounded in [Fan \& Lan], principally their ICARUS reconstruction, modern skill-system mapping, evidence/depth framework, B5 closure decision, and validity discussion. GraSP is treated through its own primary paper for the architecture, graph definition, algorithms, experiments, ablations, and stated limitations. Choi and Langley are used only as a historical reference for ICARUS because that work is part of the source context used by Fan and Lan. The chapter does not introduce a third formal theory foundation. The Java-like records, interfaces, validation gates, lifecycle labels, persistence model, observability trace, and test plan are engineering representations created for this book. The heating-a-potato example is a book-created illustrative trace motivated by the title of GraSP's Appendix E; its detailed node sequence is not claimed as an exact experimental trajectory.\FanLanCite{\S III-E; \S IV-B; \S VI-B; \S VI-C, B5; Appendix C-O; Appendix D}\autocite{xia2026grasp}
 
 \section*{Looking ahead}
 

@@ -404,7 +404,7 @@ A conservative proposal is to admit only verified outcome labels into calibratio
 \section{Java-like contracts, persistence and concurrency}
 \label{sec:ch16-contracts}
 
-The previous section described responsibilities. This section makes their boundaries concrete with Java-like contracts. The types are proposed for this book; they are not copied from Fan and Lan or from a particular framework. The examples use ordinary Java records and enums so that the data contract is visible without requiring a specific persistence or orchestration library.
+The previous section described responsibilities. This section makes their boundaries concrete with Java-like contracts. The types are proposed for this book; they are not copied from Fan and Lan or from a particular framework. The examples use ordinary Java records and enums so that the data contract is visible without requiring a specific persistence or orchestration library. These are illustrative fragments rather than a standalone compilation unit: imports, adapter implementations, and supporting value types that do not change the control contract are intentionally elided. The prose identifies the semantics required of those omitted types. Part III supplies the complete application-level wiring.
 
 \subsection{Core records}
 \label{sec:ch16-core-records}
@@ -787,7 +787,7 @@ A useful B6 implementation must distinguish uncertainty from permission, budget 
 
 \section*{Source and example note}
 
-The theoretical account in this chapter is grounded in [Fan \& Lan], principally their historical EPIC/Sigma discussion, modern resource and uncertainty mappings, B6 residual hypothesis, and experimental protocol. EPIC, Sigma, AIOS, AgentRM, budget-aware value search, UALA, KnowNo, Calibrate-Then-Act, Utility-Guided Agent Orchestration, and the runtime interfaces are discussed only in the roles in which Fan and Lan cite and analyze them. The chapter does not introduce a third formal theoretical foundation. The Java-like contracts, resource-vector schema, scheduler responsibilities, authorization record, interruption state machine, persistence protocol, and implementation sequence are engineering proposals created for this book. Product X is a book-created teaching example. All numeric values used in the example are hypothetical and are not empirical findings.
+The theoretical account in this chapter is grounded in [Fan \& Lan], principally their historical EPIC/Sigma discussion, modern resource and uncertainty mappings, B6 residual hypothesis, and experimental protocol. EPIC, Sigma, AIOS, AgentRM, budget-aware value search, UALA, KnowNo, Calibrate-Then-Act, Utility-Guided Agent Orchestration, and the runtime interfaces are discussed only in the roles in which Fan and Lan cite and analyze them. The chapter does not introduce a third formal theoretical foundation. The Java-like contracts, resource-vector schema, scheduler responsibilities, authorization record, interruption state machine, persistence protocol, and implementation sequence are engineering proposals created for this book. Product X is a book-created teaching example. All numeric values used in the example are hypothetical and are not empirical findings.\FanLanCite{\S III-D; \S V-C; \S VI-A; \S VI-C, B6; Appendix C-Q; Appendix D}
 
 \section*{Looking ahead}
 

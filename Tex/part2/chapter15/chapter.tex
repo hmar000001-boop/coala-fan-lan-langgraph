@@ -403,7 +403,7 @@ The model is used by diagnosis and proposal generation, but it is not a direct w
 
 \subsection{Typed data contracts}
 
-The following Java-like contracts are reference shapes, not a claim that the papers prescribe these types. A real system should use validated identifiers, immutable values, explicit serialization rules, schema versions, and an allowlist for deserialization.
+The following Java-like contracts are reference shapes, not a claim that the papers prescribe these types. A real system should use validated identifiers, immutable values, explicit serialization rules, schema versions, and an allowlist for deserialization. The Java listings in this chapter are illustrative contracts, SQL schemas, and orchestration fragments rather than a standalone compilable application. Domain value types such as identifiers, evidence rules, preconditions, declared effects, capabilities, risk classifications, and method-compatibility results are named where their semantics matter; imports and routine DTO/persistence implementations are intentionally elided. The critical lifecycle, replay, version, and authorization invariants are specified explicitly. Part III supplies the complete application-level wiring.
 
 \begin{lstlisting}[language=Java,caption={Core identifiers and goal contract},label={lst:ch15-goal-contract}]
 record GoalId(UUID value) {}
@@ -429,22 +429,68 @@ record Constraint(
     VerificationRule verification
 ) {}
 
+record VerificationRule(String ruleId, String description, String evidenceType) {}
+record EvidenceRule(String ruleId, String predicate) {}
+record EvidenceBundle(List<EvidenceRecord> records) {}
+
+enum TriggerKind {
+    OUTCOME, FEASIBILITY, ENVIRONMENT, AUTHORITY,
+    CONSTRAINT, PROGRESS, GOAL
+}
+
 enum ConstraintKind {
     REQUIRED_OUTCOME,
     SAFETY_INVARIANT,
     PROHIBITED_ACTION,
     REPORTING_REQUIREMENT
 }
+
+record EvidenceRecord(
+    EvidenceId id,
+    String sourceRef,
+    String contentDigest,
+    Instant observedAt,
+    Instant validUntil
+) {}
+
+record Precondition(String expression, String verifierRef) {}
+record DeclaredEffect(String effectId, String description, boolean external) {}
+record Capability(String name, String scope) {}
+enum RiskClass { LOW, MODERATE, HIGH, CRITICAL }
+enum Reversibility { REVERSIBLE, COMPENSATABLE, IRREVERSIBLE }
+record MethodCompatibility(boolean compatible, List<String> reasons) {
+    void requireCompatible() { /* reject when compatible is false */ }
+}
+
+record AuthorizationResult(boolean allowed, List<String> reasons) {
+    void requireAllowed() { /* reject when allowed is false */ }
+}
+
+record AuthorityPolicy(
+    Set<Capability> allowedCapabilities,
+    Set<RiskClass> allowedRiskClasses,
+    boolean mayDelegate,
+    boolean requiresApprovalForExternalEffects
+) {}
+
+record TransitionResult(
+    boolean applied,
+    boolean replayed,
+    long currentVersion,
+    String outcomeRef
+) {}
 \end{lstlisting}
 
 The goal has an identity that survives method changes and a version that changes only through the goal-authority path. It also has a set of constraints. Some constraints specify the required outcome; others prohibit particular actions or define how success must be verified. This prevents a method replacement from accidentally discarding the constraints that make the goal safe.
 
 \begin{lstlisting}[language=Java,caption={Intention, method, and policy records},label={lst:ch15-intention-contract}]
 enum IntentionState {
-    PROPOSED, AUTHORIZED, ACTIVE,
+    PROPOSED, REJECTED, AUTHORIZED, ACTIVE,
     RECONSIDERATION_PENDING, SUSPENDED,
     DELEGATED, SATISFIED, IMPOSSIBLE, ABANDONED
 }
+
+enum ResumeTarget { ACTIVE, RECONSIDERATION_PENDING }
 
 enum CommitmentPolicy {
     BLIND, SINGLE_MINDED, OPEN_MINDED
@@ -478,6 +524,9 @@ record IntentionRecord(
     AuthorityPolicy authority,
     MethodAssignment method,
     IntentionState state,
+    ResumeTarget resumeTarget,
+    String suspensionReason,
+    String activeDelegationId,
     long recordVersion,
     Instant createdAt,
     Instant updatedAt
@@ -502,7 +551,7 @@ record MethodAssignment(
 ) {}
 \end{lstlisting}
 
-The intention record references the goal version and the method version instead of copying mutable descriptions into an unstructured text field. The rationale and plan remain available for explanation, but the goal store is authoritative for the actual authorized objective. The method registry is authoritative for the operation's declared preconditions, effects, capabilities, and risk classification.
+The intention record references the goal version and the method version instead of copying mutable descriptions into an unstructured text field. The rationale and plan remain available for explanation, but the goal store is authoritative for the actual authorized objective. The method registry is authoritative for the operation's declared preconditions, effects, capabilities, and risk classification. Outside the suspended state, \texttt{resumeTarget} and \texttt{suspensionReason} are null. A delegated intention carries an active child-task identifier; if it is suspended while delegated work remains outstanding, that identifier is retained until cancellation or child completion is durably acknowledged. A \texttt{SUSPENDED} record must have one explicit resume target, and a \texttt{DELEGATED} record must have exactly one current child handle.
 
 The two policy types intentionally remain separate. The commitment policy describes the conditions under which the intention is released. The reconsideration schedule describes when the current course is inspected. \texttt{EVENT\_SENSITIVE} is a proposed runtime scheduling option; it is not presented as a fourth classical BDI commitment policy.
 
@@ -520,13 +569,20 @@ record ReconsiderationEvent(
     TriggerKind trigger,
     List<EvidenceId> evidence,
     Instant observedAt,
-    String correlationId
+    String correlationId,
+    String requestDigest
 ) {}
 
 enum GovernorAction {
     CONTINUE, SWITCH_METHOD, DELEGATE,
-    SUSPEND, ABANDON
+    SUSPEND, ABANDON, RESUME
 }
+
+record AppliedEvent(
+    String eventId,
+    String requestDigest,
+    TransitionResult result
+) {}
 
 record GovernorDecision(
     GovernorAction action,
@@ -554,32 +610,37 @@ Authority must be a checked contract, not an implication inferred from model out
   \item The model can propose methods, explain diagnoses, and identify relevant evidence. It cannot directly mutate the goal or intention record.
   \item A delegated worker can complete only its declared child task and cannot amend the parent goal or widen its capabilities.
   \item The authorization gate can reject a method even after the governor selects it, if the required capability, user consent, risk approval, or side-effect permission is absent.
+  \item A separate proposal authority may reject an unapproved \texttt{PROPOSED} intention. It records the rejecting principal, reason, evidence, and idempotency event; this operation is persisted through \texttt{IntentionRepository.rejectProposalAtomically}. It is not a method-governor action.
 \end{itemize}
 
 For high-impact or irreversible actions, explicit approval remains necessary unless a narrowly scoped permission has been granted in advance. A method governor does not create permission merely by deciding that an action would be useful. This keeps the intention lifecycle separate from the authorization mechanism that controls external actions.
 
 \subsection{Intention lifecycle and guarded transitions}
 
-The proposed lifecycle is shown below. The labels describe states of the intention record, not separate agents. \texttt{SATISFIED}, \texttt{IMPOSSIBLE}, and \texttt{ABANDONED} are terminal outcomes for a particular intention version. A new authorized goal or a newly authorized attempt should receive a new version or identity rather than silently reopening a terminal record.
+The proposed lifecycle is shown below. The labels describe states of the intention record, not separate agents. \texttt{REJECTED}, \texttt{SATISFIED}, \texttt{IMPOSSIBLE}, and \texttt{ABANDONED} are terminal outcomes for a particular proposal or intention version. Rejection closes a proposal before authorization; it is not equivalent to abandoning an already authorized commitment. A new authorized goal or a newly authorized attempt should receive a new version or identity rather than silently reopening a terminal record.
 
-\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter15/b4-intention-lifecycle.png}{Proposed intention lifecycle with guarded authorization, active execution, reconsideration, suspension, delegation, and terminal outcomes.}{fig:ch15-intention-lifecycle}
+\BookDiagram[0.62\textheight]{Tex/diagrams/generated/part2/chapter15/b4-intention-lifecycle.png}{Proposed intention lifecycle with proposal rejection, guarded authorization, active execution, delegated child-return paths, explicit suspension resume targets, and terminal outcomes.}{fig:ch15-intention-lifecycle}
 
-The main transitions are:
+The main transitions and their guards are:
 
 \begin{description}
   \item[] \textbf{Proposed to authorized.} The principal or delegated authority approves the goal, constraints, and bounded method policy.
+  \item[] \textbf{Proposed to rejected.} The authorized proposal authority declines the proposed commitment, records a reason and evidence, and closes the proposal. A rejected proposal cannot be resumed; a new proposal receives a new identity or version.
   \item[] \textbf{Authorized to active.} The initial method passes precondition, capability, and side-effect checks and is accepted for execution.
   \item[] \textbf{Active to reconsideration pending.} A validated trigger or scheduled review establishes that the current course must be examined.
   \item[] \textbf{Reconsideration pending to active.} The governor chooses \texttt{CONTINUE} after reviewing the evidence and confirms that the current method remains allowed.
   \item[] \textbf{Reconsideration pending to active with a new method assignment.} The governor chooses \texttt{SWITCH\_METHOD}; the same goal identity, goal version, and invariants are preserved, while the method assignment receives a new version.
-  \item[] \textbf{Active or reconsideration pending to delegated.} The governor creates a bounded child task and records its scope, capabilities, deadline, and return contract. The parent intention remains authoritative.
-  \item[] \textbf{Active or delegated to suspended.} The governor or applicable policy pauses execution while retaining the intention and a defined resume condition.
+  \item[] \textbf{Active or reconsideration pending to delegated.} The governor creates a bounded child task and records its scope, capability allowlist, deadline, resource budget, cancellation signal, and return contract. The parent intention remains authoritative and the child cannot redelegate or widen its scope.
+  \item[] \textbf{Delegated to reconsideration pending.} A child success, failure, timeout, or cancellation returns a result event to the parent. The parent first verifies the child identity and evidence, checks that the parent goal and record versions remain current, and then integrates the result as evidence for a fresh governor decision. A stale or unverifiable child result is not integrated; the parent is suspended or escalated with its return target set to \texttt{RECONSIDERATION\_PENDING}.
+  \item[] \textbf{Active, reconsideration pending, or delegated to suspended.} The governor or applicable policy pauses execution while retaining the intention, suspension reason, any active delegation handle, and a defined resume target. A child is cancelled when policy requires it; otherwise its handle and bounded authority remain recorded.
+  \item[] \textbf{Suspended to active.} Resumption uses \texttt{resumeTarget=ACTIVE} only when the stored condition is satisfied and the current method, goal version, permissions, and external state are revalidated.
+  \item[] \textbf{Suspended to reconsideration pending.} Resumption uses \texttt{resumeTarget=RECONSIDERATION\_PENDING} when new evidence, a child result, an approval, or a changed dependency requires the governor to decide again before execution continues.
   \item[] \textbf{Active or reconsideration pending to satisfied.} The goal's verification rule is met by authoritative evidence.
   \item[] \textbf{Active or reconsideration pending to impossible.} Evidence and policy establish that the goal cannot be achieved under the current authorized constraints. The conclusion must be reviewable and may require escalation.
   \item[] \textbf{Active, reconsideration pending, or suspended to abandoned.} The authority policy permits abandonment and the decision records who or what authorized it and why.
 \end{description}
 
-A method change is not a terminal goal event. It is a transition within the active intention. Conversely, a new goal version is not just another method assignment. A principal's amendment must be represented as a goal-authority operation with its own audit trail.
+A method change is not a terminal goal event. It is a transition within the active intention. A delegated result never changes the parent goal or directly commits a new method. It returns the parent to reconsideration so that the governor can revalidate the evidence and authority. Conversely, a new goal version is not just another method assignment. A principal's amendment must be represented as a goal-authority operation with its own audit trail.
 
 \subsection{Trigger taxonomy and diagnosis}
 
@@ -609,7 +670,7 @@ The distinction should be based on registered method descriptors, not only on na
 
 The authoritative intention state should be stored durably. A minimal implementation may use a relational row for the current aggregate plus an append-only event table. More elaborate systems may use an event-sourced aggregate, provided they preserve the same invariants. The important properties are atomicity, versioning, idempotency, auditability, and recovery after a crash.
 
-A method switch should be committed as one logical transaction: confirm the expected intention version; verify the goal version and authority proof; validate the target method and invariants; update the method assignment and lifecycle state; append the decision event; and write any dispatch instruction to an outbox. The transaction should fail as a whole if the expected version is stale. The executor reads the outbox and performs the external dispatch separately.
+A method switch or delegated-method assignment should be committed as one logical transaction: confirm the expected intention version; verify the goal version and authority proof; validate the target method and invariants; enforce the parent's capability ceiling for a child; update the method assignment and lifecycle state; append the decision event with its request digest; and write any dispatch instruction to an outbox. Proposal rejection is a separate atomic transition, available only while the record is \texttt{PROPOSED}. The transaction should fail as a whole if the expected version is stale. The executor reads the outbox and performs the external dispatch separately.
 
 \begin{lstlisting}[language=SQL,caption={Illustrative persistence tables for an intention aggregate},label={lst:ch15-schema}]
 CREATE TABLE intention (
@@ -617,6 +678,9 @@ CREATE TABLE intention (
     goal_id            VARCHAR(64) NOT NULL,
     goal_version       BIGINT NOT NULL,
     state              VARCHAR(32) NOT NULL,
+    resume_target      VARCHAR(40),
+    suspension_reason  TEXT,
+    active_delegation_id VARCHAR(128),
     method_id          VARCHAR(128),
     method_version     BIGINT,
     record_version     BIGINT NOT NULL,
@@ -630,6 +694,7 @@ CREATE TABLE intention_event (
     expected_version   BIGINT NOT NULL,
     resulting_version  BIGINT NOT NULL,
     event_type         VARCHAR(64) NOT NULL,
+    request_digest     VARCHAR(128) NOT NULL,
     evidence_json      TEXT NOT NULL,
     decision_json      TEXT NOT NULL,
     created_at         TIMESTAMP NOT NULL
@@ -675,9 +740,9 @@ Delegation creates a child task under the parent intention. The \gls{delegationc
   \item the rule that the child cannot amend the parent's goal or enlarge its own authority.
 \end{itemize}
 
-The parent remains responsible for integrating the result. A child result is evidence or a proposal; it does not automatically satisfy the parent goal. If the parent version changes while the child is running, the result must be revalidated against the latest state before it is used.
+The parent remains responsible for integrating the result. A child result is evidence or a proposal; it does not automatically satisfy the parent goal. Success, failure, timeout, and cancellation are all returned as typed child outcomes to the parent, which revalidates the parent goal version, intention record version, evidence provenance, and delegated scope before moving to \texttt{RECONSIDERATION\_PENDING}. If the parent version changes while the child is running, the result is not applied to the new version; the parent suspends or escalates with a recorded reconsideration resume target. A missing, late, malformed, or out-of-scope result cannot be treated as successful completion.
 
-Suspension is different. A suspended intention remains active as a commitment but is not currently executing its method. The record should identify why it was paused, what event or approval allows resumption, whether delegated work should be cancelled, and which resources should be released. A timeout with an uncertain external outcome may justify suspension while waiting for a provider record. It should not be reclassified as success or failure just to clear an active queue.
+Suspension is different. A suspended intention remains active as a commitment but is not currently executing its method. The record should identify why it was paused, what event or approval allows resumption, whether delegated work should be cancelled, which resources should be released, and the explicit resume target (\texttt{ACTIVE} or \texttt{RECONSIDERATION\_PENDING}). Resuming to active is permitted only after the original method and permissions are revalidated; resuming to reconsideration requires a new governor decision before any method executes. A timeout with an uncertain external outcome may justify suspension while waiting for a provider record. It should not be reclassified as success or failure just to clear an active queue.
 
 \subsection{Anti-oscillation safeguards}
 
@@ -698,7 +763,7 @@ Thresholds and switch budgets are not universal constants. They should be chosen
 
 \subsection{Java-like interfaces and orchestration}
 
-The following interfaces illustrate the control separation. Implementations may use a workflow engine or a graph runtime, but neither framework should be allowed to bypass the domain-level contracts.
+The following interfaces illustrate the control separation. Implementations may use a workflow engine or a graph runtime, but neither framework should be allowed to bypass the domain-level contracts. The transactional and authority requirements are stated explicitly and are not delegated to omitted boilerplate.
 
 \begin{lstlisting}[language=Java,caption={Proposed service boundaries for intention governance},label={lst:ch15-interfaces}]
 interface GoalAuthority {
@@ -706,10 +771,34 @@ interface GoalAuthority {
     GoalSpec amendGoal(AuthorizedGoalAmendment amendment);
 }
 
+interface ProposalAuthority {
+    TransitionResult rejectProposal(
+        IntentionId id, long expectedVersion, String eventId,
+        String requestDigest, PrincipalId authority, String reason,
+        List<EvidenceId> evidence
+    );
+}
+
 interface IntentionRepository {
     Optional<IntentionRecord> find(IntentionId id);
-    TransitionResult apply(
+    Optional<AppliedEvent> findAppliedEvent(String eventId);
+    TransitionResult applyAtomically(
+        String eventId,
+        String requestDigest,
         long expectedVersion,
+        GovernorDecision decision
+    );
+    TransitionResult rejectProposalAtomically(
+        IntentionId id, long expectedVersion, String eventId,
+        String requestDigest, PrincipalId authority, String reason,
+        List<EvidenceId> evidence
+    );
+}
+
+interface DelegationPolicy {
+    AuthorizationResult validateChildWithinParent(
+        AuthorityPolicy parentAuthority,
+        MethodDescriptor childMethod,
         GovernorDecision decision
     );
 }
@@ -754,16 +843,23 @@ interface MethodExecutor {
 A simplified orchestration path is:
 
 \begin{lstlisting}[language=Java,caption={Guarded reconsideration and method transition},label={lst:ch15-orchestration}]
-void reconsider(ReconsiderationEvent event) {
+TransitionResult reconsider(ReconsiderationEvent event) {
+    // Fast replay path. The repository repeats this check inside the
+    // atomic apply transaction to close the concurrent-delivery race.
+    Optional<AppliedEvent> prior = repository.findAppliedEvent(event.eventId());
+    if (prior.isPresent()) {
+        requireSameDigest(prior.get().requestDigest(), event.requestDigest());
+        return prior.get().result();
+    }
+
     IntentionRecord current = repository
         .find(event.intentionId())
         .orElseThrow();
-
     requireMatchingVersions(current, event);
-    if (eventAlreadyApplied(event.eventId())) return;
 
     GoalSpec goal = goalAuthority
         .requireCurrentGoal(current.goalId());
+    requireSameGoalVersion(goal, current);
     EvidenceBundle evidence = evidenceStore
         .loadAndValidate(event.evidence());
     Diagnosis diagnosis = diagnoser
@@ -772,28 +868,43 @@ void reconsider(ReconsiderationEvent event) {
     GovernorDecision decision = governor.decide(
         current, diagnosis, current.authority());
 
-    MethodDescriptor next = null;
-    if (decision.action() == SWITCH_METHOD) {
-        next = methodRegistry.require(
-            decision.nextMethod().methodId(),
-            decision.nextMethod().methodVersion());
-        requireSameGoalVersion(goal, current);
-        requireGoalInvariants(goal, next);
-        authorizationGate.authorize(goal, next, decision)
+    boolean retainsCurrentMethod =
+        decision.action() == CONTINUE || decision.action() == RESUME;
+    boolean selectsMethod =
+        decision.action() == SWITCH_METHOD || decision.action() == DELEGATE;
+
+    if (retainsCurrentMethod || selectsMethod) {
+        MethodAssignment assignment = retainsCurrentMethod
+            ? current.method() : decision.nextMethod();
+        MethodDescriptor selected = methodRegistry.require(
+            assignment.methodId(), assignment.methodVersion());
+        MethodCompatibility compatibility = methodRegistry.assess(goal, selected);
+        compatibility.requireCompatible();
+        requireGoalInvariants(goal, selected);
+        authorizationGate.authorize(goal, selected, decision)
             .requireAllowed();
+
+        if (decision.action() == DELEGATE) {
+            delegationPolicy.validateChildWithinParent(
+                current.authority(), selected, decision)
+                .requireAllowed();
+        }
     }
 
-    TransitionResult result = repository.apply(
+    // Unique event ID, request digest, expected version, legal transition,
+    // and result/outbox persistence are checked in one repository transaction.
+    TransitionResult result = repository.applyAtomically(
+        event.eventId(), event.requestDigest(),
         current.recordVersion(), decision);
+    if (result.replayed()) return result;
     if (!result.applied()) {
         throw new StaleDecisionException(result.currentVersion());
     }
-    // The repository writes a durable outbox entry in the same
-    // transaction as the accepted intention transition.
+    return result;
 }
 \end{lstlisting}
 
-The pseudo-code omits transport, retry, observability, and transaction details. In a production implementation, the repository's \texttt{apply} method must enforce the invariants again; it should not trust that an upstream caller performed every check. It should verify the current state, expected record version, goal version, transition legality, and unique event ID in one transaction. The dispatcher then handles the outbox idempotently.
+The pseudo-code omits transport, retry, observability, and transaction details. The preliminary replay lookup is an optimization, not the concurrency guarantee: the repository's \texttt{applyAtomically} operation must repeat the event-ID check inside the same transaction that validates the request digest, current state, expected record version, goal version, transition legality, and outbox write. An identical duplicate returns the previously committed result before stale-version validation can reject it. The canonical digest covers the intention ID, expected record/goal/method versions, trigger, evidence identifiers, and correlation identity; it must not be computed from mutable display text or a non-canonical map. Reuse of an event ID with a different request digest is a conflict and must be rejected. If a concurrent delivery wins between the fast lookup and the transaction, the repository returns the previously committed result as a replay; the caller distinguishes that replay from a stale-version rejection. Concurrent deliveries therefore converge on one committed transition rather than depending on the order of two application-level checks. The dispatcher then handles the outbox idempotently.
 
 \subsection{Incremental implementation sequence}
 
@@ -825,7 +936,13 @@ At minimum, the test suite should include:
   \item A child task returns an answer after the parent goal has been amended. The parent must revalidate the result before use.
   \item A process crashes after the intention update but before external dispatch. The outbox must allow safe recovery without creating a duplicate operation.
   \item A process crashes after an external operation succeeds but before recording the response. Reconciliation must occur before a retry.
-  \item A method oscillates between two alternatives. Hysteresis or the switch budget should trigger suspension or escalation without blocking a high-priority safety event.
+  \item A proposed intention is rejected by an authorized principal. The rejection reason is durable, the proposal is terminal, and a retry requires a new proposal identity.
+  \item A suspended intention resumes to \texttt{ACTIVE} only when its stored resume condition and method permissions remain valid.
+  \item A suspended intention resumes to \texttt{RECONSIDERATION\_PENDING} when a child result or changed dependency requires a fresh governor decision.
+  \item A delegated child returns success, failure, timeout, and cancellation in separate tests. Each returns the parent to reconsideration only after parent-version and scope validation.
+  \item A stale or out-of-scope child result is not integrated and causes suspension or escalation.
+  \item Two concurrent deliveries of the same event ID and digest produce one transition and the same recorded result; reuse of the ID with a different digest is rejected.
+  \item Both \texttt{SWITCH\_METHOD} and \texttt{DELEGATE} run method compatibility and authorization checks. A child requesting any capability outside the parent allowlist is rejected.
   \item An intention appears complete in a model-generated summary but lacks authoritative success evidence. It must not enter \texttt{SATISFIED}.
 \end{itemize}
 

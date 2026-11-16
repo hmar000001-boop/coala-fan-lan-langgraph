@@ -263,7 +263,7 @@ The governor owns admission. The router owns delivery. The consumers own their l
 
 \subsection{Typed contracts}
 
-The following Java-like records make the hand-offs implementable. They are proposals, not existing LIDA structures or types mandated by Fan and Lan.
+The following Java-like records make the hand-offs implementable. They are proposals, not existing LIDA structures or types mandated by Fan and Lan. The listings are contract fragments rather than a standalone compilation unit: imports, persistence adapters, and routine transport/value-object details are omitted. The support records used by the cycle orchestration are declared explicitly below where their fields affect state, authority, or failure handling.
 
 \begin{lstlisting}[language=Java,caption={Proposed candidate, coalition, and workspace contracts.},label={lst:ch14-workspace-records}]
 enum CandidateKind {
@@ -424,6 +424,109 @@ interface PolicyLearner {
 
 Only the governor can make an admission decision. The workspace store accepts a decision only once for the cycle. The router can publish only the stored snapshot and only to its authorized recipients. Consumers cannot mutate the snapshot; they return new proposals or receipts. The policy learner creates a candidate version; a policy registry and deployment gate decide whether that version can become active.
 
+\subsection{Cycle support types and subsystem ports}
+
+The orchestration uses a small number of support records that are easy to overlook when the workspace, ledger, and policy lifecycle are described separately. They are shown here so that the no-admission and admitted paths have different, type-visible outcomes.
+
+\begin{lstlisting}[language=Java,caption={Supporting B3 cycle types and explicit service dependencies.},label={lst:ch14-cycle-support-types}]
+record WorkspaceBudget(int tokenLimit, int candidateLimit) {}
+
+record CycleContext(
+    String cycleId,
+    String taskScope,
+    WorkspaceBudget workspaceBudget,
+    Set<String> authorizedConsumers,
+    Instant admissionDeadline,
+    Instant expiresAt
+) {}
+
+record ValidationResult(
+    boolean eligible,
+    CandidateEnvelope candidate,
+    List<String> reasons
+) {
+    boolean isEligible() { return eligible; }
+}
+
+record AdmissionDecision(
+    AdmissionState state,
+    String coalitionId,
+    long expectedVersion,
+    String policyVersion,
+    String rationale
+) {}
+
+enum DeliveryStatus { DELIVERED, REJECTED, RETRYABLE_FAILURE, PERMANENT_FAILURE }
+
+record DeliveryReceipt(
+    String cycleId,
+    long snapshotVersion,
+    String consumerId,
+    Instant attemptedAt,
+    DeliveryStatus status,
+    String failureReason
+) {}
+
+record CycleTrace(
+    String cycleId,
+    long snapshotVersion,
+    List<CandidateRef> memberVersions,
+    List<DeliveryReceipt> deliveries
+) {}
+
+record TaskOutcome(
+    String episodeId,
+    boolean success,
+    double observedTaskQuality,
+    String evidenceRef,
+    Instant observedAt
+) {}
+
+record PolicyCandidate(
+    String candidatePolicyVersion,
+    String parentPolicyVersion,
+    String validationReportRef
+) {}
+
+sealed interface WorkspaceCycleResult
+    permits NoAdmissionResult, BroadcastResult {}
+
+record NoAdmissionResult(
+    String cycleId,
+    AdmissionDecision decision
+) implements WorkspaceCycleResult {}
+
+record BroadcastResult(
+    WorkspaceSnapshot snapshot,
+    List<DeliveryReceipt> deliveries,
+    List<ConsumerReceipt> consumerReceipts
+) implements WorkspaceCycleResult {}
+
+interface WorkspaceLedger {
+    void recordNoAdmission(String cycleId, AdmissionDecision decision);
+    void recordBroadcast(WorkspaceSnapshot snapshot,
+                         List<DeliveryReceipt> deliveries);
+    void recordReceipts(List<ConsumerReceipt> receipts);
+    CycleTrace trace(WorkspaceSnapshot snapshot);
+    void recordOutcome(OutcomeAttribution outcome);
+}
+
+interface AdmissionPolicyRegistry {
+    AdmissionPolicySnapshot active();
+}
+
+interface ConsumerCoordinator {
+    List<ConsumerReceipt> collectReceipts(String cycleId, long snapshotVersion);
+}
+
+interface PolicyFeedbackQueue {
+    void enqueueValidatedFeedback(OutcomeAttribution feedback);
+    List<OutcomeAttribution> drainValidatedBatch(int maximumItems);
+}
+\end{lstlisting}
+
+The feedback queue and policy learner are deliberately separate. The cycle records validated outcome evidence and enqueues it. A later offline or controlled learning job calls \texttt{drainValidatedBatch}, passes the returned records to \texttt{PolicyLearner.update}, validates the resulting candidate policy, and submits it to the policy registry/deployment gate. The queue does not train or promote a policy, and the cycle does not update the active policy synchronously. A \texttt{NoAdmissionResult} has no workspace snapshot and therefore cannot be passed to snapshot-only expiry or attribution operations. \texttt{WorkspaceLedger.recordNoAdmission} durably closes the cycle with its decision and reason; the workspace store is never asked to expire a snapshot that was not opened.
+
 \subsection{The workspace cycle state machine}
 
 A cycle should have an explicit lifecycle. The proposed normal path is \texttt{COLLECTING}, \texttt{VALIDATING}, \texttt{COALITION\_FORMATION}, \texttt{COMPETING}, \texttt{ADMITTED}, \texttt{BROADCAST}, \texttt{CONSUMING}, \texttt{OUTCOME\_RECORDED}, \texttt{POLICY\_UPDATE}, and \texttt{EXPIRED}. Invalid candidates can be rejected before competition. A cycle with no eligible coalition may close as \texttt{NO\_ADMISSION}; this is preferable to inventing content just to fill the budget.
@@ -535,32 +638,33 @@ WorkspaceCycleResult runCycle(CycleContext context) {
 
     if (decision.state() != AdmissionState.ADMITTED) {
         ledger.recordNoAdmission(context.cycleId(), decision);
-        workspace.expire(context.cycleId(), decision.expectedVersion());
-        return WorkspaceCycleResult.noAdmission(decision);
+        // No workspace snapshot was opened; the ledger closes this cycle.
+        return new NoAdmissionResult(context.cycleId(), decision);
     }
 
     WorkspaceSnapshot snapshot = workspace.open(
         decision, context.cycleId(), context.expiresAt());
-    List<DeliveryReceipt> delivery = router.publish(
+    List<DeliveryReceipt> deliveries = router.publish(
         snapshot, context.authorizedConsumers());
-    ledger.recordBroadcast(snapshot, delivery);
+    ledger.recordBroadcast(snapshot, deliveries);
 
     List<ConsumerReceipt> receipts = consumers.collectReceipts(
         snapshot.cycleId(), snapshot.version());
     ledger.recordReceipts(receipts);
-    return WorkspaceCycleResult.broadcast(snapshot, delivery, receipts);
+    return new BroadcastResult(snapshot, deliveries, receipts);
 }
 
-void closeEpisode(WorkspaceCycleResult cycle, TaskOutcome outcome) {
+void closeEpisode(BroadcastResult cycle, TaskOutcome outcome) {
+    WorkspaceSnapshot snapshot = cycle.snapshot();
     OutcomeAttribution feedback = attributor.attribute(
-        ledger.trace(cycle.snapshot()), outcome);
+        ledger.trace(snapshot), outcome);
     ledger.recordOutcome(feedback);
-    policyTrainer.enqueueValidatedFeedback(feedback);
-    workspace.expire(cycle.cycleId(), cycle.snapshotVersion());
+    policyFeedbackQueue.enqueueValidatedFeedback(feedback);
+    workspace.expire(snapshot.cycleId(), snapshot.version());
 }
 \end{lstlisting}
 
-The pseudocode leaves coalition policy and learning details behind interfaces on purpose. It makes the authority boundaries executable: producers propose; validators filter; the governor admits; the workspace stores one snapshot; the router publishes; consumers return receipts; an outcome service records feedback; and a separate trainer queues validated data. The code does not silently treat a model's recommendation as an admission decision or external-action authorization.
+The pseudocode leaves coalition policy and learning details behind interfaces on purpose. It makes the authority boundaries executable: producers propose; validators filter; the governor admits; the workspace stores one snapshot; the router publishes; consumers return receipts; an outcome service records feedback; and a separate feedback queue stores validated outcome data for an offline learning job. The code does not silently treat a model's recommendation as an admission decision or external-action authorization.
 
 \subsection{Tests that exercise the control law}
 
@@ -569,12 +673,15 @@ At minimum, test the following cases:
   \item a candidate with invalid provenance never reaches competition;
   \item a candidate outside the task scope is rejected even if its relevance score is high;
   \item a coalition whose token cost exceeds the workspace budget is not admitted;
+  \item a no-admission decision records a durable \texttt{NoAdmissionResult}, never opens a workspace snapshot, and never invokes snapshot expiry or outcome attribution;
+  \item a broadcast result is the only result accepted by \texttt{closeEpisode}, and its snapshot is expired only after attribution is recorded;
   \item two parallel admission requests cannot create two active snapshots for one cycle;
   \item a consumer cannot change a published snapshot;
   \item an unauthorized consumer receives no sensitive candidate;
   \item a late candidate is assigned to a later cycle rather than rewriting an existing snapshot;
   \item a read receipt is not automatically recorded as use or helpfulness;
   \item an outcome update cannot mutate the active policy version in place;
+  \item the feedback queue returns only validated records in bounded batches, and an offline learner creates a candidate version without mutating the active policy;
   \item a policy regression restores the previous accepted version;
   \item the same candidate and policy snapshots reproduce the same deterministic baseline decision.
 \end{itemize}
