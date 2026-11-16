@@ -1,0 +1,38 @@
+PHASE 1 VALIDATION EVIDENCE
+Date: 2026-11-16
+Canonical source: batch09-chapter18-complete-project.zip
+
+ARCHIVE / PDF
+- Source archive SHA-256: 1638be9c6a86ee05d389cc558a0e66f87413e1fe50310d029e338d201f9b1602
+- Baseline PDF SHA-256: afdee56e95075def422da97d563176e48b21809396ce100b925a118db6029384
+- Baseline PDF: 597 pages; 504 x 720 pt (7 x 10 in); PDF 1.7; creation 2026-11-15 17:31:58 UTC
+
+STATIC CHECKS (PASS)
+$ bash scripts/check-scaffold.sh
+Repository structure verified: Part I 8 chapters; Part II 10; Part III 12. Chapters 1-18 contain drafted prose; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources.
+
+$ bash scripts/check-diagrams.sh --sources-only
+Diagram source validation passed: 95 Mermaid sources, accessible descriptions, sequence syntax guard, and all Chapter 1-18 figure references.
+
+$ bash -n scripts/*.sh
+PASS
+
+$ source inventory script
+281 project files; 50 active TeX source files inspected; 57 input/include references, none missing; 418 unique labels, no duplicates; 12 checked ref-style references, none missing; 52 unique bibliography keys, all in the 52-entry .bib; 131 glossary entries and 141 uses, none missing; 182 active index commands.
+
+BUILD ATTEMPTS (BLOCKED / INCOMPLETE)
+$ bash scripts/build-book.sh
+Exit 1: Mermaid CLI is not installed. Run: npm install --prefix tools/mermaid --no-audit --no-fund
+
+$ npm install --prefix tools/mermaid --no-package-lock --no-save --no-audit --no-fund --no-progress
+Timed out; npm debug log shows registry.npmjs.org fetch attempts failing with EAI_AGAIN. No usable mmdc binary was installed.
+
+$ xelatex -halt-on-error -file-line-error -interaction=nonstopmode -output-directory=... Tex/part1/main.tex
+Exit 1 at Tex/preamble.tex:19: fontspec cannot find the font "TeX Gyre Termes". Local fontconfig resolves the family to a Type 1 PFB file; the required OpenType font is not available under the requested family.
+
+Diagnostic-only copy (not the canonical source): Noto Serif/Noto Sans/Noto Sans Mono substituted; BookDiagram replaced with labelled fixed panels. Biber read the .bcf, found 52 citekeys, and wrote .bbl. XeLaTeX reached Chapter 7 and at least page 131 before tool timeout. No full diagnostic PDF was completed. This does not validate actual diagram rendering, production fonts, or final pagination.
+
+SOURCE DEFECT CONFIRMATION
+Tex/part2/chapter12/chapter.tex:642 has two literal backslashes before FanLanCite. Extracted baseline PDF text contains the literal string "FanLanCite§ V-A; ...".
+
+NO CANONICAL TEX CONTENT WAS EDITED DURING PHASE 1.

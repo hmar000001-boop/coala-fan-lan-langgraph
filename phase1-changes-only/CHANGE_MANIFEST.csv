@@ -1,0 +1,9 @@
+change_type,path,description
+Added,PHASE_1_SOURCE_BASELINE_REPORT.md,Editable Phase 1 source baseline report
+Added,PHASE_1_SOURCE_BASELINE_REPORT.pdf,Rendered five-page Phase 1 source baseline report
+Added,PHASE_1_CORRECTION_LEDGER.csv,Source finding ledger for subsequent phases
+Added,PHASE_1_VALIDATION_LOG.txt,Static validation and build-attempt log
+Added,CHANGELOG_PHASE_1.md,Added modified and deleted change summary
+Added,README_CHANGESET.md,Package contents and scope
+Modified,,None
+Deleted,,None
