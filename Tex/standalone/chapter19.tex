@@ -1,0 +1,20 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\pdfstringdefDisableCommands{\def\textenglish#1{#1}}
+\begin{document}
+\mainmatter
+\setcounter{chapter}{18}
+\input{Tex/part3/chapter19/chapter.tex}
+% Standalone proof PDFs do not need recto-only backmatter starts.
+\let\cleardoublepage\clearpage
+\backmatter
+\nocite{sumers2024coala,fanlan2026mechanisms}
+{\small
+\printglossaries
+}
+\begingroup
+\sloppy
+\setlength{\emergencystretch}{3em}
+\printbibliography[heading=bibintoc,title={References}]
+\endgroup
+\end{document}

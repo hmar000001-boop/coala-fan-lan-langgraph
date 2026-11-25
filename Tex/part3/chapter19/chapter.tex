@@ -1,4 +1,346 @@
 \chapter{Engineering Foundations for Request-Driven Enterprise Agentic Systems}
+\label{ch:engineering-foundations}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Parts I and II have given us two ways to understand language-agent systems. CoALA provides an architectural vocabulary for information storage, action space, and the decision procedure. Fan and Lan examine the mechanisms that make particular control relationships operational. We now move from those explanations to one Java application. The purpose of this chapter is to establish the problem and the modeled world before we inspect the agent's cognitive services. We will identify the supply-chain facts the application represents, the constraints that protect those facts, the deterministic simulator that acts as the external world for the demonstration, and the software modules that connect the domain to the agent runtime.
+
+The application is a reference demonstration and teaching system. It models selected supply-chain operations; it does not connect to real suppliers, warehouses, carriers, or enterprise resource-planning systems. The code is deliberately more disciplined than a toy prompt example: it uses typed domain objects, explicit state transitions, action boundaries, persistence adapters, and testable recovery paths. Those engineering properties make the implementation useful for learning, but they do not turn it into a deployed product or establish independent experimental effectiveness.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to explain the supply-chain problem being modeled; identify the main domain records and the invariants that connect them; distinguish a proposed recovery action from a validated simulation command and a resulting observation; explain the roles of the domain, simulator, action, runtime, infrastructure, and evaluation modules; and describe what the demonstration does not claim to model.
+\end{learningbox}
+
+\section{What are we building?}
+\label{sec:ch19-what-we-build}
+
+Imagine a company that must fulfil customer orders using inventory, qualified suppliers, purchase orders, carriers, routes, and shipments. A disruption can alter one of those facts. A supplier may reduce its available capacity. A lot may be placed on quality hold. A shipment may be delayed or become eligible for rerouting. A customer order may change. The company needs to understand which commitments are affected and which recovery actions remain feasible.
+
+The problem is not simply to produce a plausible explanation of a disruption. A useful system must distinguish at least five questions:
+
+\begin{enumerate}
+  \item \textbf{What is known?} Which orders, inventory lots, supplier capabilities, purchase orders, routes, and shipments are present in the modeled world?
+  \item \textbf{What changed?} Which disruption or observation altered the facts on which the current plan depends?
+  \item \textbf{What remains feasible?} Does a proposed reservation exceed available stock? Is a supplier qualified for the product? Can a route meet the revised arrival time?
+  \item \textbf{What may be done?} Is the proposed operation read-only or state-changing, and has the required capability and approval been established?
+  \item \textbf{What happened?} Did the simulated world accept the command, what new state was produced, and what evidence should the agent use in its next decision cycle?
+\end{enumerate}
+
+These questions belong to different parts of the application. A language model can help interpret a request or assess evidence, but it is not the authoritative source for inventory quantity, supplier capacity, order status, or approval. The domain model represents the business facts; the simulator applies valid modeled transitions; the action subsystem mediates the agent's interaction with that world; and the runtime coordinates the decision process. The later chapters will explain how CoALA and the five residual mechanisms from Fan and Lan are implemented around those boundaries.
+
+\BookDiagram[0.56\textheight]
+  {Tex/diagrams/generated/part3/chapter19/supply-chain-request-boundary.png}
+  {The application boundary for the teaching demonstration. The agent reasons about a request, but business facts and modeled transitions remain in the domain and simulator; a state-changing operation must pass through the action boundary before the simulator changes its snapshot.}
+  {fig:ch19-request-boundary}
+
+\subsection{A deliberately bounded example}
+
+\BookExampleLabel{} The simulator test fixture provides a small, concrete world. It contains a product called Precision valve, a supplier with a product-specific capacity, an inventory location and two lots, a customer order, an open confirmed purchase order, a carrier, two routes, a shipment, an approved product substitution, and a recovery objective with a proposed candidate. The fixture is not a claim about a real company. It exists so that the rules of the model can be exercised in repeatable tests.
+
+One test changes the supplier's modeled capacity from 100 units to 20 while an open purchase order already commits 30 units. The simulator accepts the capacity-reduction command as a change to the world, but it also emits an \texttt{OPEN\_PURCHASE\_ORDERS\_AT\_RISK} effect because the existing commitment now exceeds the reduced capacity. A focused test in \texttt{SupplyChainSimulatorTest} asserts this effect and checks that the original snapshot remains unchanged. This is a useful miniature example: the state change is explicit, the affected commitment is computed from records already in the snapshot, and the result is represented as typed evidence rather than hidden inside a model-generated paragraph.
+
+The fixture does not establish that a complete supply-chain optimization problem has been solved. It isolates one behavior so that the reader can see how a business fact, a domain constraint, a command, a state transition, and a resulting effect relate to one another. The complete request-to-approval-to-execution journey is reserved for Chapter 24.
+
+\section{The business domain: model facts before planning}
+\label{sec:ch19-domain-model}
+
+A \gls{domainmodel} is the set of concepts and relationships that an application treats as meaningful facts about its subject area. The model in this repository is intentionally selective. It is not a universal supply-chain ontology and it does not attempt to represent every commercial, regulatory, geographic, or operational detail that a real enterprise may need. It represents enough of the selected domain to exercise disruption assessment, recovery planning, state-changing actions, and feedback.
+
+The Java source groups the domain by business concept rather than placing every class in one package:
+
+\begin{description}
+  \item[Catalog.] \texttt{Product} identifies a stockable or purchasable product. \texttt{ProductSubstitution} records a time-bounded approval to use one product in place of another, including the required quantity ratio and status.
+  \item[Supplier.] \texttt{Supplier} holds supplier identity, status, version, and product-specific capabilities. A \texttt{SupplierProductCapability} includes a product, capacity, lead time, and a quality-qualification flag.
+  \item[Orders.] \texttt{CustomerOrder} groups order lines, priority, status, and due time. Each \texttt{OrderLine} identifies the required product and the requested and fulfilled quantities.
+  \item[Inventory.] \texttt{InventoryLocation}, \texttt{InventoryLot}, and \texttt{InventoryReservation} represent where stock is held, the state of a lot, and quantities committed to fulfil an order.
+  \item[Procurement.] \texttt{PurchaseOrder} and \texttt{PurchaseOrderLine} record a supplier commitment, its status, quantities, and modeled unit cost.
+  \item[Logistics.] \texttt{Carrier}, \texttt{Route}, \texttt{Shipment}, and \texttt{ShipmentLine} model transport capabilities, expected transit time, shipment status, and the order demand served by each shipment line.
+  \item[Disruption and recovery.] \texttt{Disruption} records a modeled event. \texttt{RecoveryObjective} identifies the affected orders, target fulfilment time, hard constraints, status, and version. \texttt{RecoveryCandidate} is a proposed sequence of typed recovery actions associated with an objective.
+\end{description}
+
+The main aggregates are connected through identifiers rather than by embedding an entire object graph into each record. A shipment line points to an order and an order line. An inventory reservation points to a lot and an order line. A purchase order points to a supplier, while its lines identify products. These relationships are checked when the world snapshot is built. That is important because a locally valid record can still be inconsistent with the rest of the modeled world.
+
+\BookDiagram[0.58\textheight]
+  {Tex/diagrams/generated/part3/chapter19/domain-model-overview.png}
+  {Selected domain relationships. The diagram emphasizes the records that participate in the principal fulfilment and recovery constraints; it is not a complete class diagram of every Java type.}
+  {fig:ch19-domain-model}
+
+\subsection{Quantities and money are typed values}
+
+A domain model should prevent avoidable mistakes before those mistakes reach planning. For example, the number \texttt{10} is not enough to describe a stock quantity. Ten each, ten kilograms, and ten litres are not interchangeable. The application represents a quantity as a value and a unit of measure.
+
+\begin{lstlisting}[language=Java,caption={Quantity arithmetic rejects operations across different units. Source: supply-chain-agent-domain/.../common/Quantity.java},label={lst:ch19-quantity}]
+public Quantity plus(Quantity other) {
+    requireSameUnit(other);
+    return new Quantity(value.add(other.value), unit);
+}
+
+private void requireSameUnit(Quantity other) {
+    Objects.requireNonNull(other, "other");
+    if (unit != other.unit) {
+        throw new IllegalArgumentException(
+            "Unit mismatch: " + unit + " versus " + other.unit);
+    }
+}
+\end{lstlisting}
+
+The \texttt{Quantity} record also rejects negative values, normalizes decimal scale, and prevents subtraction from producing a negative result. A \texttt{Money} value similarly couples a non-negative decimal amount to a Java currency. Addition and comparison require the same currency. The model does not silently convert units or exchange currencies; a conversion would need its own explicit rule and source of authority.
+
+This is a small but consequential design choice. If a planner proposes reserving 12 units, the application must know what those units measure and whether they can be compared with the lot quantity and order demand. Using typed values moves some invalid states out of the planner's prompt and into code that can be tested directly.
+
+\subsection{An immutable, versioned view of the world}
+
+The central aggregate for the simulator is \texttt{SupplyChainSnapshot}. It contains maps of the current products, substitutions, suppliers, locations, inventory lots, customer orders, purchase orders, carriers, routes, shipments, reservations, disruptions, recovery objectives, and recovery candidates. It also has a monotonically advanced version and a capture time. The constructor copies the builder's maps and validates references and balances before the snapshot can be created.
+
+The word \emph{snapshot} matters. This object is an immutable view of the modeled world at a particular version. It is not itself a database, an event log, or an authorization token. The persistence layer stores records through separate interfaces. The snapshot gives the simulator a coherent input state and gives downstream components a version that can be checked when an operation is applied.
+
+A snapshot also provides derived queries instead of asking every caller to reconstruct the same calculation. For example, it can calculate active physical reservations for a lot, the remaining available quantity at a given time, the quantity already committed to non-terminal shipments for an order line, and open supplier commitments for a product. These derived values are central to feasibility checks.
+
+\section{Business invariants: what the model refuses to accept}
+\label{sec:ch19-invariants}
+
+A \gls{domaininvariant} is a rule that must remain true for every state accepted by the domain model. Invariants are not preferences for a planner to balance against a score. They define which modeled states are valid. The repository enforces these rules at record construction, snapshot construction, and command application, depending on the rule.
+
+Several examples show how different records must agree:
+
+\begin{enumerate}
+  \item \textbf{Product and quantity units must agree.} A supplier capability's capacity, an inventory lot's on-hand quantity, and an order line's requested quantity must use the product's declared unit. A quantity comparison across units is rejected rather than guessed.
+  \item \textbf{Available stock is not the same as stock on hand.} A lot contributes no available stock when it is not in the available quality state or when it has expired. Active reservations are subtracted from its physical quantity. The same lot therefore cannot be allocated repeatedly just because its original on-hand value remains unchanged.
+  \item \textbf{An order line cannot be overcommitted.} Fulfilled quantity, active reservation quantity, and demand consumed by non-terminal shipments are checked together. A state in which those commitments exceed the requested quantity is rejected. A fulfilled order must also have its lines fully fulfilled.
+  \item \textbf{A substitute must be valid for the relevant time.} A substitution must refer to two different products, have a positive ratio, and be approved during the applicable time window. The snapshot rejects overlapping approved rules for the same product pair in the model's current rule set.
+  \item \textbf{Supplier commitments must fit the modeled capability.} A purchase order can only be placed for an active supplier with the required product qualification and quality qualification. Its expected delivery cannot precede the supplier's lead time, and open commitments plus the requested amount cannot exceed the capability's capacity.
+  \item \textbf{A shipment must fit its route and carrier.} Shipment references must resolve to existing route and carrier records, the carrier must support the route, and the shipment lines must reference valid order lines and products. Rerouting has further state and timing restrictions.
+\end{enumerate}
+
+These rules are not all implemented in one class. The value objects reject invalid local values; entity methods constrain valid local transitions; and \texttt{SupplyChainSnapshot} verifies relationships that require multiple records. The simulator then enforces command-specific rules, such as only placing a draft purchase order or rerouting a shipment in an allowed status.
+
 \begin{notebox}
-Chapter placeholder. This chapter establishes the engineering foundations for the single request-driven enterprise supply-chain disruption management system developed in Chapter 20. The chapter outline must be approved before prose is drafted.
+A business constraint, a planning objective, and an authorization rule are different things. A hard domain constraint determines whether a modeled state transition is feasible. A planner may rank several feasible recovery candidates by cost, lateness, or another represented value. An authorization policy determines whether a particular action is permitted for the current actor and context. A high planner score cannot override an invalid quantity, and a valid quantity does not itself grant permission to execute.
 \end{notebox}
+
+The model deliberately keeps these categories separate. The domain package does not decide which candidate should be preferred. The planner does not get to redefine the meaning of supplier capacity. The action authority does not make an infeasible order reservation valid. This separation is essential to the later code walkthroughs.
+
+\section{The simulator: a deterministic external world}
+\label{sec:ch19-simulator}
+
+For this teaching system, the external \gls{environment} is simulated. The simulator makes it possible to inspect what happens when a command changes supplier capacity, places a purchase order, applies a quality hold, delays or reroutes a shipment, reserves or releases inventory, changes demand, or records a disruption. The modeled effects can be repeated in tests without contacting an external business system.
+
+The simulator is implemented in the \path{supply-chain-agent-simulator} Maven module. Its central class is \texttt{SupplyChainSimulator}. It receives a snapshot and a typed \texttt{SimulationCommand}, applies the corresponding rule, and returns a \texttt{SimulationResult}. The command is an input to the modeled world. It is not itself evidence that the world has changed.
+
+\subsection{Typed commands make the requested transition explicit}
+
+\texttt{SimulationCommand} is a sealed interface. Its permitted records define the supported transition vocabulary. A command carries a command identifier and an occurrence time, plus the identifiers and values needed for that particular transition. For example, a reservation command identifies the reservation, customer order, order line, inventory lot, fulfilment quantity, and time.
+
+\begin{lstlisting}[language=Java,caption={A reservation command carries typed identifiers and a positive fulfilment quantity. Source: supply-chain-agent-simulator/.../command/SimulationCommand.java},label={lst:ch19-command}]
+record ReserveInventory(
+        String commandId,
+        ReservationId reservationId,
+        CustomerOrderId orderId,
+        OrderLineId orderLineId,
+        InventoryLotId lotId,
+        Quantity fulfillmentQuantity,
+        Instant occurredAt) implements SimulationCommand {
+    public ReserveInventory {
+        requireId(commandId);
+        Objects.requireNonNull(reservationId);
+        Objects.requireNonNull(orderId);
+        Objects.requireNonNull(orderLineId);
+        Objects.requireNonNull(lotId);
+        Objects.requireNonNull(fulfillmentQuantity);
+        Objects.requireNonNull(occurredAt);
+        if (!fulfillmentQuantity.isPositive()) {
+            throw new IllegalArgumentException(
+                "fulfillmentQuantity must be positive");
+        }
+    }
+}
+\end{lstlisting}
+
+The command constructor can check that the request is structurally meaningful. It cannot by itself determine whether the lot has enough available quantity or whether the order line can accept more commitment. Those facts require the current snapshot and are checked by the simulator and snapshot invariants.
+
+\subsection{A pure transition produces a new snapshot and effects}
+
+The simulator dispatches on the command type, calls the corresponding transition method, and returns a result containing the command identifier, previous version, new version, new snapshot, and a list of typed effects. It performs no database write, network request, supplier notification, carrier booking, or physical warehouse operation.
+
+A successful transition creates a new snapshot. The helper that advances the world copies the current snapshot into a builder, increments its version once, advances the capture time when the command time is later, applies the mutation, and validates the resulting snapshot. The original snapshot remains unchanged. This immutability makes it possible to compare the before and after states and prevents a caller from accidentally editing the current world outside the simulator's transition rules.
+
+A \texttt{SimulationEffect} describes the modeled consequence. It has a type, description, affected entity references, and attributes. For example, reducing supplier capacity can produce both a capacity-change effect and an effect identifying open purchase orders that are now at risk. An effect is an auditable description of the simulated transition; its existence does not mean a real external side effect occurred.
+
+\BookDiagram[0.56\textheight]
+  {Tex/diagrams/generated/part3/chapter19/simulator-transition-boundary.png}
+  {A typed command is validated against the current snapshot. The pure simulator returns a new immutable snapshot and typed effects; an adapter is responsible for exposing that transition to the agent-facing action interface.}
+  {fig:ch19-simulator-transition}
+
+\subsection{Worked example: reducing supplier capacity}
+
+Return to the small test fixture. The supplier has a capability for the Precision valve product with a capacity of 100 units. An open confirmed purchase order already commits 30 units. The test applies a \texttt{ReduceSupplierCapacity} command with a new capacity of 20.
+
+The simulator first resolves the supplier and the product capability. It requires the new capacity to use the same unit and to be strictly lower than the current capacity. It creates a supplier record with an updated capability and version. It then computes the open supplier commitment from purchase orders whose statuses consume capacity. Since 30 committed units exceed the new capacity of 20, the simulator adds an \texttt{OPEN\_PURCHASE\_ORDERS\_AT\_RISK} effect.
+
+The test asserts that the returned snapshot has version 1, the supplier capability is now 20, the supplier record's version has advanced, the risk effect is present, and the original snapshot still has version 0. It also tests that a command attempting to increase capacity through the reduction operation is rejected as an invalid transition.
+
+The example illustrates four separate facts: the command says what change is requested; the simulator checks whether that change is valid; the new snapshot records the modeled business state; and the effect explains which related commitment needs attention. The simulator does not choose a recovery plan, authorize a purchase, or notify the supplier. Those responsibilities belong elsewhere.
+
+\section{From the simulator to agent-facing actions}
+\label{sec:ch19-action-boundary}
+
+The simulator is a domain transition engine. The agent should not call its internal methods directly or receive permission merely because a model generated a command-shaped object. The action module provides a boundary between the cognitive application and the simulated environment.
+
+The interface \texttt{SupplyChainSimulationWorld} exposes two operations: read the current snapshot and apply a typed simulation command against an expected version. The implementation \texttt{InMemorySupplyChainSimulationWorld} is intentionally described in its source as an in-memory adapter for tests and local scenarios, not as a transactional production repository.
+
+\begin{lstlisting}[language=Java,caption={The in-memory adapter checks the expected version and commits with compare-and-set. Source: supply-chain-agent-actions/.../grounding/InMemorySupplyChainSimulationWorld.java},label={lst:ch19-world-adapter}]
+SupplyChainSnapshot before = current.get();
+if (before.version() != expectedVersion) {
+    throw new DomainViolation(DomainViolation.Code.CONFLICT,
+        "World snapshot version is " + before.version()
+            + ", expected " + expectedVersion);
+}
+SimulationResult result = simulator.simulate(before, command);
+if (!current.compareAndSet(before, result.snapshot())) {
+    throw new DomainViolation(DomainViolation.Code.CONFLICT,
+        "World snapshot changed concurrently; reload and reconsider");
+}
+return result;
+\end{lstlisting}
+
+This is a small example of optimistic concurrency control. A caller acts on a particular snapshot version. If the version has already changed, the adapter rejects the stale request. If another thread changes the reference between the read and the compare-and-set, the second check also rejects the transition. The caller must reload the state and reconsider rather than silently applying an action to facts that are no longer current.
+
+The compare-and-set operation is not a distributed database transaction and does not make the in-memory adapter suitable for multiple application processes. It provides a clear local concurrency boundary for the deterministic simulation. The PostgreSQL infrastructure and durable application composition are introduced later; they should not be conflated with this local adapter.
+
+\subsection{Grounding actions and perception actions}
+
+The action module separates state-changing \gls{groundingprocedure}s from read-only perception. \texttt{SupplyChainGroundingActions} contains typed handlers for operations such as reserving inventory, releasing a reservation, placing a purchase order, and rerouting a shipment. The handlers describe the action category and effect, declare the required capability, identify affected resources, expose a request fingerprint, check the expected snapshot version, and translate the request into a simulator command.
+
+For example, the reserve-inventory handler is declared as a grounding action with a domain-write effect and the \texttt{INVENTORY\_RESERVE} capability. Its precondition compares the current snapshot version with the version carried by the request. Its execution method constructs a \texttt{SimulationCommand.ReserveInventory} using the operation identifier and action context. This handler is not the complete authorization policy: it is a typed action endpoint within the wider registry, dispatcher, and authority design. Chapter 24 will follow that control path in the assembled application.
+
+Read-only handlers are different. \texttt{SupplyChainPerceptionActions} exposes operations for reading a supplier, inventory lot, customer order, shipment, available inventory, and quality disposition. Its class comment states that these handlers expose observations rather than mutable domain aggregates. The \texttt{Observation<T>} record carries the value, entity reference, evidence reference, provenance, and source snapshot version. The snapshot perception adapter marks the source as the simulator and derives the provenance identifier from the snapshot version and entity reference.
+
+This distinction is more important than it may first appear. Reading available inventory is a perception operation. Reserving inventory changes the modeled world. The first can provide evidence for planning; the second must satisfy domain feasibility and the action authority required for a write. A sentence in the model response saying that inventory has been reserved is neither an observation nor an executed action.
+
+\BookDiagram[0.55\textheight]
+  {Tex/diagrams/generated/part3/chapter19/perception-grounding-boundary.png}
+  {Read-only perception returns versioned observations with provenance. State-changing grounding requests pass through a typed action handler and the version-checked simulation-world port.}
+  {fig:ch19-perception-grounding}
+
+\section{The Maven modules: separating business logic from agent runtime}
+\label{sec:ch19-modules}
+
+The application is organized as an eleven-module Maven reactor. The modules are not eleven microservices, and the diagram should not be read as a deployment topology. They are source and dependency boundaries in one Java project. Their purpose is to keep domain facts, cognitive capabilities, orchestration, persistence adapters, and evaluation support understandable and independently testable.
+
+\begin{longtable}{P{0.25\textwidth} P{0.25\textwidth} P{0.40\textwidth}}
+\toprule
+\textbf{Responsibility} & \textbf{Maven module} & \textbf{What it owns} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Responsibility} & \textbf{Maven module} & \textbf{What it owns} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\small\itshape Continued on next page} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Business facts and invariants & \path{supply-chain-agent-domain} & Product, supplier, order, inventory, procurement, logistics, disruption, recovery, shared value objects, and the versioned snapshot. \\
+Deterministic world transitions & \path{supply-chain-agent-simulator} & Typed simulation commands, transition rules, results, and modeled effects. \\
+Request interpretation contracts & \path{supply-chain-agent-core} & Application-owned request interpretation types and ports. \\
+CoALA memory & \path{supply-chain-agent-memory} & Working, episodic, semantic, procedural, retrieval, and memory lifecycle abstractions. \\
+Internal and external action contracts & \path{supply-chain-agent-actions} & Action descriptors, typed handlers, perception, grounding, capability references, and execution contracts. \\
+Residual mechanism services & \path{supply-chain-agent-mechanisms} & B1, B2, B3, B4, B6 and shared outcome-feedback services. \\
+Candidate planning & \path{supply-chain-agent-planning} & Planning contracts, world model, candidate evaluation, strategy implementations, and planner routing. \\
+Cognitive-cycle runtime & \path{supply-chain-agent-runtime} & Cognitive operations and state, LangGraph4j graph orchestration, and LangChain4j model adapters. \\
+Durable adapters & \path{supply-chain-agent-infrastructure-postgres} & PostgreSQL stores, migrations, runtime persistence, and graph checkpoint integration. \\
+Application composition & \path{supply-chain-agent-app} & The application graph, durable host construction, and host-facing composition. \\
+Evaluation and test support & \path{supply-chain-agent-evaluation} & Deterministic fixtures, full-graph test support, planner comparisons, and experimental harness infrastructure. \\
+\bottomrule
+\end{longtable}
+
+The dependency direction is as important as the module names. The domain module has no project-module dependencies. The simulator depends on the domain. Actions depend on the core, domain, memory, and simulator modules. Mechanisms build on domain, memory, and actions. Planning builds on domain, memory, actions, simulator, and mechanisms. Runtime assembles the core, actions, memory, mechanisms, and planning contracts. PostgreSQL infrastructure implements persistence and checkpoint adapters around those capabilities. The app module composes the system, and the evaluation module depends on the application and selected infrastructure/planning modules to exercise it.
+
+\BookDiagram[0.65\textheight]
+  {Tex/diagrams/generated/part3/chapter19/maven-module-map.png}
+  {A grouped view of the eleven Maven modules by responsibility and application-composition layer. The adjacent table and text give the exact module names and project dependency direction; these groups are source boundaries, not separate deployable services.}
+  {fig:ch19-module-map}
+
+The module map gives us a way to navigate the repository. When we study memory, we start in \path{supply-chain-agent-memory}, not in the graph runtime. When we study typed recovery, we start in the mechanism module and follow its callers. When we study simulation feasibility, we start in the domain and simulator modules. The runtime assembles these responsibilities but does not replace them.
+
+\section{Frameworks and infrastructure: implementation tools, not new theories}
+\label{sec:ch19-framework-boundaries}
+
+The supplied code is framework-aware. It uses LangGraph4j, LangChain4j, and PostgreSQL. This is an implementation fact, not a third theoretical foundation. CoALA and Fan and Lan remain the only overarching theories of the book.
+
+\textbf{LangGraph4j} is used by \texttt{CognitiveCycleGraph} for application-level sequencing, conditional routing, interruptions, and checkpointing. The services and planning algorithms remain separate Java components invoked through the graph's operations. This is why the framework should not be described as implementing CoT, ToT-inspired search, or MCTS. Those strategies are Java planning components; the graph coordinates when the application invokes them.
+
+\textbf{LangChain4j} is used at the model boundary. The repository provides adapters such as \texttt{LangChain4jRequestInterpreter} and \texttt{LangChain4jReasoningProvider} for application-owned ports. The model-facing interfaces classify a request or return a structured assessment. The reasoning service is explicitly documented as having no tools or operational authority. LangChain4j is therefore not the outer workflow engine and a model response does not itself authorize or execute a business action.
+
+\textbf{PostgreSQL} supplies durable adapters for memory and runtime records, while the LangGraph4j PostgreSQL saver stores graph checkpoints. These are related persistence concerns, but they are not the same state. A graph checkpoint is not automatically episodic memory, and a memory record is not automatically the entire resumable execution state. Chapters 20 and 24 will show those contracts at the point where their separation becomes necessary.
+
+\begin{tipbox}
+Read each framework call in the context of the Java port it serves. Ask which application-owned contract is being implemented and which authority remains outside the model or graph. This is more useful than memorizing framework annotations before understanding the responsibility they connect.
+\end{tipbox}
+
+\section{What the tests demonstrate}
+\label{sec:ch19-test-evidence}
+
+The source repository contains tests at several levels. The domain module tests value objects and snapshot invariants. The simulator module tests commands and world transitions. The action module tests dispatch and the typed supply-chain actions. Higher-level runtime and application tests exercise graph behavior and persistence boundaries. This layered evidence is useful because a final successful workflow alone may not reveal which layer enforced a rule.
+
+For this chapter, three test groups are particularly instructive:
+
+\begin{description}
+  \item[\texttt{QuantityTest}.] It checks arithmetic with matching units, rejects unit mismatch and underflow, and rejects negative quantities.
+  \item[\texttt{SupplyChainSnapshotInvariantTest}.] It checks over-reserved physical stock, in-flight shipment quantity against order demand, the relationship between delivered shipment quantity and recorded fulfilment, overlapping approved substitution windows, and duplicate product SKUs.
+  \item[\texttt{SupplyChainSimulatorTest}.] It exercises purchase-order qualification, lead time and capacity; reservation availability and substitution ratios; quality holds; shipment delay and rerouting; demand changes; disruption recording; and determinism for the same snapshot and command.
+\end{description}
+
+These tests establish that particular rules are encoded and that particular inputs produce asserted outcomes. They do not prove that the model captures every relevant supply-chain constraint, that the recovery plans are optimal in a real business, or that adding a cognitive mechanism improves task success. Those are different claims requiring different evidence. The independent experimental phase is deliberately kept separate from the teaching application's implementation and CI acceptance.
+
+\section{How to read the rest of Part III}
+\label{sec:ch19-roadmap}
+
+This chapter has established the domain, the simulated environment, and the high-level repository boundaries. The next chapters follow the same progression from responsibility to implementation:
+
+\begin{enumerate}
+  \item \textbf{Chapter 20 -- CoALA in code.} We will map the Part I architecture onto the actual memory services, internal and external action contracts, and planning interfaces. The discussion will preserve the difference between the CoALA framework and the engineering choices used by this application.
+  \item \textbf{Chapter 21 -- B1 and B3.} We will follow evidence from memory candidates through B1 selection and into B3's bounded workspace admission and broadcast. The chapter will show why retrieval and workspace admission are different decisions.
+  \item \textbf{Chapter 22 -- B2.} We will trace a typed impasse through bounded recovery, parent-state protection, validation of the returned result, and the separate lifecycle for promoting reusable recovery knowledge.
+  \item \textbf{Chapter 23 -- B4 and B6.} We will examine persistent intention and method authority alongside uncertainty, resource limits, interruption, and stopping. Their complementary authority boundaries will remain explicit.
+  \item \textbf{Chapter 24 -- application composition.} We will assemble the services into the LangGraph4j runtime, explain LangChain4j and PostgreSQL boundaries, and walk through the test-backed simulated workflow without conflating separate test scenarios.
+\end{enumerate}
+
+The purpose is not to reproduce the whole repository in prose. Each chapter will select the code that reveals an important contract or transition, explain how the selected component connects to its neighbors, and point to the actual module and tests. The reader should be able to move from a concept in Parts I or II to the class that realizes the corresponding responsibility, then follow the execution path far enough to understand what the code does and does not guarantee.
+
+\begin{chapterrecap}
+The supply-chain application is a deterministic teaching system, not a deployed enterprise integration. Its domain module represents selected products, suppliers, orders, inventory, procurement, logistics, disruptions, and recovery records. Typed quantities and snapshot validation protect relationships across those records. The simulator applies typed commands to an immutable, versioned snapshot and returns typed effects; it does not contact real-world systems. Agent-facing perception actions return provenance-bearing observations, while grounding actions pass state-changing requests through a version-checked world adapter. Eleven Maven modules separate business facts, simulation, cognitive capabilities, mechanisms, planning, runtime, persistence, application composition, and evaluation. LangGraph4j, LangChain4j, and PostgreSQL are implementation technologies, not additional theoretical foundations.
+\end{chapterrecap}
+
+\section{Review questions and practical exercise}
+\label{sec:ch19-review-questions}
+
+\begin{reviewquestions}{Review questions}
+\begin{enumerate}
+  \item Why is a generated explanation of a supplier disruption not enough to establish the current supplier capacity or open purchase-order commitment?
+  \item Which domain records are needed to determine whether a customer order line can accept another inventory reservation?
+  \item What does \texttt{Quantity} prevent that would be easy to overlook if all quantities were represented as untyped decimal numbers?
+  \item Why does \texttt{SupplyChainSnapshot} validate relationships across more than one record?
+  \item What is the difference between a \texttt{SimulationCommand}, a \texttt{SimulationResult}, and a \texttt{SimulationEffect}?
+  \item Why does the simulator return a new snapshot rather than mutating the existing snapshot?
+  \item What does the expected-version check protect against, and what does the in-memory compare-and-set not guarantee?
+  \item How do perception actions differ from grounding actions?
+  \item Why should the module dependency diagram not be interpreted as a deployment diagram?
+  \item What responsibilities belong to LangGraph4j and LangChain4j in this repository, and what responsibilities remain in ordinary Java components?
+  \item Which claims can the domain and simulator tests support, and which claims would require independent experiments?
+\end{enumerate}
+\end{reviewquestions}
+
+\paragraph{Practical exercise.} Start with the supplier-capacity test fixture. Record the supplier's original product capacity and open purchase-order commitment. Apply the test's capacity-reduction command. Draw the before-and-after snapshot boundary and list the effects returned by the simulator. Then answer four questions: Which component decides whether the new capacity value is valid? Which component computes whether existing commitments are at risk? Which component would authorize a corresponding state-changing action if the agent initiated it? Which observation should be made available to the next decision cycle? Do not treat the test's simulated transition as a message sent to a real supplier.
+
+\section*{Source and example note}
+The CoALA connections in this chapter are limited to the architectural roles of information storage, action space, and the decision-making procedure introduced in Part I. CoALA describes a conceptual framework; it does not prescribe these Maven modules, this domain model, the simulator, or the framework stack. The mechanism responsibilities named for later chapters follow Fan and Lan's five residual bundles B1, B2, B3, B4, and B6; B5/GraSP remains the closed-candidate boundary discussed in Part II. The supply-chain model, code excerpts, module boundaries, and tests are engineering material from the supplied Java repository. The capacity-reduction example is taken from the repository's deterministic simulator test fixture. It is not a real business incident or an empirical result.
+
+\CoALACite{\S 4 and Table 2}
+\FanLanCite{\S VI-B--VI-E; Table V}
+
+\section*{Looking ahead}
+Chapter 20 begins with CoALA's architectural map and follows it into the application's actual memory, action, and planning components. We will keep the domain and simulator boundaries from this chapter in view: the agent may reason about the modeled world, but the world model remains the authority for its business facts and feasible transitions.

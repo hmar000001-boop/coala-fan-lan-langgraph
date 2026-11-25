@@ -1,0 +1,16 @@
+accTitle: Maven module layers and composition path
+accDescr: The eleven Maven modules are grouped into five teaching layers: domain and simulator; application contracts and cognitive capabilities; graph runtime; durable PostgreSQL adapters; and application composition with evaluation support. The exact module names and project dependency details are listed in the adjacent chapter table and text. Arrows show the broad direction in which the application is assembled, not a deployment topology.
+flowchart TB
+    Foundation["Business foundation\nDomain model and deterministic simulator"]
+    Capabilities["Application and cognitive capabilities\nCore and memory · perception and grounding actions\nB1, B2, B3, B4, B6 services · planning strategies"]
+    Runtime["Cognitive graph runtime\nLangGraph4j orchestration and LangChain4j adapters"]
+    Persistence["Durable infrastructure adapters\nPostgreSQL stores and graph checkpoint adapter"]
+    Application["Application composition\nApplication graph and durable host"]
+    Evaluation["Evaluation support\nDeterministic fixtures and test harnesses"]
+
+    Foundation --> Capabilities
+    Capabilities --> Runtime
+    Runtime --> Persistence
+    Persistence --> Application
+    Runtime --> Application
+    Application --> Evaluation

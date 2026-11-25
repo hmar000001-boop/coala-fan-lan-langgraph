@@ -1,0 +1,14 @@
+accTitle: Deterministic simulation transition
+accDescr: A typed simulation command and the current immutable snapshot enter the pure simulator. The simulator validates the transition and returns a result containing a new snapshot and typed effects. The in-memory world adapter checks the expected version and compare-and-set commits the new snapshot.
+flowchart LR
+    Snapshot[Current snapshot] --> Adapter[Simulation world adapter]
+    Command[Typed simulation command] --> Adapter
+    Adapter -->|expected version| Check{Version current?}
+    Check -->|No| Conflict[Typed conflict]
+    Check -->|Yes| Simulator[Pure simulator]
+    Simulator --> Result[Simulation result]
+    Result --> NewSnapshot[New immutable snapshot]
+    Result --> Effects[Typed simulation effects]
+    NewSnapshot --> CAS[Compare-and-set]
+    CAS -->|Committed| Next[Current snapshot advances]
+    CAS -->|Lost race| Conflict

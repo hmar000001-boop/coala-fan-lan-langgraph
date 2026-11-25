@@ -1,18 +1,18 @@
 # From Cognitive Architectures to Production Agentic Systems
 
-A source-disciplined technical book connecting CoALA, Fan and Lan's mechanism-level analysis, and the engineering of one production-oriented agentic system in Java.
+A source-disciplined technical book connecting CoALA, Fan and Lan's mechanism-level analysis, and the engineering of one simulated supply-chain agentic application in Java.
 
 ## Current book scope
 
 - **Part I — Chapters 1–8:** CoALA, presented on its own terms.
 - **Part II — Chapters 9–18:** Fan and Lan's mechanism-level review, including its evidence boundaries and the synthesis in Chapter 18.
-- **Part III — Chapters 19–20:** one request-driven enterprise supply-chain disruption management system implemented in Java. Chapter 19 establishes the engineering foundations; Chapter 20 develops the application.
+- **Part III — Chapters 19–24:** one request-driven supply-chain disruption-management application implemented in Java and operated against a deterministic simulated world. Chapter 19 establishes the domain and engineering foundations; Chapter 20 maps CoALA into code; Chapters 21–23 explain B1/B3, B2, and B4/B6; Chapter 24 integrates the graph runtime, persistence, and simulated workflow.
 
-Part III is Java-only and framework-independent. It does not introduce LangGraph4j, LangChain4j, another agent framework, or additional application case studies. CoALA and Fan and Lan remain the only overarching theoretical foundations. Engineering architecture, contracts, state transitions, persistence, authorization, recovery, and evaluation are book-level design decisions, not mechanisms prescribed by either paper.
+Part III is a teaching/reference demonstration, not a deployed enterprise integration. It documents the actual LangGraph4j orchestration, LangChain4j model adapters, and PostgreSQL persistence boundaries. These are implementation technologies, not additional theoretical foundations. CoALA and Fan and Lan remain the only overarching theoretical foundations. The five residual bundles are B1, B2, B3, B4 and B6; B5/GraSP remains a closed-candidate boundary and is not claimed as implemented.
 
 ## Manuscript status
 
-Chapters 1–18 are drafted and integrated. The source corrections and selective compression for Parts I and II are maintained as phase-based, change-only patches. Chapters 19 and 20 remain structural placeholders until their individual outlines are prepared and approved; no Part III prose is implied by the current scaffold.
+Chapters 1–18 are drafted and integrated. Chapter 19 is drafted following its author-approved outline (25 November 2026). Chapters 20–24 remain placeholders; their chapter-local outlines are prepared but each requires individual author approval before prose drafting.
 
 ## Repository layout
 
@@ -22,7 +22,7 @@ Chapters 1–18 are drafted and integrated. The source corrections and selective
 - `Tex/part0/` — title matter, preface, and reading guide.
 - `Tex/part1/` — CoALA chapters 1–8.
 - `Tex/part2/` — Fan and Lan chapters 9–18.
-- `Tex/part3/` — the two-chapter supply-chain engineering part (19–20).
+- `Tex/part3/` — the six-chapter simulated supply-chain engineering part (19–24), with a chapter-local outline in each chapter folder.
 - `Tex/diagrams/source/` — editable Mermaid diagram sources.
 - `Tex/diagrams/generated/` — generated PNG outputs (build artifacts, not committed).
 - `Tex/bibliography/`, `Tex/glossary/`, and `Tex/appendices/` — shared scholarly and reference material.
@@ -50,7 +50,7 @@ bash scripts/build-book.sh
 
 The build renders the editable `.mmd` sources to PNG before XeLaTeX compilation. Generated PNGs are build artifacts and should not be added to source control. The CI workflow is the production build authority.
 
-To build the authored chapters in Parts I and II separately:
+To build the authored chapters in Parts I, II, and the drafted Chapter 19 separately:
 
 ```bash
 bash scripts/build-chapters.sh
@@ -65,7 +65,7 @@ bash scripts/build-part.sh part2
 bash scripts/build-part.sh part3
 ```
 
-`quality-checks.sh` validates the generated PDF metadata, expected chapter headings, US Letter page dimensions, and unresolved citations/references. The scaffold check also enforces that Part III contains exactly Chapters 19 and 20.
+`quality-checks.sh` validates the generated PDF metadata, expected chapter headings, US Letter page dimensions, and unresolved citations/references. The scaffold check enforces the six-chapter Part III structure, requires Chapter 19 prose, and keeps Chapters 20–24 as placeholders until their individual outlines are approved.
 
 ## Source discipline
 

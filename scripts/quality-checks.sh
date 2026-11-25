@@ -75,7 +75,11 @@ for expected in \
   'The Closed Candidate B5 and GraSP' \
   'How the Mechanisms Work Together' \
   'Engineering Foundations for Request-Driven Enterprise Agentic Systems' \
-  'Enterprise Supply-Chain Disruption Management'; do
+  'CoALA in Code: Memory, Actions, and Planning' \
+  'Memory Selection and Workspace Competition: B1 and B3' \
+  'Typed Impasses and Protected Recovery: B2' \
+  'Persistent Intention and Resource Governance: B4 and B6' \
+  'Composing the Supply-Chain Agent: Graph Orchestration, Persistence, and Simulated Execution'; do
   case "$NORMALIZED_TEXT" in
     *"$expected"*) ;;
     *) fail "compiled PDF does not contain expected chapter heading: $expected" ;;
