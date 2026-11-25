@@ -7,7 +7,7 @@
 \phantomsection
 \addcontentsline{toc}{section}{Chapter at a glance}
 
-Part I explained CoALA as a way to organize language-agent systems through information storage, action space, and a decision-making procedure. Chapters 3--8 examined memory, internal and external actions, planning, evaluation, selection, and the decision cycle. Chapter 19 then introduced the supply-chain domain and the deterministic environment in which the Java application operates. We can now connect those ideas to the application's actual contracts.
+Chapter 2 introduced CoALA's three architectural dimensions: information storage, action space, and decision-making procedure. Chapters 3--8 then examined memory, internal and external actions, planning, evaluation, selection, and the iterative decision cycle. Chapter 19 introduced the supply-chain domain and the deterministic environment in which the Java application operates. We can now connect those ideas to the application's actual contracts.
 
 This chapter follows one path through the code. It begins with the four memory responsibilities, moves through internal actions and external perception, and then examines how planning strategies construct and evaluate candidate action paths. The aim is not to repeat the theory or to reproduce every class. It is to teach the reader how to move from a CoALA responsibility to the Java type that owns it, the contract that constrains it, and the test that demonstrates its behavior. The complete runtime graph, framework wiring, and persistent application composition are reserved for Chapter 24.
 
@@ -20,7 +20,7 @@ By the end of this chapter, you should be able to map CoALA's three architectura
 
 Chapter 2 introduced three questions that help describe a language agent: what information it maintains, what actions it can perform, and how its decision procedure coordinates those actions. The questions remain useful when we read an implementation, but their answers do not have to occupy three separate classes or services. CoALA is an architectural framework, not a prescription for Maven modules, deployment processes, or class names.\CoALACite{Section 4, Figure 4A, and Table 2}
 
-In this application, information storage is represented by the memory module and its repositories. Working memory holds active, execution-scoped context; episodic memory retains reviewed experience; semantic memory manages facts with provenance and temporal validity; and procedural memory manages versioned procedure records. The action space is represented by typed handlers. Some handlers perform internal operations on the agent's information, some observe the simulated supply-chain environment, and others request changes to that environment. The decision procedure is represented by planning strategies, candidate evaluation, and the higher-level runtime that coordinates them.
+In this application, information storage is represented by the memory module and its repositories. Working memory holds active context within an application-defined memory scope; episodic memory retains reviewed experience; semantic memory manages facts with provenance and temporal validity; and procedural memory manages versioned procedure records. The action space is represented by typed handlers. Some handlers perform internal operations on the agent's information, some observe the simulated supply-chain environment, and others request changes to that environment. The decision procedure is represented by planning strategies, candidate evaluation, and the higher-level runtime that coordinates them.
 
 The last point needs care. A planner is not the entire decision procedure. It proposes candidate paths under a request and budget. The application still needs to decide which strategy to invoke, evaluate what the strategy returns, and coordinate later execution. This chapter examines the memory, action, and planning contracts. Chapter 24 will show how the graph runtime sequences them. The eleven-module organization and framework boundaries were introduced in Section~\ChapterNineteenModulesRef; we will refer to those module names where useful rather than repeat the module tour.
 
@@ -45,10 +45,10 @@ The Java implementation preserves that separation through four models and servic
 \toprule
 \textbf{Memory role} & \textbf{Main Java types} & \textbf{Responsibility in this application} \\
 \midrule
-Working & \texttt{WorkingMemorySnapshot}, \texttt{WorkingMemoryService} & Active, scoped, versioned context for an execution, including typed values, hypotheses, and their evidence. \\
+Working & \texttt{WorkingMemorySnapshot}, \texttt{WorkingMemoryService} & Active, scoped, versioned context for an application-defined memory scope, including typed values, hypotheses, and their evidence. \\
 Episodic & \texttt{Episode}, \texttt{EpisodicMemoryService} & Records what happened and its outcome, while separating initial recording from review and trusted retrieval. \\
 Semantic & \texttt{SemanticFact}, \texttt{SemanticMemoryService} & Manages domain facts with provenance, admission status, and valid-time/known-time history. \\
-Procedural & \texttt{ProcedureVersion}, \texttt{ProceduralMemoryService} & Manages versioned procedure records through draft, validation, activation, retirement, or rejection. \\
+Procedural & \texttt{ProcedureVersion}, \texttt{ProceduralMemoryService} & Manages versioned procedure records through draft, validation, activation, or rejection; predecessor retirement accompanies replacement activation. \\
 \bottomrule
 \end{tabularx}
 \caption{Four CoALA memory responsibilities represented by distinct Java contracts.}
@@ -58,10 +58,11 @@ Procedural & \texttt{ProcedureVersion}, \texttt{ProceduralMemoryService} & Manag
 \subsection{Working memory: active, scoped, and versioned}
 \label{subsec:ch20-working-memory}
 
-Working memory contains information that is active for the current reasoning process. It is not simply the latest conversation text. In the application, \texttt{WorkingMemorySnapshot} is an immutable record for one memory scope. It has an identifier, a version, creation and update times, an expiry time, typed values, hypotheses, and the evidence references associated with the current values and hypotheses. The values are represented through the \texttt{MemoryValue} type rather than being stored as arbitrary untyped strings.
+Working memory contains information that is active for a reasoning process. It is not simply the latest conversation text. In the application, \texttt{WorkingMemorySnapshot} is an immutable record for an application-defined \texttt{MemoryScopeId}. A scope may represent a tenant, business unit, or execution family; it is not necessarily identical to one graph invocation or checkpoint. It has an identifier, a version, creation and update times, an expiry time, typed values, hypotheses, and the evidence references associated with the current values and hypotheses. The values are represented through the \texttt{MemoryValue} type rather than being stored as arbitrary untyped strings.
 
 The service changes the snapshot through version-checked operations. The following excerpt shows the central update path:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Updating one working-memory slot with version and expiry checks.},label={lst:ch20-working-memory-put}]
 public WorkingMemorySnapshot put(
         WorkingMemoryId id, long expectedVersion, String key,
@@ -75,6 +76,7 @@ public WorkingMemorySnapshot put(
     return repository.compareAndSet(id, expectedVersion, replacement);
 }
 \end{lstlisting}
+\end{minipage}
 
 The method does not mutate the existing snapshot. It first checks that the caller's expected version is current and that the snapshot has not expired. It then creates a replacement snapshot and asks the repository to compare-and-set it. If another update has already advanced the version, a stale write is rejected instead of silently overwriting newer context. The snapshot itself recomputes its evidence list from the evidence attached to its current slots and hypotheses. Removing a value therefore also removes evidence that is no longer referenced by the active snapshot.
 
@@ -93,6 +95,7 @@ Recording is not the same operation as verification. A new episode begins in the
 
 The transition is explicit in the episode model:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Verification is a separate, evidence-bearing transition.},label={lst:ch20-episode-verify}]
 public Episode verify(String actor,
                       EvidenceReference reviewRef,
@@ -111,15 +114,16 @@ public Episode verify(String actor,
         provenance, require(actor, "actor"), at, reviewRef, null);
 }
 \end{lstlisting}
+\end{minipage}
 
-The test suite demonstrates the distinction with two different assertions: a newly recorded episode is not returned as trusted experience, and an explicitly reviewed episode becomes eligible for retrieval. This is not a claim that every verified episode is a universal rule. It means that the application has accepted that episode as reviewed evidence within its stated scope and provenance. It remains an episode, not automatically a semantic fact or executable procedure.
+The test suite demonstrates the distinction with two different assertions: a newly recorded episode is not returned as trusted experience, and an explicitly reviewed episode becomes eligible for retrieval. The review handler requires its own capability and evidence, but the current \texttt{Episode} model does not retain the recording principal in a way that lets the handler enforce that the reviewer differs from the original recorder. Do not infer a strict author/reviewer identity-separation invariant from this lifecycle. Verification means that the application accepted the episode as reviewed evidence within its stated scope and provenance; it does not make the episode a universal rule, semantic fact, or executable procedure.
 
 \subsection{Semantic memory: facts have provenance and time}
 \label{subsec:ch20-semantic-memory}
 
-Semantic memory represents knowledge expressed as facts. In this application, a \texttt{SemanticFact} has a key and value, a scope, provenance, status, and two temporal dimensions. Valid time describes when the fact applies in the modeled world. Known time describes when the application had accepted that version of the fact. These dimensions allow a query to ask not only what is considered valid at a business time, but also what the system knew at a particular decision time.
+Semantic memory represents knowledge expressed as facts. In this application, a \texttt{SemanticFact} has a key and value, a scope, provenance, status, and two temporal dimensions. Valid time describes when the fact applies in the modeled world. Known time describes when the application had accepted that version of the fact. These dimensions allow a query to ask not only what is considered valid at a business time, but also what the system knew at a particular decision time. The semantic review action has its own capability and evidence contract, but the current fact model does not retain a proposing principal for an enforced proposer/reviewer identity comparison.
 
-A proposed fact is not automatically active. The admission policy can permit activation from trusted provenance, but model-derived provenance requires explicit human review. Replacing an active fact is also governed: the service checks versions and matching keys, and the repository performs the old-fact supersession and new-fact activation as one operation. A temporal revision can divide a timeline into contiguous replacement segments, rather than silently overwriting history.
+A proposed fact is not automatically active. Under the repository's conservative default admission policy, only \texttt{AUTHORITATIVE\_SYSTEM} and \texttt{HUMAN\_VERIFIED} provenance may be activated without human review. Other provenance categories—including verified documents, verified episodes, simulator observations, unverified documents, and model-derived content—require the explicit review path. Replacing an active fact is also governed: the service checks versions and matching keys, and the repository performs old-fact supersession and new-fact activation as one operation. A temporal revision can divide a timeline into contiguous replacement segments rather than silently overwriting history.
 
 This is useful in a supply-chain setting because the statement “supplier capacity is 40 units” is incomplete without knowing which supplier/product capability it describes, when that capacity applies, where the information came from, and when the application accepted it. Semantic memory supplies those distinctions. It does not guarantee that the original source was correct; it preserves the provenance and admission decisions that the application can inspect.
 
@@ -128,7 +132,7 @@ This is useful in a supply-chain setting because the statement “supplier capac
 
 Procedural memory represents how the agent may carry out a recurring task. The implementation stores a versioned \texttt{ProcedureVersion} with a kind, description, artifact reference, provenance, lifecycle status, and predecessor relationship. Its state progresses through \texttt{DRAFT}, \texttt{VALIDATED}, and \texttt{ACTIVE}; an active version may later become \texttt{RETIRED}. A draft may instead be \texttt{REJECTED}.
 
-Validation and activation are distinct transitions. Validation identifies a reviewer and time. Activation requires the procedure to be in the validated state and records an approver and activation time. When a new version is activated, the service coordinates retirement of the prior active version for the same procedure key. A reference to a procedure artifact is not, by itself, an executable skill graph.
+Validation and activation are distinct transitions. Validation records a validator and time; activation requires the validated state and records an approver and activation time. In the in-memory reference repository, activating a replacement performs the predecessor's retirement and the new version's activation inside one synchronized repository operation. There is no separately registered retirement action in the learning-action catalog. Procedure validation, rejection, and activation enforce distinct-principal checks against the author; activation also requires the approver to differ from the validator. These actor-separation checks are specific to the procedural lifecycle. Episodic and semantic review use separate capabilities and evidence, but their current models and handlers do not enforce the same author-versus-reviewer identity comparison. A reference to a procedure artifact is not, by itself, an executable skill graph.
 
 \begin{warningbox}
 Procedural memory in this repository must not be described as GraSP or as a reproduction of the B5 skill-DAG mechanism. It is an explicit, versioned memory model with governed lifecycle transitions and artifact references. It does not provide GraSP's typed skill-graph retrieval, compilation, node verification, local repair, and fallback chain. Part II established why B5 is a closed candidate in Fan and Lan's bounded review; the application does not reopen that result by naming a store “procedural memory.”
@@ -137,10 +141,11 @@ Procedural memory in this repository must not be described as GraSP or as a repr
 \subsection{Cross-store retrieval is not yet B1 selection or B3 admission}
 \label{subsec:ch20-memory-retrieval}
 
-The four memory responsibilities become useful to a decision process when the application can retrieve relevant records under a common scope and time basis. \texttt{MemoryRetrievalService} accepts a \texttt{MemoryRetrievalQuery} containing a memory scope, optional entity, optional semantic predicate, optional working-memory identifier, valid time, known time, and a per-type limit. It then reads the requested working-memory snapshot, verified episodes, active semantic facts, and active procedures. The result is a typed \texttt{MemoryRetrievalResult}; it does not flatten every record into one string.
+The four memory responsibilities become useful to a decision process when the application can retrieve them through one typed result. \texttt{MemoryRetrievalService} accepts a \texttt{MemoryRetrievalQuery} containing a scope, optional entity, optional semantic predicate, optional working-memory identifier, valid time, known time, and a per-type limit. The query shares a scope and request context, but the four stores do not apply identical temporal semantics. Working memory is loaded by identifier, checked for scope equality, and accepted when its expiry is after \texttt{knownAt}; the service returns the currently stored snapshot rather than reconstructing it as of a historical time. Episodic retrieval applies scope, optional entity, and \texttt{knownAt}; with no entity, it can return scope-relevant verified episodes. Semantic retrieval occurs only when an entity is supplied and applies scope, subject, optional predicate, \texttt{validAt}, and \texttt{knownAt}. Procedural retrieval applies scope and \texttt{knownAt}, but not \texttt{validAt}. Each repository applies the per-type limit. The result is a typed \texttt{MemoryRetrievalResult}; it does not flatten every record into one string.
 
 The core behavior is concise:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Cross-store retrieval applies scope and time filters without B1 scoring.},label={lst:ch20-memory-retrieval}]
 var episodes = episodic.findVerified(
     new EpisodeQuery(query.scopeId(), query.entity(),
@@ -155,8 +160,11 @@ var procedures = procedural.findActiveAt(
 return new MemoryRetrievalResult(
     activeWorking, episodes, facts, procedures);
 \end{lstlisting}
+\end{minipage}
 
-This service deliberately performs deterministic scoped lookup. It does not assign activation, estimate retrieval latency, optimize downstream utility, or choose a context set under a resource budget. It also does not automatically copy every returned item into working memory. Those are later decisions in the pipeline. Chapter 21 will examine B1's selection problem and B3's separate workspace competition/admission problem. Retrieval gives those mechanisms candidate information; it is not a substitute for either one.
+This service deliberately performs deterministic, filter-based lookup. It does not assign activation, estimate retrieval latency, optimize downstream utility, or choose a context set under a resource budget. It also does not automatically copy returned items into working memory. A caller may use the typed result to construct a later reasoning request or feed a selection stage, but that handoff is not an automatic pipeline implemented by this service. Chapter 21 will examine B1's selection problem and B3's separate workspace competition/admission problem. Retrieval supplies candidate information; it is not a substitute for either one.
+
+The historical query parameters also need careful interpretation. Episodic, semantic, and procedural repositories can decide whether a record was eligible at a requested \texttt{knownAt}. If a record has since been superseded or retired, the repository returns the currently stored immutable object, whose lifecycle status can still be \texttt{SUPERSEDED} or \texttt{RETIRED}; it does not materialize a separate historical version of the status. Semantic facts additionally apply valid-time filtering. Working memory is different: it is fetched by identifier and checked for scope and expiry, not reconstructed as a historical snapshot. These are useful time-aware filters, but they are not one uniform bitemporal query engine across all four memory types.
 
 \BookDiagram[0.54\textheight]
   {Tex/diagrams/generated/part3/chapter20/four-memory-responsibilities.png}
@@ -181,6 +189,7 @@ The action module gives these operations typed handler contracts. Their descript
 
 The result, \texttt{ReasoningAssessment}, is structured. It contains a summary, evidence-backed findings, hypotheses, assumptions, supporting evidence, information gaps, a confidence value, and a concise rationale. The fields are bounded in length and count. If a finding is labelled evidence-backed, the result must contain supporting evidence. The action also checks that the provider has not cited an evidence reference that was absent from the request:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The reasoning action rejects citations outside the supplied evidence set.},label={lst:ch20-reasoning-action}]
 ReasoningAssessment assessment = Objects.requireNonNull(
     provider instanceof ExecutionAwareReasoningProvider aware
@@ -195,6 +204,7 @@ if (!supplied.containsAll(assessment.supportingEvidence())) {
 }
 return assessment;
 \end{lstlisting}
+\end{minipage}
 
 This is an evidence-reference integrity check. It does not prove that a cited source is true, that a hypothesis is correct, or that the model interpreted the source accurately. The application preserves the distinction between an evidence-backed finding, an assumption, a hypothesis, and an information gap so that downstream logic can decide what to do with each. The assessment is not a private chain-of-thought transcript; it is a bounded result with a concise rationale.
 
@@ -205,13 +215,13 @@ A \texttt{LangChain4j\allowbreak ReasoningProvider} adapter implements the \text
 
 Reasoning does not automatically modify working memory. \texttt{WorkingMemoryUpdateAction} is a separate memory-write handler. It checks that the requested scope matches the stored snapshot, that the expected version is current, and that the snapshot has not expired. It also supplies a request fingerprint for idempotency. Only after the preconditions pass does it call \texttt{WorkingMemoryService.put}.
 
-Similarly, \texttt{EpisodeLearningAction} records an episode as unverified. Its class contract explicitly prevents the learning action from verifying or promoting its own record. Separate reviewer-facing operations handle episodic verification/rejection, semantic proposal/approval/rejection, and procedural validation/activation/retirement/rejection. The \texttt{LearningActionCatalog} exposes these operations through distinct, versioned action handlers and capabilities.
+Similarly, \texttt{EpisodeLearningAction} records an episode as unverified. Separate reviewer-facing operations handle episodic verification/rejection, semantic proposal/approval/rejection, and procedural validation/activation/rejection. The \texttt{LearningActionCatalog} exposes these operations through distinct, versioned action handlers and capabilities. The procedural handlers enforce author/validator/approver separation as described above; the episodic and semantic handlers do not enforce the same principal-identity comparison. Procedure predecessor retirement is not a separate catalog action: it occurs within the repository's replacement activation operation.
 
 This is the implementation's meaning of explicit learning operations: the application can record an experience or propose a fact, but the write does not become trusted merely because a model generated it. The code does not fine-tune model parameters, modify its own Java source, or turn every outcome into a reusable procedure automatically. Those differences preserve the distinction in Chapter 4 between writing an experience, forming a semantic statement, and changing explicit procedural knowledge.
 
 \BookDiagram[0.55\textheight]
   {Tex/diagrams/generated/part3/chapter20/internal-actions-memory-write.png}
-  {Retrieval and reasoning are read-only internal actions. Working-memory updates and episode recording are separate writes; review and admission operations are separate lifecycle transitions.}
+  {Retrieval and reasoning are separate read-only internal actions. The dotted links denote optional, caller-managed handoffs to reasoning and to separate write handlers; they are not an automatic retrieval--reasoning--learning pipeline. Episodic and semantic review use separate capabilities and evidence, while the stricter author/validator/approver identity checks apply to procedural records.}
   {fig:ch20-internal-actions-memory-write}
 
 The focused tests \texttt{CoalaInternal\allowbreak ActionsTest} and \texttt{LearningAction\allowbreak CatalogTest} verify action contracts, including evidence-reference checks and the separation between recording and review. They do not establish live-model reasoning quality or full runtime composition.
@@ -223,6 +233,7 @@ CoALA's action space includes interaction with an environment. Chapter 5 disting
 
 \texttt{SupplyChainPerceptionActions} provides read-only operations for supplier, inventory lot, customer order, shipment, available inventory, and quality disposition. These handlers return an \texttt{Observation<T>} rather than a mutable domain object. The observation carries the value together with the entity reference, evidence reference, provenance, and source snapshot version:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={A perception result remains tied to its source entity and snapshot.},label={lst:ch20-observation}]
 public record Observation<T>(
         T value,
@@ -242,6 +253,7 @@ public record Observation<T>(
     }
 }
 \end{lstlisting}
+\end{minipage}
 
 For example, reading the available quantity of an inventory lot produces an observation about a particular simulator snapshot. The version and provenance allow later operations to refer to the source of that value. They do not guarantee that the snapshot is still current when a later action is attempted; the state-changing path must still apply its own current-version checks.
 
@@ -263,6 +275,7 @@ The starting contract is \texttt{PlanningRequest}. It binds the recovery objecti
 
 A \texttt{PlanningState} represents one point in a candidate search. It stores the recovery-objective identifier, the root-world version, the branch's current snapshot, the ordered path of proposed actions, and accumulated evidence. Its constructor enforces a useful invariant: the branch snapshot version must equal the root version plus the number of actions in the path. It also prevents the same planning-action identifier from appearing twice in one path. Advancing a state creates a new object and adds the action's supporting evidence:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={A planning transition creates a new path state rather than mutating the root.},label={lst:ch20-planning-state}]
 public PlanningState advance(SupplyChainSnapshot nextWorld,
                              PlanningAction action) {
@@ -274,6 +287,7 @@ public PlanningState advance(SupplyChainSnapshot nextWorld,
         nextWorld, actions, List.copyOf(refs));
 }
 \end{lstlisting}
+\end{minipage}
 
 A \texttt{PlanningAction} binds several things that must remain consistent: a planning-action identifier, an action descriptor, a domain recovery action, a simulator command, an impact estimate, supporting evidence, and assumptions. The identifier is also used by the command. This prevents the candidate description and the command that is simulated from referring to unrelated operations.
 
@@ -281,6 +295,7 @@ The \texttt{PlanningWorldModel} defines three operations: create an initial stat
 
 The actual transition is deliberately small:
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The planning world model applies a command to a branch state only.},label={lst:ch20-simulator-world-model}]
 public WorldTransition apply(PlanningRequest request,
                              PlanningState state,
@@ -300,10 +315,11 @@ public WorldTransition apply(PlanningRequest request,
     }
 }
 \end{lstlisting}
+\end{minipage}
 
 The simulator receives the branch snapshot from \texttt{PlanningState}, not the current snapshot held by \texttt{SupplyChainSimulationWorld}. The result is placed into a new planning state. The method does not call the world adapter or commit a change to the current modeled environment. A rejected domain transition is represented as \texttt{WorldTransition.Rejected}. This makes it possible for a planner to explore an infeasible branch without corrupting the state on which the real decision is based.
 
-There are therefore two distinct uses of the simulator logic. During planning, it computes what the world would look like if a candidate path were followed, but only inside an isolated branch. During grounding, an authorized action is sent through the dispatcher and world adapter to change the current modeled environment. The internal rollout is a candidate-evaluation aid; it is not environmental feedback. This is the implementation counterpart of the distinction already developed in Chapters 7 and 8 between reasoning about possible consequences and receiving an observation after an external interaction.\CoALACite{Section 4.6, ``Evaluation,'' p. 12; ``Execution,'' p. 13}
+There are therefore two distinct uses of the simulator logic. During planning, it computes what the world would look like if a candidate path were followed, but only inside an isolated branch. During grounding, an authorized action is sent through the dispatcher and world adapter to change the current modeled environment. The internal rollout is a structured, deterministic simulator application to a branch; it is not a language model imagining a consequence and it is not environmental feedback. This is the implementation counterpart of the distinction already developed in Chapters 6--8 between using a structured simulator to develop/evaluate a proposal, reasoning about possible consequences, and receiving an observation after an external interaction.\CoALACite{Section 4.6, ``Evaluation,'' p. 12; ``Execution,'' p. 13}
 
 \BookDiagram[0.54\textheight]
   {Tex/diagrams/generated/part3/chapter20/planning-branch-boundary.png}
@@ -315,7 +331,7 @@ There are therefore two distinct uses of the simulator logic. During planning, i
 
 The application exposes three implementations of \texttt{PlanningStrategy}. Each accepts a \texttt{PlanningRequest} and returns a \texttt{PlanningResult} containing candidate(s), a termination reason, statistics, session information, a selection explanation, and trace information. They differ in how they search; they do not differ in the authority they possess. None of them commits a grounding action.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.23\linewidth}>{\raggedright\arraybackslash}p{0.34\linewidth}X}
@@ -351,9 +367,9 @@ The focused strategy tests verify each implementation's stated search behavior a
 
 Part I separated evaluation from selection. Evaluation assigns values or checks properties of candidate actions. Selection determines what happens to the candidate set. Neither operation should be confused with execution authorization.\CoALACite{Section 4.6, ``Evaluation'' and ``Selection,'' pp. 12--13}
 
-The application separates the evaluator contract from its deterministic implementation. The main types are \texttt{CandidateEvaluator}, \texttt{DeterministicCandidate\allowbreak Evaluator}, \texttt{PlanEvaluation}, and \texttt{PlanCandidate}. A candidate is not accepted merely because a planner returned it. The deterministic evaluator reconstructs the path from the trusted initial planning state. At each step, it checks that the proposed action is still available and equals the trusted action definition, then applies it through the world model. After replay, it compares the resulting snapshot with the snapshot claimed by the proposed state. It also checks the objective identity, root-world version, hard constraints, deadline, risk threshold, and the constraints and types of the supplied impact estimates.
+The application separates the evaluator contract from its deterministic implementation. The main types are \texttt{CandidateEvaluator}, \texttt{DeterministicCandidate\allowbreak Evaluator}, \texttt{PlanEvaluation}, and \texttt{PlanCandidate}. A candidate is not accepted merely because a planner returned it. The deterministic evaluator reconstructs the proposed action path from the request's trusted initial planning state. At each step, it checks that the proposed action remains available and exactly matches the canonical action definition, then applies it through the world model. After replay, it compares the resulting snapshot with the snapshot claimed by the proposed state. It also checks objective identity, root-world version, hard constraints, deadline, risk threshold, and the structural validity of the action-impact estimates.
 
-If the replay and constraints pass, the evaluator calculates a transparent weighted score. The implemented factors are expected fulfillment progress, normalized estimated cost, timeliness, risk, and robustness. This is an engineering scoring policy. It is not a formula prescribed by CoALA and should not be presented as a universally optimal objective function.
+If replay and hard constraints pass, the evaluator calculates a transparent weighted score. The implemented factors are expected fulfillment progress, normalized estimated cost, timeliness, aggregate risk, and robustness. The impact values are carried by the canonical planning-action definitions and are aggregated by the evaluator; replay checks the world transition and candidate-state consistency, but does not derive those estimates from the simulator's before/after state or establish that they are calibrated to observed outcomes. This is an engineering scoring policy, not a formula prescribed by CoALA or a universally optimal objective function.
 
 One implementation assumption deserves special attention. The aggregate risk calculation multiplies per-action survival estimates, which treats action risks as independent for the purpose of that estimate. The code documents this as an explicit engineering assumption. Real action risks may be correlated; the current score should therefore be read as the output of the configured model, not as a calibrated probability that the plan will succeed.
 
@@ -361,17 +377,18 @@ The evaluator also exposes a limitation rather than hiding it. If a request incl
 
 Feasibility and approval are separate. \texttt{PlanEvaluation.approvalRequired} records whether a downstream governance requirement applies to the proposed write. It is not itself a hard planning violation. A candidate can be feasible and still require approval before it may proceed. The \texttt{PlanCandidate} type describes itself as an auditable proposal; it is not approved and cannot be executed directly.
 
-Three selections must therefore remain distinct:
+Four decisions must therefore remain distinct:
 
 \begin{enumerate}
-  \item \textbf{Planner-method selection} chooses which strategy will search. This is the responsibility of \texttt{PlannerRouter}; B4's authority over persistent method choices is explained in Chapter 23.
-  \item \textbf{Candidate evaluation and selection} checks candidate feasibility, assigns values, and determines which proposal is preferred or carried forward.
+  \item \textbf{Planner-method routing} chooses which registered strategy will search. This is the responsibility of \texttt{PlannerRouter}; B4's authority over persistent method choices is explained in Chapter 23.
+  \item \textbf{Candidate evaluation} replays a proposed path, checks feasibility constraints, and assigns evaluation values. \texttt{CandidateEvaluator} does not choose a candidate.
+  \item \textbf{Strategy-specific ordering and retention} happen inside the planner implementation. The sequential strategy extends the single path chosen by its injected provider; bounded search ranks successors, prunes branches, and sorts the retained candidate list; MCTS selects tree nodes during search and orders the extracted candidate list by evaluation score. There is no shared \texttt{CandidateSelector} service in the inspected planning module, nor a generic CoALA-style reject-and-return-to-proposal loop implemented as a separate component.
   \item \textbf{Execution authorization} decides whether a particular state-changing action may be dispatched. Chapter 19 introduced the action gates; Chapter 24 will show their place in the full workflow.
 \end{enumerate}
 
 \BookDiagram[0.50\textheight]
   {Tex/diagrams/generated/part3/chapter20/evaluation-selection-authority.png}
-  {Planner-method routing, candidate evaluation/selection, and execution authorization are separate decisions. A feasible or preferred proposal still requires the applicable downstream authorization before grounding.}
+  {PlannerRouter selects a strategy; CandidateEvaluator evaluates a path but does not select it; each strategy implements its own search-time ordering and candidate retention. There is no shared CandidateSelector. A feasible or highly ranked proposal still requires the applicable downstream authorization before grounding.}
   {fig:ch20-evaluation-selection-authority}
 
 The focused evaluator tests make these boundaries concrete. One accepts a simulator-replayed plan and confirms that approval is reported as a governance requirement. Another rejects a proposed state that does not match replay. A third rejects a plan that exceeds the configured hard-risk threshold. A fourth verifies fail-closed behavior when the protected-customer-commitment constraint cannot be checked by the current domain model. These assertions demonstrate the implemented checks; they do not establish that every possible business constraint is represented or that the score is empirically calibrated.
@@ -418,28 +435,30 @@ Planner strategy tests & Linear, bounded-branching, and seeded MCTS behavior und
 \label{sec:ch20-recap}
 
 \begin{chapterrecap}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
 CoALA's three dimensions provide a practical map for reading the application: memory services represent information storage; typed handlers expose internal and external actions; and planning plus the later runtime coordinates decisions over time. The mapping is many-to-many rather than one box per class or Maven module.
 
-The four memory responsibilities remain distinct. Working memory is active, scoped, versioned context. Episodic memory records experience but requires separate review before trusted retrieval. Semantic memory manages facts with provenance, admission status, and time. Procedural memory manages versioned procedure records through explicit lifecycle transitions; it is not a GraSP skill-DAG executor. Cross-store retrieval returns typed, scoped results but does not perform B1 scoring or B3 workspace admission.
+The four memory responsibilities remain distinct. Working memory is active, scope-bound, versioned context. Episodic memory records experience but requires separate review before trusted retrieval. Semantic memory manages facts with provenance, admission status, and valid-time/known-time filters. Procedural memory manages versioned procedure records through explicit lifecycle transitions; replacement activation retires the predecessor within the repository operation, and the store is not a GraSP skill-DAG executor. Cross-store retrieval returns typed results using different per-store filters; it does not perform B1 scoring or B3 workspace admission, and historical eligibility does not mean that the currently stored object is materialized in its old lifecycle state.
 
-Internal actions are also separate. Retrieval reads memory; reasoning returns a bounded, evidence-referenced assessment; working-memory updates and episode recording are separate writes. External perception returns provenance-bearing observations, while grounding requests state changes in the simulator. During planning, the deterministic simulator applies candidate commands to isolated branch states. It does not commit those branches to the current simulated world.
+Internal actions are also separate and caller-composed. Retrieval reads memory; reasoning returns a bounded, evidence-referenced assessment; working-memory updates and episode recording are separate writes. Episodic and semantic review use separate capabilities and evidence, while explicit author/validator/approver identity separation is enforced in the procedural lifecycle. External perception returns provenance-bearing observations, while grounding requests state changes in the simulator. During planning, the deterministic simulator applies candidate commands to isolated branch states. It does not commit those branches to the current simulated world.
 
-The sequential, bounded-search, and MCTS planners share one contract but explore in different ways. Candidate evaluation replays proposals and checks configured constraints. A feasible or preferred candidate is still only a proposal: planner-method routing, candidate evaluation/selection, and execution authorization are different decisions.
+The sequential, bounded-search, and MCTS planners share one contract but explore in different ways. Candidate evaluation replays paths and checks configured constraints, while each strategy manages its own search ordering and candidate retention; there is no common candidate-selection service. A feasible or highly ranked candidate remains only a proposal and still requires downstream authorization before grounding.
 \end{chapterrecap}
 
 \begin{reviewquestions}{Review questions and short exercises}
 \begin{enumerate}
-  \item Why does the Java implementation use four distinct memory models instead of one generic conversation-history store?
+  \item Why does the Java implementation use four distinct memory models instead of one generic conversation-history store, and why is a memory scope not necessarily the same thing as a graph invocation?
   \item What makes a working-memory update versioned? What happens when a caller writes with a stale expected version?
   \item Why does a newly recorded episode not immediately become trusted experience? Which evidence is required for review?
-  \item How do valid time and known time answer different questions for a semantic fact?
-  \item Why is procedural memory not equivalent to an executable skill graph?
+  \item How do valid time and known time answer different questions for a semantic fact, and why should the retrieval service's time behavior not be described as uniform across all four memory stores?
+  \item Why is procedural memory not equivalent to an executable skill graph, and what operation retires the previous active version when a replacement is activated?
   \item What does \texttt{MemoryRetrievalService} return, and which decisions are deliberately left to B1 and B3?
   \item Why is a \texttt{ReasoningAssessment} not an action, a memory write, or a private chain-of-thought transcript?
   \item Give one example of a perception operation and its corresponding grounding operation. Why must their outputs be treated differently?
   \item What invariant links a \texttt{PlanningState}'s root-world version, current snapshot version, and action-path length?
-  \item Explain the difference between the sequential planner, bounded alternative search, and the MCTS adaptation. Which provider port is not backed by a concrete production adapter in the current source snapshot?
-  \item Why can \texttt{approvalRequired} be true while a candidate remains feasible? What must still happen before the action can be dispatched?
+  \item Explain the difference between the sequential planner, bounded alternative search, and the MCTS adaptation. Where does candidate ordering/retention occur, and which provider port is not backed by a concrete production adapter in the current source snapshot?
+  \item Why can \texttt{approvalRequired} be true while a candidate remains feasible? What must still happen before the action can be dispatched, and what can the evaluator not infer from proposer-supplied impact estimates?
   \item Which hard constraint currently causes the evaluator to fail closed because the domain model cannot verify it?
 \end{enumerate}
 \end{reviewquestions}
@@ -450,7 +469,7 @@ Choose one action from the supply-chain action definitions, such as reserving in
 
 \subsection*{Source and implementation note}
 
-The theoretical account in this chapter is grounded in [CoALA], principally Section 4.1 for memory, Sections 4.2--4.5 for internal and external actions, and Section 4.6 for planning, evaluation, selection, and execution. These concepts are recalled from Part I and are not reinterpreted through Fan and Lan's later mechanism analysis. The supply-chain types, Java contracts, provider interfaces, scoring policy, test fixtures, and simulator-backed planning model are part of the book's application repository. They are engineering choices used to instantiate selected CoALA responsibilities; they are not prescribed implementations from the CoALA paper. The CoALA memory/action categories do not imply the specific validation, approval, versioning, evidence, or planning algorithms described here.
+The theoretical account in this chapter is grounded in [CoALA], principally Section 4.1 for memory, Sections 4.2--4.5 for internal and external actions, and Section 4.6 for planning, evaluation, selection, and execution. These concepts are recalled from Part I and are not reinterpreted through Fan and Lan's later mechanism analysis. The supply-chain types, Java contracts, deterministic filter-based memory retrieval, action catalog, planning algorithms, simulator-backed world model, scoring policy, and tests are part of the book's application repository. They are engineering choices used to instantiate selected CoALA responsibilities; they are not prescribed implementations from the CoALA paper. The CoALA memory/action categories do not imply the specific validation, approval, versioning, evidence, or planning algorithms described here.
 
 \subsection*{Looking ahead}
 

@@ -1,15 +1,15 @@
 flowchart TB
-accTitle: Four CoALA memory responsibilities and retrieval boundary
-accDescr: Working memory stores active scoped context. Episodic memory stores reviewed experience. Semantic memory stores admitted facts. Procedural memory stores governed procedure versions. Cross-store retrieval produces typed results, followed later by B1 selection and B3 workspace admission.
+accTitle: Four CoALA memory responsibilities and their distinct retrieval filters
+accDescr: Working memory is fetched by id and checked for scope and expiry, not reconstructed historically. Episodic retrieval filters by scope, optional entity, and known time. Semantic retrieval occurs only with an entity and filters by valid time and known time. Procedural retrieval filters by scope and known time. Each store applies its own rules; historically eligible records may still be returned with their currently stored superseded or retired status. The typed result may later feed B1 selection and B3 admission, which are separate operations.
 
-    WM[Working memory<br/>active scoped context]
-    EP[Episodic memory<br/>reviewed experience]
-    SM[Semantic memory<br/>admitted facts]
-    PM[Procedural memory<br/>governed versions]
-    WM --> RET[Cross-store retrieval]
+    WM[Working memory<br/>identifier, scope, expiry<br/>current stored snapshot]
+    EP[Episodic memory<br/>verified at known time<br/>optional entity filter]
+    SM[Semantic memory<br/>only when entity supplied<br/>valid time + known time]
+    PM[Procedural memory<br/>active at known time<br/>no valid-time filter]
+    WM --> RET[Cross-store retrieval<br/>per-store filters and limits]
     EP --> RET
     SM --> RET
     PM --> RET
-    RET --> RESULT[Typed retrieval result]
+    RET --> RESULT[Typed retrieval result<br/>current stored objects]
     RESULT -. later selection .-> B1[B1 memory selection<br/>Chapter 21]
     B1 -. later admission .-> B3[B3 workspace<br/>Chapter 21]

@@ -1,12 +1,16 @@
 flowchart TB
-accTitle: Internal retrieval, reasoning, and separately governed writes
-accDescr: A read-only retrieval action supplies typed memory results to a bounded reasoning action. Reasoning returns a structured assessment. Working-memory updates and episode recording are separate memory writes. Review and admission operations are separately authorized lifecycle transitions.
+accTitle: Separate internal actions and caller-managed memory handoffs
+accDescr: Memory retrieval and reasoning are separate read-only actions. A caller may use typed retrieval results to construct a bounded reasoning request; the dashed handoff is optional and not an automatic pipeline. A caller may separately request a working-memory update or episode recording from an assessment. Episode verification and semantic review use separate capabilities and evidence but do not enforce a distinct original author and reviewer identity. Procedural validation, activation, and rejection enforce author separation; activation also separates the approver from the validator, and replacement activation retires the predecessor inside the repository operation.
 
-    RET[Memory retrieval<br/>read only] --> RESULTS[Typed memory results]
-    RESULTS --> REASON[Reasoning action<br/>bounded evidence input]
-    REASON --> ASSESS[Reasoning assessment]
-    ASSESS --> WM[Working-memory update<br/>separate write action]
-    ASSESS --> EP[Episode recording<br/>unverified]
-    EP --> REVIEW[Separate review<br/>verify or reject]
-    FACT[Semantic proposal] --> APPROVE[Separate admission<br/>approve or reject]
-    PROC[Procedure draft] --> VALIDATE[Validate and activate<br/>separate lifecycle]
+    RET[Memory retrieval<br/>read only] --> RESULTS[Typed retrieval result]
+    RESULTS -. optional caller-managed handoff .-> REQ[Construct reasoning request<br/>bounded context + evidence refs]
+    REQ --> REASON[Reasoning action<br/>read only]
+    REASON --> ASSESS[Structured reasoning assessment]
+    ASSESS -. optional caller-managed handoff .-> WM[Working-memory update<br/>separate write action]
+    ASSESS -. optional caller-managed handoff .-> EP[Episode recording<br/>starts unverified]
+    EP --> EREVIEW[Verify or reject<br/>separate capability + evidence]
+    FACT[Semantic proposal<br/>PROPOSED] --> SREVIEW[Approve or reject<br/>separate capability + evidence]
+    PROC[Procedure draft] --> VALIDATE[Validate<br/>reviewer differs from author]
+    VALIDATE --> ACTIVATE[Activate<br/>approver differs from author and validator]
+    PROC --> PREJECT[Reject<br/>reviewer differs from author]
+    ACTIVATE --> RETIRE[Repository retires prior active version<br/>during replacement activation]

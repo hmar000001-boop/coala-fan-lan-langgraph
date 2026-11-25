@@ -1,13 +1,13 @@
 flowchart TB
-accTitle: Planning branches do not commit to the current simulated world
-accDescr: A versioned root snapshot seeds a planning state. Candidate commands are applied to isolated branch snapshots through the deterministic simulator. Candidate branches are replayed and evaluated. A separate later grounding path changes the current world only after required authorization and dispatch.
+accTitle: Structured simulator rollouts remain isolated planning branches
+accDescr: A versioned root snapshot seeds a planning state. Candidate commands are applied by the deterministic supply-chain simulator to isolated branch snapshots. The rollout is a structured domain transition, not a model-generated imagined outcome and not environmental feedback. Candidate branches are replayed and evaluated; a separate later grounding path may change the current world after the required authorization and dispatch.
 
-    ROOT[Root snapshot<br/>version v]
+    ROOT[Root simulated snapshot<br/>version v]
     ROOT --> S0[Planning root state]
     S0 --> C1[Candidate action A]
     S0 --> C2[Candidate action B]
-    C1 --> SIM1[Simulator transition<br/>isolated branch]
-    C2 --> SIM2[Simulator transition<br/>isolated branch]
+    C1 --> SIM1[Deterministic simulator<br/>isolated branch A]
+    C2 --> SIM2[Deterministic simulator<br/>isolated branch B]
     SIM1 --> E1[Replay and evaluate]
     SIM2 --> E2[Replay and evaluate]
     E1 --> CAND[Auditable plan candidate]

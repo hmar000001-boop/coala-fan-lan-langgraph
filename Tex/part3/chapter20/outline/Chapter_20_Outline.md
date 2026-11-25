@@ -34,7 +34,7 @@ By the end of the chapter, readers should be able to:
 5. Explain why a reasoning result is a bounded assessment rather than an action, a memory write, or a private chain-of-thought transcript.
 6. Distinguish read-only perception from state-changing grounding in the simulator, referring back to Chapter 19 for dispatch and concurrency details.
 7. Follow a `PlanningRequest` through a simulator-backed planning world model, a selected planning strategy, deterministic replay/evaluation and an auditable `PlanCandidate`.
-8. Distinguish planner-method selection, candidate evaluation/selection, and authorization/dispatch.
+8. Distinguish planner-method routing, candidate evaluation, strategy-specific ordering/retention, and execution authorization/dispatch.
 9. Identify the implementation's deliberate approximations and missing adapters without attributing them to CoALA.
 
 ## 3. Relationship to the surrounding chapters
@@ -93,7 +93,7 @@ Begin with the practical problem: a request, an observation, a verified past eve
 - `WorkingMemorySnapshot.java`, `WorkingMemoryEntry.java`, `MemoryValue.java`, `Hypothesis.java`
 - `WorkingMemoryRepository.java`
 
-Explain that a `WorkingMemorySnapshot` is an immutable, scope-bound active context with an identifier, version, creation/update/expiry times, typed slots, hypotheses and the evidence references associated with the current content. `WorkingMemoryService.put`/`remove` require an expected version, enforce expiry and use repository compare-and-set. Replacing/removing a slot recomputes the current evidence set; a stale writer cannot silently overwrite a newer snapshot.
+Explain that a `WorkingMemorySnapshot` is an immutable, application-scope-bound active context with an identifier, version, creation/update/expiry times, typed slots, hypotheses and the evidence references associated with current content. A `MemoryScopeId` may represent a tenant, business unit or execution family; do not equate it automatically with one graph invocation or checkpoint. `WorkingMemoryService.put`/`remove` require an expected version, enforce expiry and use repository compare-and-set. Replacing/removing a slot recomputes the current evidence set; a stale writer cannot silently overwrite a newer snapshot.
 
 Show one small typed slot update, not the full class. Explain that the stored values are typed values/references—not a promise to retain every prompt or transcript. A hypothesis remains provisional until its evidence/status changes; a supported hypothesis requires supporting evidence.
 
@@ -113,8 +113,9 @@ Explain the implemented lifecycle:
 
 - `record` creates a `RECORDED` episode with scope, entities, bounded events, provenance, evidence and an unverified-retention boundary;
 - a model-derived episode must carry supporting evidence;
-- a separate reviewer/evidence transition can verify or reject it;
-- verified episodes can later be superseded while preserving their historical knowledge interval;
+- a separate capability/evidence transition can verify or reject it;
+- verified episodes can later be superseded while preserving their historical eligibility interval;
+- the current episode model/handlers do not enforce that the reviewer principal differs from the original recorder, because the original recording principal is not retained for that comparison; do not claim strict author/reviewer separation for episodic memory;
 - exact retrieval returns verified episodes, not every newly recorded episode.
 
 Use `EpisodicMemoryServiceTest.newlyRecordedEpisodeIsNotReturnedAsTrustedExperience` and `onlyExplicitlyReviewedEpisodeBecomesRetrievableExperience` as the two contrasting test examples. State clearly that an episode is selected experience, not a general application log and not automatically a reusable rule.
@@ -123,7 +124,7 @@ Use `EpisodicMemoryServiceTest.newlyRecordedEpisodeIsNotReturnedAsTrustedExperie
 
 **Code anchors:** `SemanticFact`, `FactKey`, `FactValue`, `FactStatus`, `SemanticFactRevision`, `SemanticAdmissionPolicy`, `SemanticMemoryService`.
 
-Explain the staged/active/rejected/superseded lifecycle. A proposed fact is not active knowledge. The conservative default admission policy allows activation without human review only for `AUTHORITATIVE_SYSTEM` and `HUMAN_VERIFIED` provenance; other provenance types require an explicit review path. Replacements and temporal amendments are version-checked and repository operations preserve the previous timeline.
+Explain the staged/active/rejected/superseded lifecycle. A proposed fact is not active knowledge. Under the conservative default policy, only `AUTHORITATIVE_SYSTEM` and `HUMAN_VERIFIED` provenance can activate without human review; all other provenance categories require the explicit review path. Replacements and temporal amendments are version-checked and repository operations preserve the previous timeline. Semantic review uses a separate capability and evidence, but the current fact model does not retain a proposer identity for enforced proposer/reviewer separation.
 
 Distinguish:
 
@@ -136,7 +137,7 @@ Use one small, domain-relevant example (such as a supplier capability validity i
 
 **Code anchors:** `ProcedureVersion`, `ProcedureKind`, `ProcedureStatus`, `ProcedureArtifactReference`, `ProceduralMemoryService`.
 
-Explain the explicit lifecycle `DRAFT → VALIDATED → ACTIVE`, followed by `RETIRED`, with `REJECTED` as a separate terminal review outcome. Validation and activation are distinct transitions with reviewer/approver identities and lifecycle revisions. A new version may replace an older active version under repository rules.
+Explain the explicit lifecycle `DRAFT → VALIDATED → ACTIVE`, followed by `RETIRED`, with `REJECTED` as a separate terminal review outcome. Validation/rejection require a principal distinct from the author; activation requires a principal distinct from both author and validator. Replacement activation retires the predecessor inside the repository activation operation; there is no separate registered retire action. The artifact reference is not executable by itself.
 
 State the boundary precisely: this is versioned procedural knowledge/artifact governance. It is not GraSP's skill retrieval, typed-DAG compilation, node verification, local repair and fallback chain. B5/GraSP is the closed candidate from Part II, not a mechanism this application claims to implement.
 
@@ -146,18 +147,21 @@ Use `ProceduralMemoryServiceTest.draftProcedureIsNotAvailableAsAnActiveCapabilit
 
 **Code anchors:** `MemoryRetrievalQuery`, `MemoryRetrievalResult`, `MemoryRetrievalService`, `MemoryRetrievalAction`.
 
-Explain what the service actually returns:
+Explain the exact per-store filters rather than describing a uniform time-aware memory engine:
 
-- an optional working-memory snapshot after scope/expiry checks;
-- verified episodic records;
-- active semantic facts filtered by entity/predicate and valid/known times;
-- active procedural versions at the requested knowledge time.
+- Working memory is fetched by identifier, scope-checked and accepted when its expiry is after `knownAt`; the currently stored snapshot is returned, not a historical reconstruction.
+- Episodes are filtered by scope, optional entity and `knownAt`; omitting the entity permits scope-wide retrieval.
+- Semantic facts are queried only when an entity is supplied and are filtered by scope, subject, optional predicate, `validAt` and `knownAt`.
+- Procedures are filtered by scope and `knownAt`, not `validAt`.
+- Each store applies its own per-type limit.
 
-**Critical distinction:** `MemoryRetrievalService` is an exact, deterministic, scoped lookup. Its source comment explicitly says it does not implement B1 activation scoring. Retrieval does not itself rank candidates by B1 value/latency, create a B3 workspace, or automatically write every returned record into working memory. The later cognitive decision path transforms retrieved evidence into a candidate-selection/workspace flow; Chapter 21 explains B1 and B3.
+Clarify that historical eligibility is not historical materialization: an episode, fact or procedure that has since been superseded/retired may still qualify for an earlier `knownAt`, but the returned immutable object can retain its currently stored `SUPERSEDED`/`RETIRED` status. This is not one uniform bitemporal engine across all four stores.
 
-Use `MemoryRetrievalServiceTest.exactRetrievalCombinesAllFourCoalaMemoryResponsibilitiesWithoutB1Scoring` as the principal test anchor. Explain its scope-isolation assertion as a memory boundary, not a relevance-quality benchmark.
+**Critical distinction:** `MemoryRetrievalService` is exact, deterministic, filter-based lookup. It does not implement B1 activation scoring, rank by value/latency/maintenance, create a B3 workspace, automatically write records into working memory, or automatically invoke reasoning. A caller may construct later reasoning/selection requests from the typed result; Chapter 21 explains B1 and B3.
 
-**Figure 20.2 — Four memory responsibilities and exact retrieval result.** Show distinct write/review lifecycles and the typed retrieval result. Draw B1 selection and B3 workspace admission as later stages outside this figure (or faded/dashed and labelled “Chapter 21”).
+Use `MemoryRetrievalServiceTest.exactRetrievalCombinesAllFourCoalaMemoryResponsibilitiesWithoutB1Scoring` as the principal test anchor. Add `episodicRetrievalCanReturnScopeRelevantEpisodesWithoutAnEntityFilter` to demonstrate the optional episodic entity filter, and `workingMemoryReferenceCannotBeReadAcrossScopes` for the scope boundary. These tests do not prove historical snapshot reconstruction across the four stores.
+
+**Figure 20.2 — Four memory responsibilities and their distinct retrieval filters.** Show the per-store filters and typed result. Draw B1 selection and B3 workspace admission as later, separate operations.
 
 ### 20.3 Internal actions: retrieval, reasoning and learning are separate operations
 
@@ -186,7 +190,9 @@ Show that reasoning output does not mutate memory implicitly. `WorkingMemoryUpda
 
 The implementation has explicit persistent memory writes and governed review paths. Do not claim automatic model fine-tuning, self-modifying agent code, or that every experience automatically changes future policy. These distinctions connect directly to Part I Chapter 4's learning boundaries.
 
-**Figure 20.3 — Internal action sequence.** Show retrieval → evidence-bounded reasoning → separate working-memory update and/or episode recording. Show review/admission as a separately authorized lifecycle, not as an automatic consequence of reasoning.
+Be exact about the review identities: the procedural handlers enforce author/validator/approver separation; the approver must differ from both the author and validator. Episodic and semantic review use separate capabilities and evidence, but the current episode/fact models and handlers do not enforce the same principal-identity comparison. Procedure predecessor retirement occurs as part of replacement activation in the repository; it is not a separate registered learning action. All handoffs between retrieval, reasoning and learning writes are caller-managed, not an automatic pipeline.
+
+**Figure 20.3 — Separate internal actions and caller-managed handoffs.** Show retrieval and reasoning as separate read-only actions; use dashed links for optional caller-composed handoffs to working-memory/episode writes. Show review/admission as a separate lifecycle, not an automatic consequence of reasoning.
 
 **Test anchors:** `CoalaInternalActionsTest` (especially `workingMemoryUpdateIsScopedVersionedAndIdempotent`, `episodeLearningRecordsButDoesNotSelfVerify`, and `reasoningActionRejectsEvidenceReferencesNotSuppliedByCaller`); `LearningActionCatalogTest`.
 
@@ -263,23 +269,24 @@ Explain the deterministic evaluator's important steps:
 
 Be precise about the difference between feasibility and governance. `PlanEvaluation.approvalRequired` records a downstream requirement; it is not itself a planning infeasibility violation. A feasible candidate remains only an auditable proposal. Approval, action capability authorization and dispatch occur later.
 
-Include one explicit limitation: if `PRESERVE_PROTECTED_CUSTOMER_COMMITMENTS` is requested, the current domain model cannot verify it and the evaluator fails closed. This is an engineering limitation surfaced honestly by the implementation, not a guarantee that the objective was checked successfully.
+Include two explicit limits: if `PRESERVE_PROTECTED_CUSTOMER_COMMITMENTS` is requested, the current domain model cannot verify it and the evaluator fails closed; and action-impact estimates are carried by canonical planning-action definitions and aggregated by the evaluator, but deterministic replay does not derive them from simulator before/after state or establish calibration against outcomes. These are engineering limitations, not guarantees that all objective dimensions were measured successfully.
 
-Keep three distinct selections separate:
+Keep four distinct decisions separate:
 
-- **planner-method selection:** which strategy runs (`PlannerRouter`);
-- **candidate evaluation/selection:** which proposal is feasible/preferred (planner/evaluator and later decision services);
+- **planner-method routing:** which strategy runs (`PlannerRouter`);
+- **candidate evaluation:** the shared evaluator replays a path, checks constraints and assigns values; it does not choose a candidate;
+- **strategy-specific ordering and retention:** occurs inside each planner implementation. The sequential provider chooses each next action for one path; bounded search ranks successors, prunes branches and orders retained candidates; MCTS selects tree nodes during search and orders extracted candidates by evaluation score. There is no shared `CandidateSelector` service or generic common reject-and-return-to-proposal component in the inspected module;
 - **execution authorization:** whether a particular candidate may proceed to dispatch (Chapter 19 boundary, composed in Chapter 24).
 
 **Test anchors:** `DeterministicCandidateEvaluatorTest.acceptsSimulatorReplayedPlanAndMarksApprovalAsGovernanceRequirement`, `rejectsAPlanWhoseClaimedStateDoesNotMatchSimulatorReplay`, `rejectsPlanExceedingHardRiskThreshold`, and `failsClosedWhenProtectedCommitmentConstraintCannotBeVerifiedByCurrentDomainModel`.
 
-**Figure 20.7 — Proposal, evaluation, candidate selection and authorization are separate.** The last authorization/dispatch box should be shown as a downstream boundary, not part of the planner.
+**Figure 20.7 — Evaluation, strategy-specific candidate ordering and authorization are separate.** Show no generic shared selector service; the final authorization/dispatch box is a downstream boundary, not part of the planner.
 
 ### 20.8 One bounded code trace: from memory result to plan candidate
 
 Do not claim that one unit test proves the entire integrated application path. Build a transparent, source-grounded trace by connecting focused test-backed operations:
 
-1. open/load an execution-scoped working-memory snapshot;
+1. open/load a working-memory snapshot bound to an application-defined memory scope;
 2. issue an exact `MemoryRetrievalQuery` and inspect the four typed result groups;
 3. pass an explicit context/evidence set to `ReasoningAction` and inspect the bounded assessment;
 4. construct a `PlanningRequest` bound to the objective, snapshot, working memory, action definitions, constraints, policies and budget;
@@ -287,7 +294,7 @@ Do not claim that one unit test proves the entire integrated application path. B
 6. replay/evaluate the branch and construct an auditable `PlanCandidate`;
 7. stop before approval or grounding execution.
 
-The trace is a pedagogical composition of actual contracts and component-test fixtures, not a claim that these isolated tests jointly constitute one end-to-end run. The fully assembled application path and its precise test boundaries belong to Chapter 24.
+The trace is a caller-composed pedagogical sequence of actual contracts and component-test fixtures, not a claim that retrieval automatically invokes reasoning or that these isolated tests jointly constitute one end-to-end run. The fully assembled application path and its precise test boundaries belong to Chapter 24.
 
 ### 20.9 Chapter recap and transition
 
