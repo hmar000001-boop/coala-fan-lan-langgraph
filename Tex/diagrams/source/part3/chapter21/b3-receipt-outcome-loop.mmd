@@ -1,0 +1,14 @@
+flowchart TB
+accTitle: B3 broadcast receipts and verified outcome feedback
+accDescr: An admitted workspace is delivered synchronously to named consumers. The service checks receipt identity and that consumed candidates are in the workspace, then records the receipt. An accepted receipt is not a useful outcome. A later verified report must reference an accepted receipt and an exact consumed candidate, pass evidence verification, and be revalidated before it can support B1 exact-revision updates or separately governed coalition feedback.
+    SNAP[Admitted workspace snapshot] --> BROADCAST[Synchronous consumer calls]
+    BROADCAST --> RECEIPT[Consumer receipt]
+    RECEIPT --> VALIDATE{Accepted identity and candidate subset?}
+    VALIDATE -->|No| REJECT[Rejected or failed receipt]
+    VALIDATE -->|Yes| STORE[Persist receipt evidence]
+    STORE --> REPORT[Later downstream outcome report]
+    REPORT --> CHECK{Exact consumed candidate and source evidence verified?}
+    CHECK -->|No| DENY[Reject outcome]
+    CHECK -->|Yes| REVERIFY[Re-read and revalidate persisted evidence]
+    REVERIFY --> B1[Update exact attributed B1 memory revision]
+    REVERIFY --> COAL[Separate coalition feedback governance]

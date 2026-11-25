@@ -1,0 +1,15 @@
+flowchart TB
+accTitle: B1 runtime sequence after base memory retrieval
+accDescr: The runtime first queries M2 and adapts returned records to B1 candidates. A trusted feature provider supplies scoring features. Optional persisted learning state enriches the candidates. The selector scores and bounds the set, the domain port persists the evidence set, and selected long-term references are projected into working memory. Selection-access history is recorded after the projection succeeds.
+    CTX[Cycle context and scope] --> M2[M2 MemoryRetrievalService]
+    M2 --> FACTORY[B1MemoryCandidateFactory]
+    FEAT[Trusted candidate feature provider] --> FACTORY
+    FACTORY --> CAND[B1MemoryCandidate list]
+    LEARN[Optional B1 feature enrichment] --> CAND
+    CAND --> SELECT[B1RetrievalSelector]
+    SELECT --> DIV{Diversity requirement met?}
+    DIV -->|No| FAIL[Evidence step fails]
+    DIV -->|Yes| SAVE[Persist selected evidence set]
+    SAVE --> PROJ[Project selected long-term references]
+    PROJ --> ACCESS[Record selection-access history]
+    ACCESS --> READY[Evidence result for the cycle]

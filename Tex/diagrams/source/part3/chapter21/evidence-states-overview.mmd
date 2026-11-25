@@ -1,0 +1,15 @@
+flowchart LR
+accTitle: Evidence states from memory retrieval to workspace admission
+accDescr: M2 retrieves eligible CoALA memories. B1 selects memory candidates and may project long-term references into working memory. The application separately prepares typed workspace candidates for B3. B3 admits a bounded snapshot that is broadcast to designated consumers. A later verified outcome is separate from selection, admission, and receipt.
+    M2[M2 cross-store retrieval] --> MC[Retrieved memory candidates]
+    MC --> B1[B1 memory selection]
+    B1 --> SEL[Selected memory candidates]
+    SEL --> PROJ[Optional long-term reference projection]
+    PROJ --> WM[CoALA working memory]
+    APP[Domain and application adapter] --> CANDS[Separate typed workspace candidates]
+    SEL -. explicit optional attribution .-> CANDS
+    CANDS --> B3[B3 bounded workspace admission]
+    B3 --> SNAP[Cycle-scoped workspace snapshot]
+    SNAP --> BC[Broadcast to designated consumers]
+    BC --> REC[Consumer receipts]
+    REC --> OUT[Separately verified outcome]

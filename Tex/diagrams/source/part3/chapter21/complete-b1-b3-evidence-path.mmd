@@ -1,0 +1,18 @@
+flowchart TB
+accTitle: Complete B1 and B3 evidence path and persistence boundaries
+accDescr: The runtime composes M2 retrieval, B1 candidate creation and selection, evidence-set persistence, and working-memory reference projection. A domain adapter independently prepares B3 candidates and optional exact B1 attributions. B3 creates an in-memory cycle workspace snapshot and broadcasts it synchronously. Consumer receipts and verified outcomes are persisted in PostgreSQL. Verified feedback updates exact memory revisions or follows separate coalition governance. Neither selection nor broadcast authorizes a domain action.
+    M2[M2 retrieval] --> CAND[B1 candidate factory and trusted features]
+    CAND --> B1[B1 selection]
+    B1 --> ESET[Evidence-set persistence]
+    ESET --> PROJ[Working-memory reference projection]
+    ESET --> DOM[Domain adapter prepares separate B3 request]
+    PROJ --> WM[CoALA working memory]
+    DOM --> MAP[Optional exact B1 attribution]
+    MAP --> B3[B3 mandatory and bounded competition]
+    B3 --> SNAP[In-memory workspace snapshot]
+    SNAP --> BC[Synchronous broadcast]
+    BC --> R2[PostgreSQL receipts and verified outcomes]
+    R2 --> FEED[Verified feedback paths]
+    FEED --> B1
+    FEED --> COAL[Separate coalition policy governance]
+    B3 -. no execution authority .-> ACT[Separate authorization and grounding boundary]

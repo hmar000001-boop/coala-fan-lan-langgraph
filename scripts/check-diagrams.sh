@@ -41,6 +41,7 @@ chapters = [
     Path('Tex/part2/chapter18/chapter.tex'),
     Path('Tex/part3/chapter19/chapter.tex'),
     Path('Tex/part3/chapter20/chapter.tex'),
+    Path('Tex/part3/chapter21/chapter.tex'),
 ]
 sources_only = os.environ.get('SOURCES_ONLY') == 'true'
 sources = sorted(src_root.rglob('*.mmd'))
@@ -160,7 +161,7 @@ if errors:
     sys.exit(1)
 
 if sources_only:
-    print(f'Diagram source validation passed: {len(sources)} Mermaid sources, accessible descriptions, sequence syntax guard, and all Chapter 1-20 figure references.')
+    print(f'Diagram source validation passed: {len(sources)} Mermaid sources, accessible descriptions, sequence syntax guard, and all Chapter 1-21 figure references.')
 else:
-    print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-20.')
+    print(f'Diagram validation passed: {len(sources)} Mermaid sources and {len(referenced)} referenced PNGs across Chapters 1-21.')
 PY

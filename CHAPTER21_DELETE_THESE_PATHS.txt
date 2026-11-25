@@ -1,0 +1,10 @@
+Apply these deletions manually at the LaTeX repository root.
+These are obsolete, unreferenced Part III placeholders outside the approved
+six-chapter scope (Chapters 19–24). No other existing files should be deleted.
+
+Tex/part3/chapter25/chapter.tex
+Tex/part3/chapter26/chapter.tex
+Tex/part3/chapter27/chapter.tex
+Tex/part3/chapter28/chapter.tex
+Tex/part3/chapter29/chapter.tex
+Tex/part3/chapter30/chapter.tex

@@ -1,0 +1,15 @@
+flowchart LR
+accTitle: Explicit handoff between B1 memory selection and B3 workspace preparation
+accDescr: B1 selects exact memory revisions and persists an evidence-set reference. The domain adapter independently prepares a heterogeneous B3 workspace request. It may map selected B1 memory revisions to workspace candidate IDs. The runtime validates every mapping before attaching exact attributions. Unmapped workspace candidates remain valid candidates without B1 memory attribution.
+    M2[M2 retrieved memories] --> B1[B1 selection]
+    B1 --> ESET[Persisted B1 evidence set]
+    ESET --> DOMAIN[Domain adapter]
+    DOMAIN --> B3REQ[Separate B3 workspace request]
+    DOMAIN -. optional exact ID mapping .-> MAP[Candidate to memory revision map]
+    ESET -. selected reference set .-> CHECK[Runtime validates mapping]
+    B3REQ --> CHECK
+    MAP --> CHECK
+    CHECK --> ATTR[Workspace candidates with explicit attribution]
+    CHECK --> NOATTR[Workspace candidates without attribution]
+    ATTR --> B3[B3 admission]
+    NOATTR --> B3

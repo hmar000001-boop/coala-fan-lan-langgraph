@@ -1,4 +1,585 @@
 \chapter{Memory Selection and Workspace Competition: B1 and B3}
-\begin{notebox}
-Chapter placeholder. The detailed outline is prepared but requires individual author approval before prose drafting.
-\end{notebox}
+
+\label{ch:memory-selection-workspace}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+Chapter 20 ended at an important boundary. The application's \texttt{Memory\allowbreak{}Retrieval\allowbreak{}Service} can retrieve scope- and time-eligible records from CoALA's four memory responsibilities, but retrieval does not decide which memories deserve the current cycle's limited context. Nor does it decide which observations, constraints, hypotheses, or plan fragments should enter a shared workspace. Those are two further decisions, and the application assigns them to different services.
+
+This chapter follows the evidence path from base retrieval into B1 memory selection, then examines B3's separate competition for a bounded workspace. It follows the actual Java composition rather than assuming that the two mechanisms form one universal pipeline. B1 works over memory candidates and chooses which ones to expose to the current cycle. B3 receives a separately prepared set of heterogeneous workspace candidates and decides which content to admit and make available to designated consumers. A domain adapter may explicitly attribute a workspace candidate to one or more exact B1-selected memory revisions, but the runtime validates that mapping; it does not automatically convert the B1 result into the B3 candidate list.
+
+The chapter also follows what happens after selection and admission. Selected long-term memory records can be projected into working memory as stable references. A workspace can be broadcast synchronously to named consumers, whose receipts record what they acknowledge as consumed. A receipt is not proof that the information was correct or useful. Only a separately verified downstream outcome can support the B1 memory-feature update described here, and the update is restricted to the exact memory revisions attributed to the consumed workspace candidate.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to distinguish base retrieval, B1 selection, working-memory reference projection, B3 workspace admission, consumer broadcast, and verified outcome feedback; trace the real runtime sequence from M2 retrieval through B1 scoring and evidence-set persistence; explain the implemented B1 objective and its separate cognitive-latency, infrastructure-latency, and maintenance-cost terms; describe B3's mandatory-content protection and bounded singleton/coalition competition; interpret incomplete admission and broadcast receipts without confusing them with useful outcomes; and identify what the current tests and PostgreSQL adapters do and do not demonstrate.
+\end{learningbox}
+
+\section{Two different selection problems follow retrieval}
+\label{sec:ch21-two-selection-problems}
+
+Consider a request to recover several delayed customer orders after a supplier capacity reduction. The application may retrieve an active working-memory snapshot, a verified episode describing a similar disruption, an active semantic fact about a supplier commitment, and an active procedure that describes an approved recovery step. These records are not interchangeable. Chapter 20 explained their memory roles and the filters used to retrieve them. Here, assume that the base retrieval service has returned a typed result. The new question is not simply whether a record exists or whether it passed the retrieval query. The question is what should be made available to the next cognitive operation under the current task and resource constraints.
+
+B1 and B3 address different versions of that question:
+
+\begin{itemize}
+  \item \textbf{B1 asks which retrieved memories should be selected for the current cognitive cycle.} Its candidate domain is explicit CoALA memory records. It considers accessibility, predicted cognitive retrieval latency, separately measured infrastructure latency, expected downstream utility, estimated maintenance cost, and a bounded context budget.
+  \item \textbf{B3 asks which heterogeneous content items should enter a bounded shared workspace.} Its candidate domain can include observations, memories, hypotheses, constraints, candidate plans, and policy items. It considers mandatory protection, capacity, candidate count, conflicts, coverage, complementary coalitions, and uncertainty-driven content diversity.
+\end{itemize}
+
+The distinction matters because selection at one boundary does not determine selection at the next. A memory can score well under B1 and still not be represented as a B3 workspace item. A workspace can admit a fresh observation or a constraint that was not a persistent memory and therefore never passed through B1. A selected long-term memory may contribute to a workspace candidate, but only through an explicit adapter mapping. The two mechanisms share evidence and constraints; they do not share one candidate set or one scoring formula. Fan and Lan make this separation part of the B1/B3 residual distinction: memory accessibility and shared-content admission have different candidate objects and control questions.\FanLanCite{Table V; \S VI-C, B1 and B3; \S VI-D}
+
+It helps to use precise verbs throughout the chapter. A record is \emph{retrieved} when M2 returns it as query-eligible information. A memory is \emph{selected} when B1 chooses its candidate. A long-term record is \emph{projected} when a stable reference to it is written into working memory. A workspace item is \emph{admitted} when B3 places it in a cycle-scoped snapshot. A candidate is \emph{consumed} when a designated consumer reports that it used the item and the broadcast service accepts that receipt. An outcome is \emph{verified} only after a separate evidence verifier accepts the downstream report. None of these verbs is a synonym for another.
+
+\BookDiagram[0.52\textheight]
+  {Tex/diagrams/generated/part3/chapter21/evidence-states-overview.png}
+  {The evidence states are related but not interchangeable. M2 retrieval supplies B1 candidates; B1 selects memories; the application may project stable references into working memory and separately prepare B3 workspace candidates. B3 then admits content and broadcasts a workspace snapshot.}
+  {fig:ch21-evidence-states}
+
+The seven-field S/C/T/P/F/L/R representation introduced in Chapter 10 will be used later as an analytical reading aid. It is not a software class template and not a score that every mechanism must complete. The code does not implement every possible learning, persistence, or governance property simply because a corresponding field exists in the analytical framework. Where the repository delegates a value to an injected provider, keeps a snapshot in memory, or has no focused database integration test, the chapter will say so rather than fill the gap by inference.
+
+\section{From base retrieval to B1 candidates}
+\label{sec:ch21-b1-runtime}
+
+\subsection{The runtime owns the handoff order}
+\label{subsec:ch21-b1-call-order}
+
+The relevant orchestration method is \texttt{Cognitive\allowbreak{}Cycle\allowbreak{}Decision\allowbreak{}Services.\allowbreak{}retrieve\allowbreak{}Evidence} in the runtime module. The method begins by obtaining the active cycle time and the current uncertainty assessment. It asks the decision-domain port for the memory scope, the M2 retrieval query, and the B1 selection request. The current uncertainty assessment is converted into a B6 governance directive and attached to the selection request. Before accessing the stores, the method checks that the domain scope, retrieval-query scope, and selection-request scope are equal. A scope mismatch is rejected rather than allowing one cycle to select information from another scope.
+
+The central call sequence is short enough to inspect directly:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The runtime composes M2 retrieval, B1 candidate construction, selection, evidence persistence, projection, and access-history recording.},label={lst:ch21-retrieve-evidence}]
+var retrieved = memoryRetrieval.retrieve(query);
+List<B1MemoryCandidate> candidates = b1CandidateFactory.from(
+    scope, retrieved, query.knownAt(), domainPort.b1FeatureProvider(context));
+if (b1FeatureLearning != null)
+    candidates = b1FeatureLearning.enrich(candidates, at);
+B1SelectionResult selected = b1Selector.select(selectionRequest, candidates);
+if (!selected.diversitySatisfied())
+    return failedEvidenceForUnsatisfiedDiversity(selected);
+EvidenceRetrieved persisted = domainPort.persistEvidenceSelection(
+    context, retrieved, selected, at);
+if (persisted.disposition() != EvidenceDisposition.READY)
+    return persisted;
+var projected = projectSelectedMemoryReferences(
+    context, scope, candidates, selected.selectedCandidates(), at);
+if (b1FeatureLearning != null)
+    b1FeatureLearning.recordSelected(selected.selectedCandidates(),
+        selectionRequest.queryCues(), context.executionId(),
+        persisted.evidenceSetId(), at);
+\end{lstlisting}
+\end{minipage}
+
+The listing omits the surrounding error translation and result construction, but preserves the sequence in the source. It is important that the method calls M2 before it constructs B1 candidates. The B1 candidate factory adapts a typed \texttt{Memory\allowbreak{}Retrieval\allowbreak{}Result}; B1 is not another search engine that independently queries all four stores. The candidate factory does not change the source memory records. It constructs a candidate reference and attaches a feature sidecar supplied by the injected \texttt{B1\allowbreak{}Candidate\allowbreak{}Feature\allowbreak{}Provider}.
+
+The current factory handles the retrieved memory types with distinct checks. A working-memory candidate must belong to the expected scope and must not have expired at the requested knowledge time. An episodic candidate must have been known as verified at that time. A semantic fact must have been known as active at that time. A procedural record must have been known as active at that time. The resulting candidate reference records the memory kind, scope, underlying record identifier, and relevant version or lifecycle revision. The reference is therefore tied to an exact source object rather than just its display text.
+
+The factory then asks the feature provider for a \texttt{B1CandidateFeatures} value. This sidecar supplies access history, cue-association strengths, expected downstream utility, context units, measured infrastructure latency, and a maintenance profile. The candidate record validates the values' basic shape, including nonnegative utility and latency and positive context size. The provider is an explicit trust boundary. The selector does not derive every feature from the memory record, and the chapter must not imply that it does. The feature contract also says that these values are estimates and costs, not the underlying memory content or authority.
+
+\subsection{Optional feature enrichment precedes scoring}
+\label{subsec:ch21-b1-enrichment}
+
+In the durable host composition, the runtime receives a \texttt{B1\allowbreak{}Memory\allowbreak{}Feature\allowbreak{}Learning\allowbreak{}Service}. When present, its \texttt{enrich} method loads feature state for each exact candidate reference. If a state exists, the service combines the candidate's input access history with persisted selection-access history and verified-use history, removes duplicate timestamps, sorts the result, and retains a bounded recent history. It also overlays the stored cue-association strengths. The provider's task-scale \texttt{expectedDownstreamUtility} remains unchanged. The persisted [0,1] outcome statistic remains in the per-memory feature state, but the accepted enrichment path does not copy it into the candidate utility feature.
+
+This enrichment is not a second candidate search or an automatic memory mutation. It transforms the candidate's scoring features before selection. The record content and its source repository remain unchanged. The bounded feature-state history also prevents a single memory's access log from growing without limit in this state object. The implementation retains at most 64 access timestamps and at most 64 verified-use timestamps in each state. This is a storage bound in the Java feature state, not a statement that the source memory itself is truncated or deleted.
+
+The runtime's order creates several explicit failure boundaries. Scope mismatch, invalid or duplicate candidate identities, and invalid candidate inputs fail before selection. A B6 minimum-distinct-memory-kind requirement can cause the evidence step to fail if B1 cannot satisfy it with eligible candidates under the accessibility, utility, count, and context constraints. The runtime persists the selected evidence-set artifact through the domain port and requires a nonblank evidence-set identifier when the persistence result says the evidence is ready. It then projects selected long-term references. If that projection fails, the runtime reports a failed evidence result and keeps the evidence-set identifier in the returned failure record. The source does not describe this as one transaction spanning the evidence-set store and the working-memory repository; the chapter should not imply that the two writes are atomic together.
+
+\subsection{What the B1 tests establish}
+\label{subsec:ch21-b1-factory-tests}
+
+The factory tests provide focused evidence for the candidate boundary. \texttt{B1\allowbreak{}Memory\allowbreak{}Candidate\allowbreak{}Factory\allowbreak{}Test.\allowbreak{}adapts\allowbreak{}Working\allowbreak{}Episodic\allowbreak{}Semantic\allowbreak{}And\allowbreak{}Procedural\allowbreak{}Memory\allowbreak{}Without\allowbreak{}Changing\allowbreak{}M2\allowbreak{}Records} checks adaptation across the four memory kinds while preserving the M2 records. Separate tests reject a working-memory value from the wrong scope, expired working memory, and an episode that was not verified at the requested knowledge time. At the runtime boundary, \texttt{Cognitive\allowbreak{}Cycle\allowbreak{}Decision\allowbreak{}Services\allowbreak{}Test.\allowbreak{}retrieval\allowbreak{}Uses\allowbreak{}M2\allowbreak{}Before\allowbreak{}B1\allowbreak{}And\allowbreak{}Persists\allowbreak{}The\allowbreak{}Selected\allowbreak{}Evidence\allowbreak{}Set} checks that base retrieval occurs before B1 selection and that the selected evidence-set reference is persisted.
+
+These are implementation contract tests. They do not demonstrate that a retrieval query is generally relevant, that every possible domain adapter supplies calibrated candidate features, or that a B1-selected memory improves a later operational outcome. The exact tests and the exact source path are more informative than a broad claim that the application "implements memory retrieval" end to end.
+
+\section{B1 scoring: accessibility, latency, utility, and cost}
+\label{sec:ch21-b1-scoring}
+
+\subsection{The implemented objective}
+\label{subsec:ch21-b1-objective}
+
+The selector scores every supplied candidate before applying its selection limits. Its objective is an engineering combination of accessibility, expected downstream utility, two separate latency penalties, maintenance cost, and an optional outcome adjustment:
+
+\[
+\begin{aligned}
+U_{B1}(m) ={}& P_{access}(m)\,V_{downstream}(m) \\
+&- \lambda_c L_{cognitive}(m)
+- \lambda_i L_{infrastructure}(m) \\
+&- C_{maintenance}(m) + A_{outcome}(m).
+\end{aligned}
+\]
+
+Here, \(P_{access}\) is a bounded accessibility estimate derived from activation. \(V_{downstream}\) is the candidate's expected contribution under the current task. \(L_{cognitive}\) is the predicted cognitive retrieval latency, while \(L_{infrastructure}\) is a separately supplied measurement of infrastructure retrieval latency. The coefficients \(\lambda_c\) and \(\lambda_i\) convert their respective time values into utility-point penalties. \(C_{maintenance}\) is an estimated maintenance cost over the request's specified horizon. \(A_{outcome}\) is an optional adjustment supplied through a trusted outcome-policy boundary and checked against a hard safety bound.
+
+The code computes the central expression directly:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The selector's net-utility calculation.},label={lst:ch21-b1-net-score}]
+double probability = 1.0 / (1.0 + Math.exp(
+    -Math.max(-40.0, Math.min(40.0, activation.totalActivation()))));
+Duration cognitiveLatency = latencyModel.predict(activation);
+double maintenance = candidate.maintenanceProfile().estimateCost(
+    request.evaluatedAt(), request.maintenanceHorizon());
+double cognitivePenalty = durationMillis(cognitiveLatency)
+    * request.policy().cognitiveLatencyPenaltyPerMillisecond();
+double infrastructurePenalty = durationMillis(
+    candidate.measuredInfrastructureLatency())
+    * request.policy().infrastructureLatencyPenaltyPerMillisecond();
+double adjustment = outcomeAdjustment.adjustmentFor(
+    candidate.scopeId(), candidate.candidateId());
+double net = probability * candidate.expectedDownstreamUtility()
+    - cognitivePenalty - infrastructurePenalty - maintenance
+    + adjustment;
+\end{lstlisting}
+\end{minipage}
+
+The expression is not the ACT-R activation equation. Nor is its logistic output a calibrated probability simply because the value lies between zero and one. It is the application's scoring rule. The weights and feature values must be understood as configured engineering inputs, not measurements reported by CoALA or Fan and Lan. The paper's B1 proposal motivates the interaction among accessibility, latency, value, and cost; this particular formula and its Java data contracts are the application's implementation choice.\FanLanCite{\S V-A; \S V-B; \S VI-C, B1; Tables V--VI; Appendices B, C-A, and D}
+
+\subsection{Activation is an estimate, not a retrieved fact}
+\label{subsec:ch21-b1-activation}
+
+The host constructs a \texttt{Recency\allowbreak{}Frequency\allowbreak{}Activation\allowbreak{}Estimator} with a decay parameter and a cue-association weight. For each recorded access timestamp, the estimator computes its age in days and adds a decayed strength proportional to \((ageDays+1)^{-decay}\). If there is no access history, it uses a configured empty-history activation. Otherwise, it takes the logarithm of the summed access strength. It adds the association strengths for the query cues, multiplied by the configured association weight. The selector then maps total activation through a logistic transform to its accessibility estimate.
+
+This is a simple, inspectable engineering approximation. It includes a recency/frequency component and a query-cue association component, but it is not a literal implementation of every term in ACT-R's base-level, spreading-activation, partial-matching, and noise account. There is no reason to call it paper-exact. The source comment expressly describes it as an engineering approximation. The tests named \texttt{recent\allowbreak{}And\allowbreak{}Frequent\allowbreak{}Access\allowbreak{}Produces\allowbreak{}Greater\allowbreak{}Activation} and \texttt{cue\allowbreak{}Association\allowbreak{}Contributes\allowbreak{}To\allowbreak{}Activation} test the two expected directional properties; they do not establish that the value is calibrated against observed recall probabilities.
+
+\subsection{Cognitive latency and infrastructure latency stay separate}
+\label{subsec:ch21-b1-latency}
+
+The \texttt{Exponential\allowbreak{}Activation\allowbreak{}Latency\allowbreak{}Model} maps the activation estimate to a predicted cognitive-time duration. It computes a configured scale multiplied by an exponential decay of activation, rounds the result to milliseconds, and clamps it between configured lower and upper bounds. In the durable host, the construction uses the configured scale, decay, and bounds visible in the application composition. The model is a chosen mapping from an activation estimate to a bounded cognitive-latency penalty; it is not a measured human retrieval law.
+
+The candidate separately carries \texttt{measured\allowbreak{}Infrastructure\allowbreak{}Latency}. This duration is supplied by the feature provider and represents infrastructure delay such as retrieval execution, not the selector's cognitive prediction. The scoring policy can assign a separate penalty rate to each. Combining them would hide whether a candidate is expensive because it is cognitively hard to access under the model or because the data path is slow. The test \texttt{measured\allowbreak{}Infrastructure\allowbreak{}Latency\allowbreak{}Is\allowbreak{}Separate\allowbreak{}From\allowbreak{}Cognitive\allowbreak{}Latency} is the direct evidence for preserving this distinction. The latency model test \texttt{stronger\allowbreak{}Activation\allowbreak{}Reduces\allowbreak{}Predicted\allowbreak{}Cognitive\allowbreak{}Latency} only checks the direction of the configured approximation.
+
+\subsection{Expected value and maintenance are distinct inputs}
+\label{subsec:ch21-b1-value-maintenance}
+
+Expected downstream utility is supplied as a candidate feature. It is not the same as source authority or factual confidence. A high-utility estimate is only as trustworthy as the feature-provider contract and evidence used to produce it. The selector multiplies this value by accessibility: a potentially useful memory that is expected to be inaccessible contributes less to the objective. The selector does not itself inspect business truth, decide which supplier commitments are authoritative, or turn a model's plausibility judgement into domain evidence. Those boundaries remain with the data and application services introduced in Chapters 19 and 20.
+
+The actual \texttt{MaintenanceProfile} stores five values: \texttt{admissionValidationCost}, \texttt{refreshCost}, \texttt{recurringCostPerDay}, \texttt{refreshInterval}, and \texttt{lastMaintainedAt}. For each candidate evaluation, \texttt{B1RetrievalSelector} calls \texttt{estimateCost(request.evaluatedAt(), request.maintenanceHorizon())}. The method adds the admission-validation cost, adds the refresh cost when the interval has elapsed since \texttt{lastMaintainedAt}, and adds the recurring daily cost multiplied by the requested horizon in days. It returns an estimate; it does not schedule or execute validation or refresh work.
+
+The implementation detail matters: \texttt{admissionValidationCost} is added on every estimate. The profile does not say whether this field means a validation operation incurred each time the candidate is evaluated or a one-time historical admission expense. If a provider uses it to represent sunk admission, embedding, or storage work, repeatedly charging it at selection time would conflict with the accounting rule in Part II, Chapter 12. If it represents a genuinely recurring validation operation, that meaning must be made explicit in the provider's feature contract. The source does not encode a separate amortized lifecycle allocation, nor does the selector deduplicate shared costs across candidates. The chapter therefore reports the implemented arithmetic and flags the unresolved field semantics; it does not claim that this implementation has solved sunk-cost accounting.
+
+Chapter 12's cost-accounting rule remains the design standard: historical storage/admission costs should not be charged afresh on every prompt unless an explicit amortization rule is defined; query-time maintenance should represent incremental work triggered by the current selection; and one operation should not be charged through both paths. The current profile only partially specifies those distinctions. Its cost values are expressed in the selector's utility-point unit, not in observed currency or elapsed time.
+
+A separate \texttt{Memory\allowbreak{}Maintenance\allowbreak{}Accounting\allowbreak{}Service} and ledger can record maintenance events and aggregate their actual cost values over a time range. The repository's ledger implementation is in-memory. The accounting path is used by the mechanism-ablation runner, but the standalone maintenance-accounting service is not wired into the durable application host. Therefore the durable host does not automatically measure every maintenance event and feed observed costs back into the profile. The test \texttt{maintenance\allowbreak{}Cost\allowbreak{}Is\allowbreak{}Included\allowbreak{}In\allowbreak{}Net\allowbreak{}Utility} checks the selector's estimated-cost contribution; \texttt{maintenance\allowbreak{}Profile\allowbreak{}Charges\allowbreak{}Refresh\allowbreak{}When\allowbreak{}Due\allowbreak{}And\allowbreak{}Recurring\allowbreak{}Horizon\allowbreak{}Cost} checks due-refresh and recurring-horizon arithmetic; \texttt{maintenance\allowbreak{}Ledger\allowbreak{}Is\allowbreak{}Idempotent\allowbreak{}And\allowbreak{}Aggregates\allowbreak{}Actual\allowbreak{}Cost} checks the separate ledger behavior.
+
+\subsection{A worked selection example}
+\label{subsec:ch21-b1-worked-example}
+
+The following values are a \textbf{[Book example]}. They illustrate how the terms interact; they are not repository measurements, empirical observations, or values copied from a production configuration. Suppose a cycle has room for at most two candidates and 8 context units. The request has a policy that uses the following illustrative calculations:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.18\linewidth}rrrrX}
+\toprule
+\textbf{Candidate} & \textbf{Access} & \textbf{Utility} & \textbf{Latency penalty} & \textbf{Maint.} & \textbf{Context} \\
+\midrule
+Fresh inventory observation & 0.90 & 0.70 & 0.05 & 0.02 & 2 \\
+Prior disruption episode & 0.55 & 0.95 & 0.08 & 0.03 & 3 \\
+Old supplier note & 0.95 & 0.20 & 0.35 & 0.10 & 2 \\
+Approved procedure & 0.65 & 0.85 & 0.04 & 0.02 & 5 \\
+\bottomrule
+\end{tabularx}
+\caption{Illustrative B1 features. The access, utility, penalty, maintenance, and context values are invented solely to demonstrate the decision rule.}
+\label{tab:ch21-b1-example}
+\end{table}
+
+Ignoring the optional outcome adjustment for this example, the old supplier note has strong estimated accessibility, but its downstream utility is low and its latency and maintenance penalties are comparatively high. It may fail the minimum net-utility threshold despite being easy to access. The prior disruption episode may be selected because its expected utility is high enough to offset its lower accessibility and larger latency penalty. The approved procedure has a strong value estimate but consumes 5 units; depending on the selected first candidate and the remaining budget, it can displace another otherwise eligible memory. The point is not that a particular record always wins. It is that B1 is a constrained comparison, not a recency-only or semantic-similarity-only ranking.
+
+\subsection{The bounded selection procedure}
+\label{subsec:ch21-b1-bounds}
+
+After it has calculated the score for every candidate, the selector sorts scores by descending net utility and uses candidate ID as the deterministic tie-breaker. It then builds a selected set while enforcing the maximum candidate count, minimum accessibility probability, minimum net utility, and context-unit budget. Candidates that fail a threshold or do not fit the remaining capacity are skipped. \texttt{B1SelectionResult} returns selected candidates, all candidate scores with a selected flag, used and available context units, and the required and achieved counts of distinct memory kinds.
+
+When the active B6 directive requests more than one distinct memory kind, the selector prefers a not-yet-represented kind while the diversity floor is unmet. If the first pass cannot achieve that floor, it makes a second bounded pass for additional eligible distinct kinds. If the floor still cannot be met, the result reports \texttt{diversitySatisfied() == false}. The runtime checks that result before it persists the evidence selection. The neutral default requires only one distinct kind; it does not reject an empty candidate list merely because no candidate was retrieved.
+
+The implementation also differs from the fuller set-aware design discussed in Part II, Chapter 12. The selector scores each memory candidate independently and then greedily packs eligible candidates in score order. It does not compute \(V(S\mid q,a)\) or the marginal contribution \(\Delta V(m\mid S,q,a)\), and it has no B1-level redundancy penalty or learned complementarity model. Two redundant memories can therefore both score highly, while two individually weak but jointly decisive memories are not recognized as a special B1 bundle. B3 later evaluates explicit workspace coalitions, but that separate coverage mechanism does not retroactively make B1 set-valued.
+
+The candidate ID tie-break makes equal-score ordering deterministic. It does not make candidate relevance deterministic, repair a poor feature provider, or guarantee that the selected set is globally optimal. Likewise, the context budget is measured in the application's \texttt{contextUnits}; it should not be called a token budget unless a specific adapter maps those units to tokens. The selector tests verify score ordering, budget fit, scope mismatch rejection, duplicate-ID rejection, cost inclusion, and the separation of the two latency terms. They do not validate the chosen weights or prove improved task outcomes.
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part3/chapter21/b1-selection-sequence.png}
+  {The B1 selector receives candidates only after M2 retrieval and feature assembly. It scores candidates, applies thresholds and context/count limits, and returns a bounded selection together with scores and diversity accounting.}
+  {fig:ch21-b1-selection}
+
+\section{Selected memories become references in working memory}
+\label{sec:ch21-projection}
+
+B1's selected result is not copied wholesale into working memory. The runtime verifies that each selected candidate belongs to the expected scope and is equal to the candidate returned by the preceding M2-to-B1 adaptation. Working-memory candidates are skipped because they already represent the active working-memory state. Selected episodic, semantic, and procedural candidates are collected as long-term references and ordered by memory kind and reference.
+
+If one or more long-term candidates are selected, the complete host requires an active working-memory identity and the shared \texttt{Working\allowbreak{}Memory\allowbreak{}Service}. The loaded snapshot must match the active memory scope and remain unexpired. The runtime creates a text-list value that contains a versioned projection marker and the selected stable memory references. It also records evidence references of type \texttt{coala-\allowbreak{}selected-\allowbreak{}memory} for those exact source references. The underlying episodic, semantic, and procedural records remain in their authoritative repositories; working memory contains a scoped reference list, not copied source documents.
+
+The projection uses the working-memory version from the cycle context. If the current version still matches, the runtime performs a version-checked write. If a concurrent write has advanced the version, the projection fails rather than merging over the new snapshot. The code has one narrow retry-recognition rule for a graph-checkpoint interruption: if the version is exactly one greater, the projected value and evidence are exactly the expected ones, and the update timestamp is the current projection timestamp, the runtime treats that as the prior projection operation. A later unrelated write increments the version again and is not mistaken for that replay. This is a targeted idempotency rule, not a general conflict-resolution algorithm.
+
+The tests make these boundaries explicit. \texttt{selected\allowbreak{}Long\allowbreak{}Term\allowbreak{}Memory\allowbreak{}Is\allowbreak{}Projected\allowbreak{}As\allowbreak{}Versioned\allowbreak{}Evidence\allowbreak{}References\allowbreak{}Into\allowbreak{}Working\allowbreak{}Memory} checks that the projection stores references. \texttt{selected\allowbreak{}Long\allowbreak{}Term\allowbreak{}Memory\allowbreak{}Cannot\allowbreak{}Be\allowbreak{}Projected\allowbreak{}Across\allowbreak{}Working\allowbreak{}Memory\allowbreak{}Version\allowbreak{}Conflict} checks fail-closed version behavior. \texttt{selected\allowbreak{}Long\allowbreak{}Term\allowbreak{}Memory\allowbreak{}Projection\allowbreak{}Is\allowbreak{}Idempotent\allowbreak{}After\allowbreak{}Graph\allowbreak{}Checkpoint\allowbreak{}Interruption} checks the narrowly recognized replay. These assertions establish projection behavior for the exercised cases. They do not imply that M2 retrieval itself mutates working memory or that the four memory stores share one historical snapshot model.
+
+\begin{tipbox}
+Keep three objects separate when reading the code: the authoritative long-term memory record, the B1 candidate that refers to an exact record revision and carries scoring features, and the working-memory value that lists selected references. The last two are not replacements for the first. The reference projection makes selected evidence available to the next cycle without changing the authority or lifecycle of the source record.
+\end{tipbox}
+
+\section{B1 learning and maintenance have separate lifecycles}
+\label{sec:ch21-b1-learning}
+
+\subsection{Selection-access history is not verified use}
+\label{subsec:ch21-b1-access}
+
+After successful evidence persistence and projection, the runtime calls \texttt{B1\allowbreak{}Memory\allowbreak{}Feature\allowbreak{}Learning\allowbreak{}Service.\allowbreak{}record\allowbreak{}Selected}. The event identity includes the graph execution ID, persisted evidence-set ID, and candidate ID. The feature state records the access timestamp and initializes any previously unseen query-cue associations to a neutral strength. It stores the event key so a retry of the same selection does not inflate the access count. The state update uses a bounded compare-and-set loop and fails if it cannot update after the configured attempts.
+
+This event means that B1 selected the memory for the evidence set. It does not mean that a downstream consumer used it, that a planner relied on it, or that the evidence improved the result. The separate \texttt{verifiedUseHistory} is updated only after a verified B3 downstream outcome. The distinction is essential: if selection alone were treated as usefulness, the system would reward memories simply for appearing in the context, whether or not they were used or helpful.
+
+\subsection{Verified downstream evidence can update an exact B1 revision}
+\label{subsec:ch21-b1-outcome}
+
+The B1 learning path is connected to B3 through an explicit attribution record. During workspace preparation, the decision-domain adapter can provide a map from B3 workspace candidate IDs to exact B1 memory references. It also provides the B1 candidates associated with the active persisted evidence-set reference. The runtime validates that the mapping keys refer to candidates in the B3 request, that the source candidates match the workspace scope, and that each attributed kind/record/revision is present in the selected B1 list supplied by the domain adapter. It then binds the B1 revision and query cues to a fingerprint of the B3 candidate. The runtime does not independently reconstruct the evidence-set candidate list by querying a PostgreSQL evidence-set table; that lookup remains the responsibility of the domain adapter contract.
+
+The outcome service receives a consumer receipt after broadcast. For an accepted receipt, it records the fingerprints of candidate IDs that the consumer says it consumed and carries forward any explicit B1 attribution for those candidates. The service creates a stable receipt identity from workspace and consumer IDs. A later downstream-outcome report is accepted only when it refers to a persisted accepted receipt, names a candidate recorded as consumed by that receipt, is timestamped after receipt time, and passes the configured verifier. The outcome also remains tied to the candidate fingerprint, experiment-unit fingerprint, policy version, verifier ID, and evidence references.
+
+The service appends the outcome and then obtains training evidence through its verified-evidence path. That path re-reads the persisted receipt and outcome, checks that the identities and fingerprints still match, and invokes the verifier again before minting the verified-evidence capability used by B1 learning. An outcome row's mere presence in a repository is not enough. If B1 attributions exist, the learning service updates only the exact memory revisions named by those attributions and checks that their memory scope matches the outcome scope. It does not generalize the result to another revision of the same logical record or to a similar record with a different identity.
+
+The feature update has explicit, bounded arithmetic, but its numeric outputs must not be confused with the task-scale utility supplied to the selector. The persisted \texttt{B1\allowbreak{}Memory\allowbreak{}Feature\allowbreak{}State.expected\allowbreak{}Downstream\allowbreak{}Utility} record component is constrained to [0,1]. Its name is inherited from the original schema, but its implemented update is a normalized outcome-quality statistic: the first verified outcome initializes it to 1.0 for \texttt{USEFUL}, 0.0 for \texttt{HARMFUL}, and 0.5 for \texttt{NEUTRAL}; later outcomes use a 0.2-step exponentially weighted update. The record component and serialized field retain this legacy name; this chapter therefore describes the value by its implemented update semantics rather than treating the name as task-scale utility. Crucially, the accepted B1 enrichment correction does \emph{not} copy this [0,1] statistic into \texttt{B1\allowbreak{}Memory\allowbreak{}Candidate.expected\allowbreak{}Downstream\allowbreak{}Utility}. That candidate value remains the task-scale value supplied by the trusted feature provider and is not constrained to [0,1]. The two scales have no declared calibration.
+
+Verified outcomes also update the matching outcome counter, cue associations (+0.1 for useful, -0.1 for harmful, 0 for neutral, clamped to [0,1]), and bounded verified-use history. The outcome key is recorded so replay does not apply the same update twice. On a later cycle, feature enrichment combines persisted selection-access and verified-use histories and overlays cue-association strengths while preserving the candidate's provider-supplied utility. The normalized [0,1] statistic remains in the persisted feature state; the selector does not consume it as candidate utility. This correction prevents an uncalibrated scale substitution. It does not implement a calibrated outcome-to-task-utility model, an adaptive selector-weight update, or evidence that later choices become better.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={Only a verified outcome capability can update the memory revisions explicitly attributed to it.},label={lst:ch21-b1-verified-update}]
+public void applyVerifiedOutcome(VerifiedDownstreamOutcomeEvidence verified) {
+    var outcome = verified.evidence();
+    for (var attribution : outcome.memoryAttributions()) {
+        if (!attribution.reference().scopeId().equals(outcome.scopeId()))
+            throw new SecurityException("B1 attributed memory does not belong to outcome scope");
+        update(attribution.reference(), current -> current.applyVerifiedOutcome(
+            outcome.idempotencyKey(), outcome.signal(),
+            attribution.queryCues(), outcome.verifiedAt()));
+    }
+}
+\end{lstlisting}
+\end{minipage}
+
+This is a carefully bounded connection between the two bundles. B3 produces the verified evidence capability and exact candidate attribution; B1 consumes that capability to update the matching memory feature state. A workspace receipt does not become a training signal by itself, and an unverified outcome does not update B1.
+
+\subsection{Three feedback paths must not be merged}
+\label{subsec:ch21-feedback-paths}
+
+The repository contains more than one feedback mechanism, so a reader should not refer to all of them as "the learning loop" without qualification:
+
+\begin{enumerate}
+  \item \textbf{Per-memory B1 feature learning} is keyed by an exact \texttt{B1\allowbreak{}Memory\allowbreak{}Candidate\allowbreak{}Reference}. It stores access history, verified-use history, cue strengths, a normalized outcome-quality estimate (under a legacy JSON field name), outcome counts, and idempotency keys for that memory revision. Feature enrichment feeds history and cue strengths into the next activation estimate; it preserves the task-scale utility supplied by the feature provider.
+  \item \textbf{Generic per-candidate score adjustment} is an optional \texttt{Candidate\allowbreak{}Outcome\allowbreak{}Adjustment} injected into B1 and B3 candidate scoring. It is bounded, scoped, and separately activated. It is not the same as the persisted feature state for one B1 memory revision.
+  \item \textbf{B3 coalition-level feedback} is keyed to a particular selected coalition and its receipt/evidence identity. The coalition feedback services preserve shadow and holdout/approval boundaries; the mere existence of a coalition outcome does not mean that an adaptive coalition policy is active in the durable host.
+\end{enumerate}
+
+The distinction mirrors the different decision objects. A memory revision, a candidate score and a complementary group of workspace candidates have different identities and should not share a single undifferentiated reward record.
+
+\subsection{Persistence and test limits for B1}
+\label{subsec:ch21-b1-persistence}
+
+The durable host constructs a \texttt{Postgres\allowbreak{}B1\allowbreak{}Memory\allowbreak{}Feature\allowbreak{}Repository} and supplies it to \texttt{B1\allowbreak{}Memory\allowbreak{}Feature\allowbreak{}Learning\allowbreak{}Service}. This is evidence that the durable host composition is wired to the PostgreSQL feature-state adapter. It is not, by itself, evidence that the adapter has a focused integration test for every read/write behavior. The source snapshot includes migration \texttt{V014\_\_\allowbreak{}b1\_\allowbreak{}memory\_\allowbreak{}feature\_\allowbreak{}learning.sql} and the repository adapter, but does not contain a dedicated PostgreSQL integration test that round-trips a B1 feature state or a verified B1 feature update.
+
+Two mechanism-level tests, \texttt{selected\allowbreak{}Accesses\allowbreak{}Are\allowbreak{}Durable\allowbreak{}And\allowbreak{}Enrich\allowbreak{}The\allowbreak{}Next\allowbreak{}B1\allowbreak{}Candidate} and \texttt{verified\allowbreak{}Downstream\allowbreak{}Outcome\allowbreak{}Updates\allowbreak{}Persisted\allowbreak{}Use\allowbreak{}Utility\allowbreak{}And\allowbreak{}Cue\allowbreak{}Statistics}, exercise feature-learning behavior against the relevant repository test double. The latter specifically guards against using a [0,1] outcome statistic to overwrite an arbitrarily scaled candidate utility. They do not establish PostgreSQL persistence. The similarly named \texttt{Postgres\allowbreak{}M7\allowbreak{}B1\allowbreak{}Persistence\allowbreak{}Integration\allowbreak{}Test} should not be used as proof of B1 feature-state round-tripping: its assertions cover semantic-fact lifecycle/conflicts, procedural version activation, and planner-session persistence. The B1 adapter is wired; focused PostgreSQL feature-state coverage remains an explicit gap.
+
+\section{B3 starts from a separately prepared workspace candidate set}
+\label{sec:ch21-b3-candidates}
+
+The B3 input is created by the application/domain adapter through \texttt{Cognitive\allowbreak{}Cycle\allowbreak{}Decision\allowbreak{}Port.\allowbreak{}workspace\allowbreak{}Admission\allowbreak{}Request}. The runtime does not clone the B1 selection result into a workspace request. It obtains a new \texttt{Workspace\allowbreak{}Admission\allowbreak{}Request}, attaches the current B6 uncertainty directive, adds the immutable experiment-unit fingerprint, validates the memory scope, and applies the optional B1 attribution mapping. This sequence makes the application boundary visible: the domain adapter decides which observations, constraints, hypotheses, plan fragments, memory-derived items, and policy items are represented as workspace candidates for the cycle.
+
+The \texttt{WorkspaceCandidate} record is deliberately broader than a memory candidate. It includes an ID and scope, a \texttt{Workspace\allowbreak{}Candidate\allowbreak{}Kind}, utility points, reliability, risk, context units, coverage tags, conflict IDs, mandatory status, evidence references, and optional B1 memory attributions. The current kinds include \texttt{OBSERVATION}, \texttt{MEMORY}, \texttt{HYPOTHESIS}, \texttt{CONSTRAINT}, \texttt{CANDIDATE\_PLAN}, and \texttt{POLICY}. The constructor checks finite values and the supported reliability/risk ranges, requires positive context units, normalizes tags and conflict IDs, prevents self-conflict, rejects duplicate memory attributions, and requires an attribution to belong to the same memory scope.
+
+The \texttt{Workspace\allowbreak{}Admission\allowbreak{}Request} validates the cycle and scope identity, positive capacity and maximum candidate count, required coverage and its configured values, candidate scope equality, and unique candidate IDs. The request also carries an uncertainty-assessment reference and an experiment-unit fingerprint. The runtime requires that the workspace request use the exact current uncertainty assessment and the expected scope. These are request-integrity checks; detailed B6 calibration and resource governance are reserved for Chapter 23.
+
+\subsection{Optional and exact B1 attribution}
+\label{subsec:ch21-b3-attribution}
+
+A B3 candidate can carry no memory attribution, one attribution, or several. The application may set the mapping when a workspace item is explicitly derived from B1-selected evidence. The runtime's \texttt{attach\allowbreak{}B1\allowbreak{}Memory\allowbreak{}Attributions} method obtains the mapping and the selected B1 candidates from the domain port. It parses each B1 memory reference into its kind, scope, underlying record ID, and version. It then requires that every mapped workspace candidate ID exists in the workspace request and every attributed memory reference exists in the selected B1 set returned by the domain adapter. For each match it creates a \texttt{B1MemoryAttribution} carrying the exact reference, query cues, and source candidate fingerprint.
+
+This boundary is deliberately stricter than comparing candidate labels or semantic similarity. If an adapter cannot establish the exact link, it should omit the attribution rather than infer one. A workspace item may still be admitted without B1 attribution, but a later verified outcome for that item cannot then update an unrelated memory's feature state. The domain adapter's selected-candidate lookup is authoritative for this handoff contract; the runtime validates the supplied mapping but does not independently query a durable evidence-set row to rebuild the association.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The runtime decorates a workspace candidate only when the domain adapter maps it to an exact selected B1 revision.},label={lst:ch21-b3-attribution}]
+var references = mapping.getOrDefault(candidate.id(), List.of());
+if (references.isEmpty()) return candidate;
+var fingerprint = B3OutcomeEvidenceService.candidateFingerprint(candidate);
+var attributions = references.stream().map(reference -> {
+    B1MemoryCandidate source = selectedByReference.get(reference);
+    if (source == null)
+        throw new SecurityException("memory revision was not selected in the persisted B1 evidence set");
+    return b1FeatureLearning.attribute(source, queryCues, fingerprint);
+}).toList();
+return candidate.withMemoryAttributions(attributions);
+\end{lstlisting}
+\end{minipage}
+
+The attribution is not an action capability. It says where a candidate's evidence came from, so that a later verified outcome can be attributed narrowly. It does not allow the consumer to mutate memory or to execute a proposed plan. B1 and B3 both remain separate from the application's external action authorization and grounding boundary described in Chapter 19.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part3/chapter21/b1-b3-explicit-handoff.png}
+  {The domain adapter prepares the B3 candidate set independently. The dashed attribution path is optional and must bind a workspace candidate to an exact B1-selected memory revision; it is not an automatic conversion of the B1 list.}
+  {fig:ch21-explicit-handoff}
+
+\section{B3 admission: mandatory protection and budgeted competition}
+\label{sec:ch21-b3-admission}
+
+\subsection{Admission begins with hard constraints}
+\label{subsec:ch21-b3-mandatory}
+
+B3 admission is more than sorting workspace candidates by one score. The \texttt{Workspace\allowbreak{}Admission\allowbreak{}Service} starts with an empty ordered selection, a set of selected IDs, a set of covered tags, coalition records, and a competition trace. It processes mandatory candidates first, sorted by candidate ID. Mandatory candidates do not compete with optional candidates for first place in a score ranking. They are protected, subject to count, conflict, and capacity limits.
+
+If mandatory candidates exceed the maximum candidate count, conflict with one another, or exceed the workspace capacity, the service returns \texttt{INSUFFICIENT\_\allowbreak{}MANDATORY\_\allowbreak{}CAPACITY}. In that case the \texttt{Workspace\allowbreak{}Admission\allowbreak{}Outcome} contains no partial snapshot. This is different from an incomplete optional admission. The mandatory path refuses to create a snapshot that silently drops a required item.
+
+The following source excerpt shows the mandatory-first boundary:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={Mandatory workspace candidates are admitted before optional competition and fail without a partial snapshot if they cannot fit.},label={lst:ch21-b3-mandatory}]
+var mandatory = request.candidates().stream()
+    .filter(WorkspaceCandidate::mandatory)
+    .sorted(Comparator.comparing(WorkspaceCandidate::id)).toList();
+if (mandatory.size() > request.maximumCandidates())
+    return failedMandatory("mandatory candidates exceed maximum candidate count");
+for (WorkspaceCandidate candidate : mandatory) {
+    if (conflicts(candidate, selected))
+        return failedMandatory("mandatory candidates conflict: " + candidate.id());
+    if (candidate.contextUnits() > request.capacityUnits() - used)
+        return failedMandatory("mandatory candidates exceed workspace capacity");
+    // Add candidate, its newly covered tags, and its context cost.
+}
+\end{lstlisting}
+\end{minipage}
+
+The distinction is between priority and feasibility. Mandatory status protects a candidate from optional ranking; it does not override a hard capacity limit or make incompatible mandatory candidates jointly valid. The test methods \texttt{mandatory\allowbreak{}Content\allowbreak{}Is\allowbreak{}Admitted\allowbreak{}Before\allowbreak{}Optional\allowbreak{}Content}, \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Capacity\allowbreak{}Fails\allowbreak{}Without\allowbreak{}Partial\allowbreak{}Snapshot}, and \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Maximum\allowbreak{}Count\allowbreak{}Fails} exercise these rules.
+
+\subsection{Singleton scores and complementary coverage}
+\label{subsec:ch21-b3-scoring}
+
+After mandatory content has been admitted, the service considers the remaining candidates under the free capacity and candidate slots. A B3 singleton base score is computed by \texttt{Workspace\allowbreak{}Scoring\allowbreak{}Policy.\allowbreak{}base\allowbreak{}Score}:
+
+\[
+S_{B3}(c) = U(c)\,R(c) - \rho\,K(c),
+\]
+
+where \(U(c)\) is the candidate's utility points, \(R(c)\) its reliability, \(K(c)\) its risk, and \(\rho\) the configured risk-penalty coefficient. An optional per-candidate outcome adjustment can be added through the trusted feedback port. If an item covers a required tag that has not yet been covered, the service adds a coverage bonus calculated from that tag's configured coverage value and the policy's coverage-bonus rate. The same tag is not rewarded as newly covered again in a later round.
+
+This objective is not B1's memory score. It does not use ACT-R-inspired activation, memory access history, predicted cognitive retrieval latency, or memory-maintenance profile. It compares workspace candidates using their own declared utility, reliability, risk, and incremental coverage under the remaining capacity. A retrieved memory can be represented as one B3 candidate, but once it is represented in the workspace request it competes as a workspace content item.
+
+\subsection{Coalitions are explicit alternatives, not labels}
+\label{subsec:ch21-b3-coalitions}
+
+A workspace coalition is a group of two or more candidates whose combined coverage makes them a meaningful option against individual candidates. The service enumerates candidate combinations up to the configured maximum coalition size, checks that members fit the free capacity and do not conflict with one another or with already selected entries, and requires at least two newly covered tags. It sums the candidates' adjusted base scores, adds the coverage bonus for the coalition's fresh tags, and can add a separate coalition-level outcome adjustment. The proposal records its members, newly covered tags, context cost, score components, competition round, and whether it won. The implemented complementarity signal is therefore explicit but narrow: it is based on caller-supplied coverage tags and configured values, not a learned semantic model of arbitrary pairwise synergy.
+
+The standard \texttt{Workspace\allowbreak{}Coalition\allowbreak{}Competition\allowbreak{}Policy} is a bounds record, not the algorithm. Its default limits coalition size to three and the number of evaluated complete coalition combinations to 512 per workspace admission. \texttt{Workspace\allowbreak{}Admission\allowbreak{}Service} implements the actual enumeration and comparison. The configured counter is shared across the service's iterative admission rounds. It increments when enumeration reaches a complete combination of the target size, before the service checks the combination's aggregate context units and fresh-coverage count. Consequently, a complete combination consumes budget even if it is subsequently rejected because its members do not fit together or do not add at least two fresh tags. By contrast, partial branches pruned earlier because an individual candidate cannot fit the current free capacity, conflicts with an already selected item, or conflicts with a current partial combination do not increment this counter. In each round the service compares feasible singleton candidates with the complete, feasible coalition proposals it has evaluated. It selects the best option under the current context and admission-count budget, records the decision, updates covered tags and capacity, and repeats while slots and eligible candidates remain. A B6 minimum-distinct-workspace-kind directive can require a candidate option that introduces a kind not already represented before the service continues with other kinds.
+
+If coalition enumeration reaches its configured complete-combination limit before the round's enumeration is finished, its partial coalition set is not treated as a comparable choice set. The service records the proposals it examined, marks the search as truncated, discards the incomplete coalition option set from the current comparison, and falls back to singleton comparison for that and later rounds. This sacrifices potential coalition options rather than pretending that an incomplete enumeration was exhaustive. The workspace snapshot records the truncation flag so that the result can be interpreted later.
+
+This is a bound on complete-combination evaluations, not a strict bound on every recursive operation or total CPU work. The source has no independent maximum on the number of incoming workspace candidates. The request's \texttt{maximumCandidates} field limits how many entries may be admitted to the resulting workspace; it does not cap the size of the request's candidate list. Because partial recursion branches pruned before reaching a complete combination are not counted, the 512-combination default must not be described as a hard cap on all search traversal. Nor is this a global optimizer that evaluates every possible subset and proves the final snapshot optimal. The repeated deterministic competition is an engineering heuristic whose proposal trace makes the inspected choices auditable. Candidate input order is not intended to decide the winner; the test \texttt{coalition\allowbreak{}Competition\allowbreak{}Is\allowbreak{}Deterministic\allowbreak{}Across\allowbreak{}Candidate\allowbreak{}Input\allowbreak{}Order} checks this property. The tests \texttt{complementary\allowbreak{}Candidates\allowbreak{}Are\allowbreak{}Recorded\allowbreak{}As\allowbreak{}An\allowbreak{}Explicit\allowbreak{}Workspace\allowbreak{}Coalition}, \texttt{alternative\allowbreak{}Coalitions\allowbreak{}Compete\allowbreak{}As\allowbreak{}First\allowbreak{}Class\allowbreak{}Options\allowbreak{}And\allowbreak{}Record\allowbreak{}The\allowbreak{}Winner}, \texttt{coalition\allowbreak{}Generation\allowbreak{}Never\allowbreak{}Combines\allowbreak{}Conflicting\allowbreak{}Candidates}, and \texttt{incomplete\allowbreak{}Coalition\allowbreak{}Enumeration\allowbreak{}Falls\allowbreak{}Back\allowbreak{}To\allowbreak{}Singleton\allowbreak{}Admission\allowbreak{}And\allowbreak{}Reports\allowbreak{}Truncation} exercise complementary admission, competing options, conflict protection, and the configured fallback. The last of these tests uses a deliberately small proposal budget; it does not assert that every recursive branch is counted.
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part3/chapter21/b3-admission-competition.png}
+  {B3 admits mandatory content first, then compares feasible singleton candidates with complementary coalitions. The search is bounded; if enumeration is truncated, the service falls back to singleton comparison rather than treating a partial coalition set as complete.}
+  {fig:ch21-b3-admission}
+
+\subsection{Incomplete admission and three status layers}
+\label{subsec:ch21-b3-status}
+
+After the competition rounds, the service creates and saves a workspace snapshot if mandatory admission succeeded. It then checks whether required coverage tags and the B6 distinct-kind floor were satisfied. The returned \texttt{Workspace\allowbreak{}Admission\allowbreak{}Status} can be \texttt{ADMITTED}, \texttt{INCOMPLETE\_COVERAGE}, or \texttt{INCOMPLETE\_\allowbreak{}EVIDENCE\_\allowbreak{}DIVERSITY}. These incomplete results still include a snapshot. Only insufficient mandatory capacity returns no snapshot.
+
+One naming detail is easy to misunderstand: the snapshot itself is created with \texttt{Workspace\allowbreak{}Status.\allowbreak{}ADMITTED}, even when the admission outcome is incomplete with respect to coverage or diversity. The snapshot status describes the lifecycle of that workspace object; the separate admission outcome status describes whether coverage and evidence-diversity requirements were met. The runtime then returns a third status, \texttt{Workspace\allowbreak{}Disposition}, to tell the graph what should happen next. That disposition can be \texttt{ADMITTED}, \texttt{INCOMPLETE}, \texttt{INSUFFICIENT\_\allowbreak{}CAPACITY}, or \texttt{FAILED}.
+
+In the current runtime, an incomplete snapshot may still be broadcast when consumers are configured. If all configured consumers accept the broadcast, the runtime returns \texttt{INCOMPLETE} for the cycle, preserving the fact that the snapshot was made available while required coverage or diversity remained incomplete. If no consumers are configured, the runtime returns \texttt{FAILED} and does not attempt broadcast. If a consumer fails or refuses the receipt, the runtime also refuses to report the workspace as admitted. The three status types should not be collapsed into a single Boolean.
+
+\section{Broadcast, receipts, and verified downstream outcomes}
+\label{sec:ch21-b3-broadcast}
+
+\subsection{Broadcast is synchronous and consumer-scoped}
+\label{subsec:ch21-b3-broadcast-semantics}
+
+The current \texttt{Workspace\allowbreak{}Broadcast\allowbreak{}Service} is a synchronous in-process adapter. It accepts only a snapshot whose lifecycle status is \texttt{ADMITTED}, checks the expected memory scope and broadcast time, and requires at least one consumer ID. It calls registered consumers directly in sorted ID order. A consumer receives a \texttt{WorkspaceBroadcast} containing the snapshot, its own consumer ID, and the broadcast time. It returns a \texttt{Workspace\allowbreak{}Consumer\allowbreak{}Receipt} describing the workspace, its status, and the candidate IDs it consumed.
+
+The service checks that the receipt's consumer and workspace identities match the call and that the consumed candidate IDs are a subset of the candidates in the snapshot. An unknown consumer ID produces a rejected receipt. A consumer exception or invalid receipt identity produces a failed receipt. The other consumers' calls are still represented in the report, so one failure does not erase the whole receipt set. If the receipt recorder throws while persisting any receipt, the broadcast call fails with a stable receipt ID that can be reconciled. The service does not silently report success or automatically replay a consumer call whose delivery/receipt persistence status is uncertain.
+
+This is not a durable asynchronous message broker, event bus, or transactional outbox. The consumer calls are synchronous and in-process. The receipt recorder can persist their result, but persistence of a receipt does not make the delivery itself asynchronous or provide general queue/retry semantics. The implementation's explicit scope and identity checks are useful, but they should be described at the boundary they actually enforce.
+
+\subsection{A receipt is not a positive outcome}
+\label{subsec:ch21-b3-receipt-outcome}
+
+An accepted receipt means that a named consumer acknowledged a particular workspace and identified the candidate IDs it consumed according to that consumer contract. It does not establish that those candidates were correct, useful, or causally responsible for a later result. The distinction is tested directly by \texttt{B3\allowbreak{}Outcome\allowbreak{}Evidence\allowbreak{}Service\allowbreak{}Test.\allowbreak{}broadcast\allowbreak{}Persists\allowbreak{}Receipt\allowbreak{}But\allowbreak{}Does\allowbreak{}Not\allowbreak{}Treat\allowbreak{}Receipt\allowbreak{}As\allowbreak{}AUseful\allowbreak{}Outcome}.
+
+A later outcome report must refer to an accepted persisted receipt, the exact candidate consumed by that receipt, and an evidence set that passes the configured downstream verifier. The report cannot predate the receipt. The outcome service stores the candidate fingerprint, experiment-unit fingerprint, admission-policy version, verifier identity, evidence references, and time of verification. Before the outcome is converted into a training capability, the service re-reads the stored receipt and outcome, checks the exact identities and fingerprints, verifies the experimental-unit evidence, and invokes the verifier again. The persisted row is therefore an audit record, not an unrestricted learning instruction.
+
+The receipt evidence stores only the consumed candidate fingerprints and any explicit B1 attributions carried by those consumed candidates. A later verified outcome for one candidate cannot update another candidate or an unconsumed memory. Where B1 attributions exist, the verified signal updates the exact revisions. Where no B1 mapping was supplied, the verified outcome remains evidence about that B3 workspace candidate but does not produce a per-memory B1 update.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The outcome service checks the accepted receipt and consumed candidate before verification and persistence.},label={lst:ch21-b3-outcome-gate}]
+WorkspaceReceiptEvidence receipt = repository.findReceipt(
+    report.scopeId(), report.receiptId())
+    .orElseThrow(() -> new SecurityException("downstream outcome has no persisted receipt"));
+if (receipt.status() != ConsumerReceiptStatus.ACCEPTED)
+    throw new SecurityException("only accepted receipts can support downstream outcomes");
+String fingerprint = receipt.consumedCandidateFingerprints()
+    .get(report.candidateId());
+if (fingerprint == null)
+    throw new SecurityException("candidate was not consumed by this receipt");
+if (report.verifiedAt().isBefore(receipt.receivedAt()))
+    throw new IllegalArgumentException("outcome predates downstream receipt");
+if (!verifier.verify(report.scopeId(), report.receiptId(), report.candidateId(),
+        report.signal(), report.evidence(), report.verifiedAt()))
+    throw new SecurityException("downstream outcome evidence could not be verified");
+\end{lstlisting}
+\end{minipage}
+
+The test suite covers several parts of this boundary. \texttt{verified\allowbreak{}Outcome\allowbreak{}Must\allowbreak{}Reference\allowbreak{}An\allowbreak{}Accepted\allowbreak{}Consumed\allowbreak{}Candidate\allowbreak{}And\allowbreak{}Verified\allowbreak{}Source\allowbreak{}Evidence} rejects a report that does not satisfy the receipt and evidence contract. \texttt{outcome\allowbreak{}For\allowbreak{}Unconsumed\allowbreak{}Candidate\allowbreak{}Or\allowbreak{}Unverified\allowbreak{}Evidence\allowbreak{}Is\allowbreak{}Rejected} checks rejected associations. \texttt{persisted\allowbreak{}Outcome\allowbreak{}Is\allowbreak{}Reverified\allowbreak{}Before\allowbreak{}Trainer\allowbreak{}Capability\allowbreak{}Is\allowbreak{}Minted} tests read-time revalidation. \texttt{verified\allowbreak{}Downstream\allowbreak{}Outcome\allowbreak{}Updates\allowbreak{}Only\allowbreak{}The\allowbreak{}Exact\allowbreak{}Attributed\allowbreak{}B1\allowbreak{}Memory\allowbreak{}Revision} checks the narrow B1 write path. These are mechanism/service tests; they do not show that the consumer used the content in a way that caused a better business result.
+
+\subsection{Coalition feedback has its own evidence identity}
+\label{subsec:ch21-b3-coalition-feedback}
+
+For a selected coalition, the receipt path can record a coalition receipt when an accepted consumer receipt includes every member candidate in the selected coalition proposal. That coalition receipt retains the exact member IDs and fingerprints, workspace and cycle identities, selected proposal fingerprint, stable preference key, newly covered tags, context units, and experiment-unit fingerprint. A later coalition outcome must match that exact receipt and proposal rather than merely naming a similar group of candidates.
+
+The B3 coalition-feedback services maintain a separate path from both per-candidate score adjustment and B1 per-memory learning. In the supplied composition, candidate-score adjustments and coalition adjustments are distinct injected ports. Coalition feedback can be evaluated in shadow and holdout modes; the tests verify that a selected coalition outcome is receipt-bound and produces only shadow feedback until the required held-out approval path is satisfied. The presence of a coalition feedback class or a persisted outcome is not proof that an active coalition policy has been installed in the durable host. The application keeps the activation boundary explicit.
+
+\subsection{The actual persistence boundary}
+\label{subsec:ch21-b3-persistence}
+
+The durable host composition makes a deliberate distinction between the workspace and the evidence produced around its broadcast. It constructs \texttt{Workspace\allowbreak{}Admission\allowbreak{}Service} with an \texttt{In\allowbreak{}Memory\allowbreak{}Workspace\allowbreak{}Repository}. The workspace snapshot is therefore per-cycle and ephemeral in this host composition. It constructs \texttt{B3\allowbreak{}Outcome\allowbreak{}Evidence\allowbreak{}Service} over the PostgreSQL B3 receipt/outcome repository and passes that service as the \texttt{Workspace\allowbreak{}Receipt\allowbreak{}Recorder} to \texttt{Workspace\allowbreak{}Broadcast\allowbreak{}Service}. Receipts and verified downstream outcomes are persisted separately from the workspace snapshot itself.
+
+This architecture means the receipt/outcome store can preserve the evidence chain needed to audit a consumer acknowledgement and later verified result without claiming that an identical workspace object is durably reloaded from PostgreSQL. The test \texttt{R2\allowbreak{}Outcome\allowbreak{}Evidence\allowbreak{}Postgres\allowbreak{}Integration\allowbreak{}Test.\allowbreak{}b3\allowbreak{}Receipts\allowbreak{}And\allowbreak{}Verified\allowbreak{}Outcomes\allowbreak{}Survive\allowbreak{}Repository\allowbreak{}Replacement\allowbreak{}And\allowbreak{}Remain\allowbreak{}Append\allowbreak{}Only} specifically supports the append-only receipt/outcome persistence claim. It does not establish durable workspace snapshots or B1 feature-state PostgreSQL round-tripping.
+
+The full-graph test \texttt{M8\allowbreak{}B4\allowbreak{}Full\allowbreak{}Graph\allowbreak{}Workflow\allowbreak{}Test.\allowbreak{}full\allowbreak{}Graph\allowbreak{}B3\allowbreak{}Broadcast\allowbreak{}Persists\allowbreak{}Receipt\allowbreak{}And\allowbreak{}Supports\allowbreak{}Verified\allowbreak{}Outcome\allowbreak{}Learning\allowbreak{}Evidence} exercises the B3 path using the full-graph test composition and its in-memory B3 evidence repository. It should not be cited as proof of PostgreSQL persistence. The durable-host test \texttt{Durable\allowbreak{}Cognitive\allowbreak{}Application\allowbreak{}Host\allowbreak{}End\allowbreak{}To\allowbreak{}End\allowbreak{}Postgres\allowbreak{}Integration\allowbreak{}Test.\allowbreak{}durable\allowbreak{}Host\allowbreak{}Approves\allowbreak{}Dispatches\allowbreak{}Reconciles\allowbreak{}Restarts\allowbreak{}And\allowbreak{}Consumes\allowbreak{}Prior\allowbreak{}Cycle\allowbreak{}Memory} does exercise a PostgreSQL-backed cycle including B1 retrieval and B3 workspace preparation/broadcast, but its assertion is not a focused B1 feature-state update round-trip. The repository keeps those claims separate.
+
+\BookDiagram[0.52\textheight]
+  {Tex/diagrams/generated/part3/chapter21/b3-receipt-outcome-loop.png}
+  {An accepted receipt records consumer acknowledgement and exact consumed candidates. A later report is verified against that receipt and its immutable evidence before it can update the explicitly attributed memory revision or contribute to a separately governed coalition-feedback path.}
+  {fig:ch21-receipt-outcome}
+
+\section{The as-built B1/B3 handoff}
+\label{sec:ch21-b1-b3-handoff}
+
+The whole path can now be read without turning it into one automatic conversion chain. M2 retrieves scope/time-eligible records. The candidate factory adapts those records and asks a trusted feature provider for scoring inputs. Optional B1 learning state enriches the candidates. The accepted B1 implementation preserves the provider's task-scale candidate utility while enriching access/verified-use history and cue-association strengths; the separate normalized [0,1] outcome statistic remains in the feature state. The B1 selector scores and bounds the memory set. The application persists the evidence-set artifact and projects selected long-term references into working memory. Then the domain adapter prepares a separate B3 request containing the content it wants to compete for workspace capacity. It may attach exact B1 attributions to selected workspace candidates. B3 admits mandatory content and compares singleton/coalition options under its own scoring and capacity constraints, with a configured limit on evaluated complete coalition combinations rather than a strict cap on every recursive search branch or incoming candidate count. The resulting snapshot is made available to synchronous consumers. Their receipts record acknowledgements and consumed candidate identities. Later verified outcome evidence can update the exact B1 memory revision's access/use and cue features, retain a normalized outcome statistic in its separate feature-state field, or contribute to a separately governed B3 coalition-feedback path. It does not currently provide a scale-calibrated, per-memory replacement for the provider's task-scale B1 utility.
+
+\BookDiagram[0.56\textheight]
+  {Tex/diagrams/generated/part3/chapter21/complete-b1-b3-evidence-path.png}
+  {The combined evidence path keeps the B1 memory-selection stage separate from domain-prepared B3 workspace admission. Receipts and outcomes are persisted separately from the in-memory snapshot. Verified per-memory feedback requires exact attribution, while coalition feedback follows its own governance boundary.}
+  {fig:ch21-complete-evidence-path}
+
+The table summarizes the different decision responsibilities:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.19\linewidth}XX}
+\toprule
+\textbf{Question} & \textbf{B1 memory selection} & \textbf{B3 workspace admission} \\
+\midrule
+Candidate domain & Retrieved CoALA memory candidates with stable source references and scoring features. & Separately prepared typed candidates, including observations, memories, hypotheses, constraints, candidate plans, and policy items. \\
+Decision & Which memories should be selected for this cycle? & Which content should occupy the bounded workspace and be broadcast to configured consumers? \\
+Main constraints & Accessibility, expected downstream utility, cognitive and infrastructure latency, maintenance estimate, context budget, candidate count, and memory-kind diversity. & Mandatory protection, capacity, candidate count, conflicts, incremental coverage, bounded coalition search, and workspace-kind diversity. \\
+Output & Selected memory candidates and scores, plus a persisted evidence-set reference. & A cycle-scoped workspace snapshot, admission status, and competition trace. \\
+Feedback & Idempotent selection-access history and verified downstream outcomes for exact memory revisions. & Consumer receipts, verified candidate outcomes, and separately governed coalition outcomes. \\
+Authority boundary & Does not authorize an external action or mutate the simulated supply-chain world. & Broadcast does not grant a capability, approve a plan, or authorize a grounding action. \\
+\bottomrule
+\end{tabularx}
+\caption{B1 and B3 are connected but retain distinct candidate domains, decision rules, outputs, and authority boundaries.}
+\label{tab:ch21-b1-b3-comparison}
+\end{table}
+
+There are two important practical consequences. First, the workspace is not a transcript of everything the agent retrieved or generated. It is a bounded snapshot created by an explicit admission service. Second, an admitted item is still information, not permission to act. A candidate plan fragment admitted to the workspace remains subject to the planner, candidate evaluator, intention authority, B6 governance, approval and action-dispatch boundaries examined in other chapters. Neither a B1 selection result nor a B3 receipt authorizes the simulator to apply a domain transition.
+
+\section{What the deterministic evaluation does and does not show}
+\label{sec:ch21-evaluation-evidence}
+
+The supplied application repository includes an M8-B3 deterministic mechanism-ablation report. Its results deserve a short place in this chapter because they prevent the implementation discussion from sounding more successful than the measurements support. These are fixture-level results from a deterministic Java 21 CLI using the mechanism services and in-memory fixtures; they are not a benchmark of deployed traffic, and they report no p-values or population confidence intervals. The source report records four B1 scenario units and three B3 scenario units. The results are from the archived \texttt{M8-B3-v1} run and predate the accepted 25 November B1 utility-scale correction. They have not been rerun with the accepted enrichment behavior. The reported B1 ranking therefore describes the earlier enrichment path and is not a performance validation of the accepted fix. The current \texttt{MaintenanceProfile} and B3 coalition-search implementation were not changed by that accepted correction; the archived maintenance and B3 fixture results still describe those same code paths, but they do not resolve the admission-validation cost ambiguity or establish a strict bound on every recursive search operation. Read the table as historical descriptive evidence, not as an experiment on the accepted B1 utility-scale correction.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.27\linewidth}XXX}
+\toprule
+\textbf{Study arm} & \textbf{Recall / coverage} & \textbf{Precision / resource use} & \textbf{Observed downstream boundary} \\
+\midrule
+B1 utility top-$k$ baseline (\(n=4\)) & Relevant recall \(1.0000\) & Precision \(0.5625\) & Mean downstream-use count 4.0; no B1 selector state. \\
+B1 selector, log-only (\(n=4\)) & Relevant recall \(0.8333\) & Precision \(0.4375\); estimated maintenance cost 2.9950 for all candidates & Mean downstream-use count 0.0. \\
+B1 selector with downstream-use edge (\(n=4\)) & Relevant recall \(0.8333\) & Precision \(0.4375\); estimated maintenance cost 2.9950 for all candidates & Mean downstream-use count 4.0, but ranking did not change versus log-only. \\
+B3 utility top-$k$ shared context (\(n=3\)) & 2 of 3 required tags covered & 3 candidates; 7 capacity units & No broadcast. \\
+B3 bounded admission + broadcast (\(n=3\)) & 3 of 3 required tags covered & 3 candidates; same 7 capacity units & Broadcast accepted in 3 of 3 fixtures; no outcome-learning effect was measured. \\
+\bottomrule
+\end{tabularx}
+\caption{Selected M8-B3 deterministic fixture results. The denominators are scenario units, not independent item observations; values are descriptive only.}
+\label{tab:ch21-m8-b1-b3-results}
+\end{table}
+
+The B1 result is mixed and negative for the current retrieval-ranking configuration: utility top-$k$ has the higher relevant recall and precision on these four fixtures. Enabling the downstream-use edge changes the observed use count, but it does not change ranking compared with the B1 log-only arm. The reported estimated maintenance cost also did not reduce the actual maintenance events in this probe: the same candidate-population events were replayed across arms, with mean actual cost 0.8625. This result is not a general rejection of B1; it is evidence that the present score parameters and feature coupling have not shown a retrieval-quality advantage on this small corpus.
+
+The B3 result is narrower and positive on required-tag coverage: with the same number of admitted candidates and the same capacity units, bounded admission covers all three required tags where the top-$k$ comparator covers two. The consumers accepted the broadcast in the three designed fixtures. Acceptance establishes the receipt boundary, not that consumers used the content correctly or that it improved a business outcome. No B3 admission-policy learning update was evaluated.
+
+The experiment report is \texttt{docs/phase8/M8-B3-RESULTS-CLARIFICATION.md}; its CI/JUnit acceptance status and in-memory scope should be read as stated in that report. The mechanism ablation itself is not a substitute for a full-graph or PostgreSQL integration test, and deterministic replays are repeatability checks rather than additional experimental units. These results are therefore useful evidence about what the current implementation does on its registered fixtures, not a claim of generalization or causal benefit.
+
+\section{Reading B1 and B3 through the seven fields}
+\label{sec:ch21-seven-fields}
+
+Chapter 10 defined the seven fields as an analytical representation of a mechanism: operative state substrate (S), control locus (C), transition trigger (T), persistence boundary (P), failure semantics (F), learning operator (L), and resource/governance policy (R). The fields help ask disciplined questions about the implementation. They do not force the code to be symmetrical or complete.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.10\linewidth}>{\raggedright\arraybackslash}p{0.42\linewidth}X}
+\toprule
+\textbf{Field} & \textbf{B1 in this application} & \textbf{B3 in this application} \\
+\midrule
+S & Memory candidates, exact memory references, scoring features, and versioned per-memory feature state. & Typed workspace candidates, admission entries, coalition proposals, and a cycle-scoped workspace snapshot. \\
+C & \texttt{B1RetrievalSelector} computes scores and bounded selection; the runtime composes retrieval, persistence, projection, and learning. & \texttt{Workspace\allowbreak{}Admission\allowbreak{}Service} performs mandatory protection and competition; \texttt{Workspace\allowbreak{}Broadcast\allowbreak{}Service} calls configured consumers. \\
+T & A cognitive-cycle evidence request after the runtime obtains scope, M2 query, B1 request, and current uncertainty directive. & A workspace-preparation request after the runtime has a persisted B1 evidence-set reference and a domain-prepared B3 request. \\
+P & The durable host uses PostgreSQL for B1 feature state; no focused PostgreSQL round-trip test for that adapter is present. & Workspace snapshots are in-memory and per-cycle in the durable host; receipts and verified outcomes are persisted in PostgreSQL. \\
+F & Scope/identity checks, candidate validation, diversity failure, evidence persistence checks, and fail-closed working-memory projection. & Mandatory-capacity failure returns no snapshot; conflicts, incomplete coverage/diversity, consumer rejection/failure, and receipt-persistence failure remain distinct outcomes. \\
+L & Selection/access and verified-use histories plus cue updates are implemented for exact revisions; the normalized outcome-quality EWMA is diagnostic and is not fed directly into task-scale candidate utility. No adaptive selector-weight update is implemented. Maintenance-event accounting is separate. & Verified candidate and coalition evidence is stored; coalition feedback remains separately governed, with no automatic claim of active policy improvement. \\
+R & Candidate count, context units, accessibility and net-utility thresholds, latency weights, and the evaluated-time/horizon maintenance estimate; the meaning of the always-added admission-validation term remains provider-contract dependent; plus the B6 memory-kind floor. & Workspace capacity and maximum admitted-candidate count, conflicts, coverage, maximum coalition size, and maximum evaluated complete coalition combinations; there is no separate input-candidate cap or hard bound on every partial recursive branch; plus the B6 workspace-kind floor. \\
+\bottomrule
+\end{tabularx}
+\caption{An implementation reading of B1 and B3 using the seven analytical fields. The table records evidenced behavior and keeps the persistence and learning limitations visible.}
+\label{tab:ch21-seven-fields}
+\end{table}
+
+The table deliberately leaves no field to inference. For B1, a PostgreSQL repository exists and is wired in the durable host, but the focused integration test is missing. For B3, the workspace snapshot's current persistence boundary is in-memory, even though the receipt/outcome evidence is durable. For both mechanisms, the existence of a learning method does not establish causal improvement. These are not minor qualifications; they determine what the application can claim and what the next evaluation phase would need to measure.
+
+\section{Chapter recap}
+\label{sec:ch21-recap}
+
+\begin{chapterrecap}
+B1 and B3 answer related but different selection questions. M2 base retrieval returns scoped and time-eligible memory records; it does not rank them by B1 utility or assemble a B3 workspace. The runtime adapts M2's typed records into B1 memory candidates, obtains trusted feature inputs, optionally enriches those features with persisted access and verified-use history, and calls \texttt{B1RetrievalSelector}. The B1 objective combines accessibility-weighted expected downstream utility with separate cognitive- and infrastructure-latency penalties, estimated maintenance cost, and an optional bounded outcome adjustment. Its bounded selection enforces thresholds, context units, candidate count, and any active minimum-diversity directive. The resulting evidence set is persisted before selected long-term references are projected into working memory. Source memory records remain in their own repositories, and a working-memory version conflict fails closed.
+
+B1 access history records selection, not usefulness. The separate B1 verified-use history and cue update require an accepted B3 receipt, an exact consumed candidate, a later verifier-approved outcome, and an explicit attribution to the exact memory revision. The persisted [0,1] outcome-quality statistic remains in a legacy-named feature-state component, but the accepted enrichment service preserves the trusted feature provider's task-scale candidate utility and does not feed the normalized statistic into the selector score. No calibrated outcome-to-task-utility model or adaptive selector-weight update is implemented. The current maintenance profile adds its admission-validation field on every estimate, a refresh cost when due, and recurring daily cost over the supplied horizon; the semantics of the admission-validation field are not disambiguated by the source. Actual maintenance-event accounting is a separate in-memory path and is not wired into the durable host. The B1 PostgreSQL feature-state adapter is wired but lacks a focused integration test that round-trips the feature state.
+
+B3 receives a separately prepared heterogeneous candidate set from the domain/application adapter. It protects mandatory candidates first, refuses a snapshot when mandatory content cannot fit, and then compares feasible singleton candidates and complementary coalitions under a maximum coalition size and a budget for evaluating complete combinations. The request's maximum-candidate field limits how many entries may be admitted; it is not a cap on the number of incoming candidates. The coalition counter is incremented when enumeration reaches a complete combination, before aggregate-capacity and fresh-coverage checks; earlier partial branches rejected for per-candidate capacity or conflicts are not counted. If complete-combination evaluation is truncated, the partial coalition set is discarded and singleton comparison is used. This limit is not a hard bound on every recursive operation. The B3 score uses workspace utility, reliability, risk, fresh coverage, and optional separately governed adjustments, not B1 activation. Complementarity is represented through caller-supplied coverage tags, not an arbitrary learned synergy model. An incomplete coverage/diversity result may still contain a snapshot; snapshot lifecycle status, admission status, and graph disposition are three different status layers.
+
+Broadcast is synchronous and consumer-scoped. A receipt records what a consumer acknowledges as consumed; it does not establish that the information was correct or helpful. Only a separately verified outcome linked to the exact accepted receipt and candidate can support the B1 exact-revision update or separately governed coalition feedback. In the durable host, workspace snapshots remain in memory while B3 receipts and verified outcomes are stored in PostgreSQL. Neither B1 selection nor B3 admission or broadcast grants authority to execute a domain action. These implementation choices are engineering realizations of the mechanisms discussed in Part II, not class layouts or algorithms prescribed by CoALA or Fan and Lan.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and practical exercises}
+\begin{enumerate}
+  \item A supplier record is returned by M2. What additional decision does B1 make, and why is that not the same as B3 workspace admission?
+  \item Trace a verified episodic memory from M2 retrieval to the B1 selector. Identify which checks belong to the candidate factory and which features come from the trusted feature provider.
+  \item Why can a memory with high estimated accessibility still be rejected by the B1 selector? Identify at least three terms or constraints that can change the result.
+  \item Explain the difference between predicted cognitive retrieval latency and measured infrastructure latency. What would be hidden if the application merged them into one field?
+  \item A selected semantic fact is projected into working memory. Which object is copied, which object remains authoritative in its original repository, and what does the working-memory version check protect?
+  \item Why is a B1 selection-access event not the same as verified downstream use? Describe what extra evidence is required before the latter is recorded.
+  \item A workspace request contains a mandatory policy item and two conflicting optional candidates. Describe how B3 processes the mandatory item and how the conflict affects the optional competition.
+  \item Give an example in which two workspace candidates form a more useful coalition than either singleton. Which conditions must hold before the service evaluates that coalition?
+  \item What happens when coalition enumeration reaches its configured cap? Why does the implementation not compare the partial coalition list as if it were complete?
+  \item Distinguish \texttt{Workspace\allowbreak{}Admission\allowbreak{}Status}, \texttt{WorkspaceStatus}, and \texttt{Workspace\allowbreak{}Disposition}. Give one example in which the snapshot exists while the admission result is incomplete.
+  \item What does an accepted consumer receipt establish? What additional checks are required before a downstream outcome can update B1 memory features?
+  \item Which B1 and B3 objects are PostgreSQL-backed in the durable host, and which workspace object remains in memory? Which focused PostgreSQL test is still missing?
+  \item Why do the B1 and B3 mechanisms have no authority to apply a purchase-order, reservation, or rerouting command to the simulated world?
+\end{enumerate}
+
+\paragraph{Practical exercise.} Create a small \textbf{[Book example]} with four B1 memory candidates and a context budget. Assign each candidate an access history, cue strength, expected downstream utility, infrastructure latency, context size, and maintenance profile. Calculate its accessibility and net utility under a chosen scoring policy, then apply the maximum-candidate and context constraints. Next, prepare a separate B3 request containing one mandatory constraint, one observation, one hypothesis, and two optional candidates whose coverage tags are complementary. Compare the best singleton with the feasible coalition. Record the resulting admission status, snapshot status, configured consumers, and receipt contents. Finally, write two hypothetical downstream outcome reports: one linked to an accepted receipt and an actually consumed candidate, and one linked to an unconsumed candidate. Explain why only the first can pass the receipt boundary, and why it still needs verifier-approved source evidence before it can update the exact B1 memory revision.
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+
+The chapter uses CoALA only for the memory, internal-action, and decision-making concepts introduced in Part I and mapped in Chapter 20; CoALA does not prescribe the B1/B3 classes, scores, modules, workspace contracts, or tests. Fan and Lan provide the mechanism framing, while the Java contracts, feature inputs, scoring, coalition search, runtime order, and persistence are application choices. Worked values are illustrative, and the small M8-B3 fixtures are not population benchmarks. This chapter makes no claim of production deployment, empirical superiority, causal benefit, or complete B1 PostgreSQL validation.
+
+\CoALACite{\S 4.1--4.2; \S 4.6; Fig. 4A; Table 2}
+\FanLanCite{\S V-A--V-B; \S VI-B--VI-D; Table V; Appendices B, C-A, and D}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 22 turns to blocked decisions: typed impasses, isolated recovery under an unchanged parent objective, resolution validation against current domain facts, and governed procedure reuse. Recovery, workspace admission, and authority to change the simulated world remain separate.

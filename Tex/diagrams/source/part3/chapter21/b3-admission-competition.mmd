@@ -1,0 +1,18 @@
+flowchart TB
+accTitle: B3 mandatory protection and bounded singleton or coalition competition
+accDescr: B3 admits mandatory candidates first, subject to count, conflict, and capacity constraints. It then compares feasible singleton candidates with complementary coalition proposals under configured size and evaluation limits. A truncated coalition search discards the partial coalition option set and falls back to singleton comparison. The admitted snapshot can still report incomplete coverage or diversity.
+    REQ[Validated workspace request] --> MAND[Admit mandatory candidates first]
+    MAND --> HARD{Count, conflict, and capacity pass?}
+    HARD -->|No| REFUSE[Insufficient mandatory capacity]
+    HARD -->|Yes| OPTIONS[Build feasible singleton options]
+    OPTIONS --> ENUM[Enumerate complementary coalitions]
+    ENUM --> CAP{Coalition search truncated?}
+    CAP -->|Yes| FALLBACK[Discard partial coalition choices and use singletons]
+    CAP -->|No| COMPARE[Compare singleton and coalition options]
+    FALLBACK --> COMPARE_SINGLE[Compare feasible singletons]
+    COMPARE --> PICK[Choose best feasible option this round]
+    COMPARE_SINGLE --> PICK
+    PICK --> MORE{Capacity and slots remain?}
+    MORE -->|Yes| OPTIONS
+    MORE -->|No| SAVE[Save bounded workspace snapshot]
+    SAVE --> STATUS[Report coverage and diversity status]

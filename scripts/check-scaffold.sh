@@ -21,9 +21,9 @@ count3=$(find "$ROOT/Tex/part3" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc 
   echo "Unexpected chapter scaffold counts: Part I=$count Part II=$count2 Part III=$count3 (expected 8, 10, and 6)" >&2; exit 1;
 }
 for n in 01 02 03 04 05 06 07 08; do test -s "$ROOT/Tex/part1/chapter$n/chapter.tex"; done
-# Part III has six chapters. Chapters 19-20 are drafted from individually
-# approved outlines; Chapters 21-24 remain placeholders.
-for n in 21 22 23 24; do
+# Part III has six chapters. Chapters 19-21 are drafted from individually
+# approved outlines; Chapters 22-24 remain placeholders.
+for n in 22 23 24; do
   chapter="$ROOT/Tex/part3/chapter$n/chapter.tex"
   test -s "$chapter" || { echo "Missing Part III chapter scaffold: chapter$n" >&2; exit 1; }
   grep -q 'Chapter placeholder' "$chapter" || {
@@ -51,6 +51,28 @@ grep -q 'Outline status:.*approved by the author' "$ROOT/Tex/part3/chapter20/out
 test -s "$ROOT/Tex/standalone/chapter20.tex" || {
   echo "Missing Chapter 20 standalone build entry." >&2; exit 1;
 }
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part3/chapter21/chapter.tex" || {
+  echo "Part III Chapter 21 must contain drafted prose." >&2; exit 1;
+}
+grep -Fq '\chapter{Memory Selection and Workspace Competition: B1 and B3}' "$ROOT/Tex/part3/chapter21/chapter.tex" || {
+  echo "Part III Chapter 21 title does not match the approved scope." >&2; exit 1;
+}
+test -s "$ROOT/Tex/part3/chapter21/outline/Chapter_21_Outline.md" || {
+  echo "Missing Chapter 21 Markdown outline." >&2; exit 1;
+}
+grep -q 'Outline status:.*approved by the author' "$ROOT/Tex/part3/chapter21/outline/Chapter_21_Outline.md" || {
+  echo "Chapter 21 outline must record author approval." >&2; exit 1;
+}
+test -s "$ROOT/Tex/standalone/chapter21.tex" || {
+  echo "Missing Chapter 21 standalone build entry." >&2; exit 1;
+}
+for diagram in b1-selection-sequence evidence-states-overview b1-b3-explicit-handoff b3-admission-competition b3-receipt-outcome-loop complete-b1-b3-evidence-path; do
+  source="$ROOT/Tex/diagrams/source/part3/chapter21/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 21 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Chapter 21 Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Chapter 21 Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part3/chapter21/chapter.tex" || { echo "Chapter 21 does not reference $diagram.png" >&2; exit 1; }
+done
 for spec in \
   '20|CoALA in Code: Memory, Actions, and Planning' \
   '21|Memory Selection and Workspace Competition: B1 and B3' \
@@ -348,4 +370,4 @@ done
 for term in compositionalcontrol crossbundledependency boundedsynthesisruntime authorityboundary outcomeattribution compositionalablation partialcomposition resourcereservation; do
   grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 18 glossary entry: $term" >&2; exit 1; }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-20 contain drafted prose; Chapters 21-24 remain outline-gated; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-21 contain drafted prose; Chapters 22-24 remain outline-gated; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources."
