@@ -1,0 +1,15 @@
+flowchart TB
+accTitle: Four CoALA memory responsibilities and retrieval boundary
+accDescr: Working memory stores active scoped context. Episodic memory stores reviewed experience. Semantic memory stores admitted facts. Procedural memory stores governed procedure versions. Cross-store retrieval produces typed results, followed later by B1 selection and B3 workspace admission.
+
+    WM[Working memory<br/>active scoped context]
+    EP[Episodic memory<br/>reviewed experience]
+    SM[Semantic memory<br/>admitted facts]
+    PM[Procedural memory<br/>governed versions]
+    WM --> RET[Cross-store retrieval]
+    EP --> RET
+    SM --> RET
+    PM --> RET
+    RET --> RESULT[Typed retrieval result]
+    RESULT -. later selection .-> B1[B1 memory selection<br/>Chapter 21]
+    B1 -. later admission .-> B3[B3 workspace<br/>Chapter 21]

@@ -1,0 +1,11 @@
+flowchart TB
+accTitle: Three planning strategies share one proposal contract
+accDescr: Sequential reasoning extends one linear path. Bounded thought search expands and ranks a limited set of structured branches. The MCTS adaptation uses seeded tree expansion, UCT selection, simulator rollouts, and backpropagation. Each returns proposals rather than executing actions.
+
+    REQ[PlanningRequest] --> STRAT[PlanningStrategy]
+    STRAT --> SEQ[Sequential planner<br/>one linear path]
+    STRAT --> TOT[Bounded search<br/>structured branches]
+    STRAT --> MCTS[MCTS adaptation<br/>bounded rollouts]
+    SEQ --> RESULT[PlanningResult<br/>candidate proposals and trace]
+    TOT --> RESULT
+    MCTS --> RESULT

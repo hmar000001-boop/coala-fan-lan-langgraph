@@ -1,0 +1,19 @@
+flowchart LR
+accTitle: CoALA responsibilities mapped to the Java application
+accDescr: Information storage maps to four memory responsibilities and retrieval. Action space includes internal actions, perception, and grounding. Planning proposes and evaluates candidates, while the full runtime coordinates the cycle.
+
+    I[Information storage] --> M[Memory services]
+    M --> WM[Working memory]
+    M --> EM[Episodic memory]
+    M --> SM[Semantic memory]
+    M --> PM[Procedural memory]
+    A[Action space] --> IA[Internal handlers]
+    A --> PA[Perception handlers]
+    A --> GA[Grounding handlers]
+    D[Decision procedure] --> P[Planning strategies]
+    P --> E[Candidate evaluation]
+    E --> R[Runtime coordination]
+    M --> R
+    IA --> R
+    PA --> R
+    GA --> R

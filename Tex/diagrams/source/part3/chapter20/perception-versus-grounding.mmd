@@ -1,0 +1,10 @@
+flowchart LR
+accTitle: Perception and grounding have different effects
+accDescr: Perception reads a snapshot and returns a provenance-bearing observation with the source version. Grounding submits a typed state-changing request through the dispatch and world adapter boundary. This chapter does not repeat the detailed gates from Chapter 19.
+
+    SNAP[Versioned simulated snapshot]
+    SNAP --> READ[Perception action<br/>read only]
+    READ --> OBS[Observation<br/>value, evidence, provenance,<br/>source version]
+    CAND[Proposed candidate] --> WRITE[Grounding request<br/>domain write]
+    WRITE --> DISPATCH[Dispatcher and world adapter<br/>Chapter 19]
+    DISPATCH --> NEXT[New current snapshot]

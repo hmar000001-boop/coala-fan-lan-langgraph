@@ -1,0 +1,12 @@
+flowchart TB
+accTitle: Internal retrieval, reasoning, and separately governed writes
+accDescr: A read-only retrieval action supplies typed memory results to a bounded reasoning action. Reasoning returns a structured assessment. Working-memory updates and episode recording are separate memory writes. Review and admission operations are separately authorized lifecycle transitions.
+
+    RET[Memory retrieval<br/>read only] --> RESULTS[Typed memory results]
+    RESULTS --> REASON[Reasoning action<br/>bounded evidence input]
+    REASON --> ASSESS[Reasoning assessment]
+    ASSESS --> WM[Working-memory update<br/>separate write action]
+    ASSESS --> EP[Episode recording<br/>unverified]
+    EP --> REVIEW[Separate review<br/>verify or reject]
+    FACT[Semantic proposal] --> APPROVE[Separate admission<br/>approve or reject]
+    PROC[Procedure draft] --> VALIDATE[Validate and activate<br/>separate lifecycle]

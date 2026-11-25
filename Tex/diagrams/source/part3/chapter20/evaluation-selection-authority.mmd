@@ -1,0 +1,13 @@
+flowchart TB
+accTitle: Planner routing, candidate evaluation, and execution authorization are separate
+accDescr: Planner routing selects a search strategy. Candidate evaluation replays a path, checks constraints, and scores feasibility. Candidate selection carries a proposal forward. Execution authorization and dispatch remain downstream; an approval-required flag is not itself permission.
+
+    ROUTE[Planner-method routing] --> PLAN[Planner strategy]
+    PLAN --> CAND[Candidate path]
+    CAND --> EVAL[Replay and evaluate]
+    EVAL --> FEAS{Feasible?}
+    FEAS -->|No| REJECT[Reject candidate]
+    FEAS -->|Yes| SELECT[Candidate selection]
+    SELECT --> FLAG[Approval requirement<br/>may be true]
+    FLAG --> AUTH[Downstream authorization<br/>and dispatch]
+    AUTH --> EXEC[Grounding execution]

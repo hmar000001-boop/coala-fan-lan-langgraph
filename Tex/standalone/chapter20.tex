@@ -1,0 +1,19 @@
+\input{Tex/preamble.tex}
+\input{Tex/shared-macros.tex}
+\pdfstringdefDisableCommands{\def\textenglish#1{#1}}
+\begin{document}
+\mainmatter
+\setcounter{chapter}{19}
+\newcommand{\ChapterNineteenModulesRef}{19.6}
+\newcommand{\ChapterNineteenActionBoundaryRef}{19.5}
+\input{Tex/part3/chapter20/chapter.tex}
+% Standalone proof PDFs do not need recto-only backmatter starts.
+\let\cleardoublepage\clearpage
+\backmatter
+\nocite{sumers2024coala}
+\begingroup
+\sloppy
+\setlength{\emergencystretch}{3em}
+\printbibliography[heading=bibintoc,title={References}]
+\endgroup
+\end{document}
