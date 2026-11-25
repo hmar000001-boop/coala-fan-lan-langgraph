@@ -1,6 +1,6 @@
+flowchart LR
 accTitle: Selected supply-chain domain relationships
 accDescr: A customer order contains order lines for products. Inventory lots hold products at locations and reservations connect lots to order lines. Suppliers qualify for products and receive purchase orders. Carriers support routes and carry shipments whose lines serve order lines. Disruptions are related to recovery objectives and proposed recovery candidates.
-flowchart LR
     Product[Product] -->|required by| OrderLine[Order line]
     Product -->|qualified for| Capability[Supplier product capability]
     Product -->|held in| Lot[Inventory lot]
@@ -10,7 +10,7 @@ flowchart LR
     PO -->|orders| Product
     Order[Customer order] -->|contains| OrderLine
     Lot -->|allocated through| Reservation[Reservation]
-    Reservation -->|fulfils| OrderLine
+    Reservation -->|fulfills| OrderLine
     Carrier[Carrier] -->|supports| Route[Route]
     Carrier -->|carries| Shipment[Shipment]
     Shipment -->|uses| Route

@@ -1,23 +1,27 @@
-accTitle: Perception and grounding action boundary
-accDescr: Perception actions read a snapshot through a read port and return observations with entity, evidence, provenance and source version. Grounding actions accept a typed write request, check its expected snapshot version and action requirements, translate it into a simulation command and pass it to the simulation-world port.
 flowchart TB
+accTitle: Perception and grounding action boundary
+accDescr: Read and write actions both pass through ActionDispatcher type and capability/resource checks. Write actions additionally use idempotency handling, a handler precondition for expected snapshot version, and the simulator-world port. A workflow-level human approval, where required, is checked separately from dispatcher capability authorization.
     Agent[Agent decision procedure]
     subgraph ReadPath[Read-only perception path]
       ReadRequest[Read request]
+      ReadDispatch[ActionDispatcher: type and capability/resource checks]
       Perception[Perception action handler]
       ReadPort[Perception port]
-      Snapshot[Current snapshot]
-      Observation[Observation with provenance and version]
-      ReadRequest --> Perception --> ReadPort --> Snapshot --> Observation
+      Snapshot[Current simulated snapshot]
+      Observation[Observation with provenance and source version]
+      ReadRequest --> ReadDispatch --> Perception --> ReadPort --> Snapshot --> Observation
     end
     subgraph WritePath[State-changing grounding path]
       WriteRequest[Typed write request]
-      Handler[Grounding action handler]
-      Preconditions[Capability and version preconditions]
+      Approval[Check application-level approval when required]
+      WriteDispatch[ActionDispatcher: type and capability/resource checks]
+      Idempotency[Inspect prior operation by required key and fingerprint]
+      Handler[Grounding action handler precondition: expected snapshot version]
+      Claim[Acquire idempotency claim when required]
       Command[Typed simulation command]
-      World[Simulation-world port]
-      Transition[Simulated transition]
-      WriteRequest --> Handler --> Preconditions --> Command --> World --> Transition
+      World[SupplyChainSimulationWorld port and adapter]
+      Transition[Simulated-world transition]
+      WriteRequest --> Approval --> WriteDispatch --> Idempotency --> Handler --> Claim --> Command --> World --> Transition
     end
     Agent --> ReadRequest
     Observation --> Agent

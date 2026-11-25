@@ -1,15 +1,12 @@
-accTitle: Supply-chain request and simulation boundary
-accDescr: A user request is interpreted and assessed by the agent. Planning proposes a typed candidate. A state-changing request passes through action capability and approval checks before the simulation-world adapter applies a command to the deterministic simulator. The simulator returns a new snapshot and effects, which can be observed by the agent.
 flowchart TD
-    User[User request] --> Agent[Agent application]
-    Agent --> Evidence[Read modeled facts]
-    Evidence --> Plan[Assess and propose recovery]
-    Plan --> Candidate[Typed candidate action]
-    Candidate --> Gate{Write action?}
-    Gate -->|No| Report[Explain or request more evidence]
-    Gate -->|Yes| Auth[Capability and approval checks]
-    Auth --> World[Simulation-world adapter]
-    World --> Sim[Deterministic simulator]
-    Sim --> Result[New snapshot and typed effects]
-    Result --> Observe[Versioned observation]
-    Observe --> Agent
+accTitle: Supply-chain request and simulation boundary
+accDescr: The agent interprets a request, reads modeled facts, and proposes a typed candidate. Read-only candidates use perception actions that return versioned observations with provenance. State-changing candidates pass workflow approval when required and the action boundary before a typed command is applied by the deterministic simulator to the current modeled world. Figure 19.4 expands the individual approval, capability, idempotency, and version gates.
+    User[User request] --> Agent[Agent interprets request, reads facts, and proposes]
+    Agent --> Candidate[Typed candidate action]
+    Candidate --> Kind{Read-only or<br/>state-changing?}
+    Kind -->|Read-only| Perception[Perception action returns a<br/>versioned observation with provenance]
+    Perception --> Agent
+    Kind -->|State-changing| Gate[Workflow approval when required;<br/>action dispatch and version checks]
+    Gate --> Simulator[Deterministic simulator applies<br/>a typed command to the current modeled world]
+    Simulator --> Result[New snapshot and typed effects]
+    Result --> Agent
