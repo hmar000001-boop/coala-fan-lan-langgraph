@@ -7,6 +7,6 @@ accDescr: PlannerRouter chooses a strategy. A planner searches and calls Candida
     SEARCH --> EVAL[CandidateEvaluator<br/>replay + feasibility + score]
     EVAL --> SEARCH
     SEARCH --> RETAIN[Strategy-specific candidate<br/>ordering and retention]
-    RETAIN --> PROPOSAL[PlanCandidate proposal(s)]
+    RETAIN --> PROPOSAL[PlanCandidate proposals]
     PROPOSAL --> AUTH[Downstream authorization<br/>and dispatch]
     AUTH --> EXEC[Grounding execution]
