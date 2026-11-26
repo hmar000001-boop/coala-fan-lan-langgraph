@@ -50,6 +50,9 @@ jobs:
         with:
           scheme: full
           run: |
+            bash scripts/generate-source-qrs.sh
+            python3 scripts/check-source-qrs.py
+
             latexmk \
               -xelatex \
               -halt-on-error \

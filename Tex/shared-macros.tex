@@ -41,6 +41,47 @@
 }
 \providecommand{\tightlist}{}
 
+% Stable source references for implementation listings. The QR payload, the
+% clickable source ID and "Open exact source" all consume the same URL argument.
+% The visible source path/member and linked test path remain useful in print.
+\newcommand{\BookSourceReferenceText}[9]{%
+  {\sffamily\fontsize{8}{9}\selectfont\raggedright
+    \setlength{\parskip}{0pt}%
+    \href{#8}{\textbf{Source #1}}\hspace{0.55em}\textbar\hspace{0.55em}\texttt{#2}\par
+    \textbf{Path:} \href{#8}{\path{#3}}\par
+    \textbf{Member:} #4\hspace{0.5em}\textbf{Source lines:} #5\par
+    \textbf{Test file:} \href{#9}{\path{#6}}\par
+    \textbf{Tests:}\par \href{#9}{#7}\par
+    \href{#8}{\textbf{Open exact source}}%
+  }%
+}
+
+\newcommand{\BookSourceReferenceNoQR}[9]{%
+  \par\smallskip\noindent
+  \begin{minipage}{\linewidth}%
+    \BookSourceReferenceText{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}%
+  \end{minipage}%
+  \par\smallskip
+}
+
+\newcommand{\BookSourceReferenceQR}[9]{%
+  \par\smallskip\noindent
+  \begin{minipage}[c]{0.785\linewidth}%
+    \BookSourceReferenceText{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}%
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.18\linewidth}%
+    \centering
+    % The source QR is a vector PDF asset generated with qrcode.sty.
+    % Embedding it as a graphic lets hyperref create a real clickable area
+    % around the full printed symbol (including its four-module quiet zone).
+    \href{#8}{\mbox{{\setlength{\fboxsep}{0pt}\colorbox{white}{\includegraphics[height=19.5mm]{Tex/diagrams/source-qr/#1.pdf}}}}}\par
+    {\scriptsize\sffamily Scan to inspect}%
+  \end{minipage}%
+  \par\smallskip
+}
+
+
 % Book-level metadata overrides the sample metadata retained in the supplied preamble.
 \hypersetup{
   pdftitle={From Cognitive Architectures to Production Agentic Systems},

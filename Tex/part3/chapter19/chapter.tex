@@ -71,7 +71,7 @@ The main domain records are connected through identifiers rather than by embeddi
 
 \subsection{Quantities and money are typed values}
 
-All source references in this chapter identify the supplied application snapshot at commit \texttt{fa8cd5ec0742d7010dbba2c3646852e95062a419}. Source IDs are stable chapter-local identifiers; each one names the repository-relative path, member, and test evidence so that the printed reference remains meaningful even before a repository URL is attached.
+All source references in this chapter identify the public \texttt{hmar000001-boop/supply-chain-agent} repository at the immutable application revision \texttt{fa8cd5ec0742d7010dbba2c3646852e95062a419}. Each source ID names one implementation target and its test evidence. For the selected implementation spotlights, the QR code and the clickable \emph{Open exact source} link resolve to the same commit-pinned GitHub source page; the printed module, path, member, and test references remain readable without scanning.
 
 A domain model should prevent avoidable mistakes before those mistakes reach planning. For example, the number \texttt{10} is not enough to describe a stock quantity. Ten each, ten kilograms, and ten litres are not interchangeable. The application represents a quantity as a value and a unit of measure.
 
@@ -91,10 +91,17 @@ private void requireSameUnit(Quantity other) {
 }
 \end{lstlisting}
 
-\noindent{\small\raggedright\textbf{Source C19-S01.} \path{supply-chain-agent-domain/src/main/java/dev/supplychain/agent/domain/common/Quantity.java}.\par
-\textbf{Members:} \texttt{Quantity.plus()} and \texttt{requireSameUnit()}.\par
-\textbf{Test file:} \path{supply-chain-agent-domain/src/test/java/dev/supplychain/agent/domain/common/QuantityTest.java}.\par
-\textbf{Tests:}\par \texttt{arithmeticRejectsUnitMismatchAndUnderflow()}\par \texttt{arithmeticPreservesUnitAndNormalizesScale()}.}\par\smallskip\end{minipage}
+\BookSourceReferenceNoQR
+  {C19-S01}
+  {supply-chain-agent-domain}
+  {supply-chain-agent-domain/src/main/java/dev/supplychain/agent/domain/common/Quantity.java}
+  {\texttt{Quantity.plus()} and \texttt{requireSameUnit()}}
+  {12--24}
+  {supply-chain-agent-domain/src/test/java/dev/supplychain/agent/domain/common/QuantityTest.java}
+  {\texttt{arithmeticRejectsUnitMismatchAndUnderflow()}; \texttt{arithmeticPreservesUnitAndNormalizesScale()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-domain/src/main/java/dev/supplychain/agent/domain/common/Quantity.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-domain/src/test/java/dev/supplychain/agent/domain/common/QuantityTest.java}
+\end{minipage}
 
 The \texttt{Quantity} record also rejects negative values, normalizes decimal scale, and prevents subtraction from producing a negative result. A \texttt{Money} value similarly couples a non-negative decimal amount to a Java currency. Addition and comparison require the same currency. The model does not silently convert units or exchange currencies; a conversion would need its own explicit rule and source of authority.
 
@@ -160,10 +167,17 @@ record ReserveInventory(String commandId, ReservationId reservationId,
 }
 \end{lstlisting}
 
-\noindent{\small\raggedright\textbf{Source C19-S02.} \path{supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/command/SimulationCommand.java}.\par
-\textbf{Member:} \texttt{SimulationCommand.ReserveInventory} constructor.\par
-\textbf{Test file:} \path{supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}.\par
-\textbf{Tests:}\par \texttt{exactProductReservationReducesAvailableInventoryAndIsImmutable()}\par \texttt{approvedSubstitutionUsesItsDeclaredPhysicalQuantityRatio()}.}\par\smallskip\end{minipage}
+\BookSourceReferenceQR
+  {C19-S02}
+  {supply-chain-agent-simulator}
+  {supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/command/SimulationCommand.java}
+  {\texttt{SimulationCommand.ReserveInventory} constructor}
+  {77--87}
+  {supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}
+  {\texttt{exactProductReservationReducesAvailableInventoryAndIsImmutable()}; \texttt{approvedSubstitutionUsesItsDeclaredPhysicalQuantityRatio()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/command/SimulationCommand.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}
+\end{minipage}
 
 The command constructor can check that the request is structurally meaningful. It cannot by itself determine whether the lot has enough available quantity or whether the order line can accept more commitment. Those facts require the current snapshot and are checked by the simulator and snapshot invariants.
 
@@ -193,7 +207,7 @@ The example illustrates four separate facts: the command says what change is req
 The method below is the primary transition implementation behind this example. The order of checks matters: the requested product capability must exist, units must agree, and the new capacity must be strictly lower before the simulator updates the supplier and emits the at-risk effect for existing commitments.
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[language=Java,caption={The capacity-reduction transition preserves existing commitments and marks those beyond the revised capacity as at risk (Source C19-S03).},label={lst:ch19-capacity-transition}]
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\fontsize{8.5}{9.5}\selectfont,caption={The capacity-reduction transition preserves existing commitments and marks those beyond the revised capacity as at risk (Source C19-S03).},label={lst:ch19-capacity-transition}]
 private SupplyChainSnapshot reduceSupplierCapacity(SupplyChainSnapshot current,
         SimulationCommand.ReduceSupplierCapacity command, List<SimulationEffect> effects) {
     Supplier supplier = current.supplier(command.supplierId());
@@ -228,10 +242,17 @@ private SupplyChainSnapshot reduceSupplierCapacity(SupplyChainSnapshot current,
 }
 \end{lstlisting}
 
-\noindent{\small\raggedright\textbf{Source C19-S03.} \path{supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/SupplyChainSimulator.java}.\par
-\textbf{Member:} \texttt{reduceSupplierCapacity()}.\par
-\textbf{Test file:} \path{supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}.\par
-\textbf{Tests:}\par \texttt{supplierCapacityReductionFlagsExistingOpenCommitmentsAtRisk()}\par \texttt{capacityCommandRejectsAnIncrease()}.}\par\smallskip\end{minipage}
+\BookSourceReferenceQR
+  {C19-S03}
+  {supply-chain-agent-simulator}
+  {supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/SupplyChainSimulator.java}
+  {\texttt{reduceSupplierCapacity()}}
+  {71--102}
+  {supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}
+  {\texttt{supplierCapacityReductionFlagsExistingOpenCommitmentsAtRisk()}; \texttt{capacityCommandRejectsAnIncrease()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/SupplyChainSimulator.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}
+\end{minipage}
 
 This is a primary implementation listing: it contains the domain checks and the decision that produces the at-risk effect. The earlier value-object and command-record listings support this explanation but do not replace it.
 
@@ -253,10 +274,17 @@ if (!current.compareAndSet(before, result.snapshot())) throw new DomainViolation
 return result;
 \end{lstlisting}
 
-\noindent{\small\raggedright\textbf{Source C19-S04.} \path{supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/grounding/InMemorySupplyChainSimulationWorld.java}.\par
-\textbf{Member:} \texttt{apply(long, SimulationCommand)}.\par
-\textbf{Test file:} \path{supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}.\par
-\textbf{Tests:}\par \texttt{staleWorldVersionIsRejectedBeforeClaimAndSameKeyCanBeUsedAfterRefresh()}\par \texttt{reservationMutatesOnlyTheSimulationWorldAndDuplicateDoesNotApplyAgain()}.}\par\smallskip\end{minipage}
+\BookSourceReferenceQR
+  {C19-S04}
+  {supply-chain-agent-actions}
+  {supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/grounding/InMemorySupplyChainSimulationWorld.java}
+  {\texttt{apply(long, SimulationCommand)}}
+  {20--28}
+  {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
+  {\texttt{staleWorldVersionIsRejectedBeforeClaimAndSameKeyCanBeUsedAfterRefresh()}; \texttt{reservationMutatesOnlyTheSimulationWorldAndDuplicateDoesNotApplyAgain()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/grounding/InMemorySupplyChainSimulationWorld.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
+\end{minipage}
 
 This is a small example of optimistic concurrency control. A caller acts on a particular snapshot version. If the version has already changed, the adapter rejects the stale request. If another thread changes the reference between the read and the compare-and-set, the second check also rejects the transition. The caller must reload the state and reconsider rather than silently applying an action to facts that are no longer current.
 

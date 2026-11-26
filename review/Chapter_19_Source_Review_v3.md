@@ -1,5 +1,7 @@
 # Chapter 19 Source Review — v3
 
+> **Historical intermediate review — superseded.** Use `Chapter_19_Source_Review_v4.md` for the verified GitHub repository identity, commit-pinned links, QR implementation, and PDF-link proof. The repository-identity statement below was incomplete and is not the current source of truth.
+
 **Date:** 25 November 2026  
 **Chapter:** Engineering Foundations for Request-Driven Enterprise Agentic Systems  
 **Implementation source:** `supply-chain-agent-main (10).zip`  

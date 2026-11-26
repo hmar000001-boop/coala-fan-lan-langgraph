@@ -21,8 +21,8 @@ count3=$(find "$ROOT/Tex/part3" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc 
   echo "Unexpected chapter scaffold counts: Part I=$count Part II=$count2 Part III=$count3 (expected 8, 10, and 6)" >&2; exit 1;
 }
 for n in 01 02 03 04 05 06 07 08; do test -s "$ROOT/Tex/part1/chapter$n/chapter.tex"; done
-# Part III has six chapters. Chapters 19-22 are drafted from individually
-# approved outlines; Chapters 23-24 remain placeholders.
+# Part III must remain exactly six canonical build chapters: 19-24.
+# Chapters 19-22 are drafted from individually approved outlines; Chapters 23-24 remain placeholders.
 for n in 23 24; do
   chapter="$ROOT/Tex/part3/chapter$n/chapter.tex"
   test -s "$chapter" || { echo "Missing Part III chapter scaffold: chapter$n" >&2; exit 1; }
