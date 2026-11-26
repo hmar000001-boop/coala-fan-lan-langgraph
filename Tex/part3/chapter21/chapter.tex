@@ -50,6 +50,7 @@ The relevant orchestration method is \texttt{Cognitive\allowbreak{}Cycle\allowbr
 The central call sequence is short enough to inspect directly:
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The runtime composes M2 retrieval, B1 candidate construction, selection, evidence persistence, projection, and access-history recording.},label={lst:ch21-retrieve-evidence}]
 var retrieved = memoryRetrieval.retrieve(query);
 List<B1MemoryCandidate> candidates = b1CandidateFactory.from(
@@ -70,6 +71,18 @@ if (b1FeatureLearning != null)
         selectionRequest.queryCues(), context.executionId(),
         persisted.evidenceSetId(), at);
 \end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceQR
+  {C21-S01}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {\texttt{CognitiveCycleDecisionServices.retrieveEvidence(...)}}
+  {228--277}
+  {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServicesTest.java}
+  {\texttt{retrievalUsesM2BeforeB1AndPersistsTheSelectedEvidenceSet()}; \texttt{selectedLongTermMemoryProjectionIsIdempotentAfterGraphCheckpointInterruption()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServicesTest.java}
 \end{minipage}
 
 The listing omits the surrounding error translation and result construction, but preserves the sequence in the source. It is important that the method calls M2 before it constructs B1 candidates. The B1 candidate factory adapts a typed \texttt{Memory\allowbreak{}Retrieval\allowbreak{}Result}; B1 is not another search engine that independently queries all four stores. The candidate factory does not change the source memory records. It constructs a candidate reference and attaches a feature sidecar supplied by the injected \texttt{B1\allowbreak{}Candidate\allowbreak{}Feature\allowbreak{}Provider}.
@@ -116,6 +129,7 @@ Here, \(P_{access}\) is a bounded accessibility estimate derived from activation
 The code computes the central expression directly:
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The selector's net-utility calculation.},label={lst:ch21-b1-net-score}]
 double probability = 1.0 / (1.0 + Math.exp(
     -Math.max(-40.0, Math.min(40.0, activation.totalActivation()))));
@@ -133,6 +147,18 @@ double net = probability * candidate.expectedDownstreamUtility()
     - cognitivePenalty - infrastructurePenalty - maintenance
     + adjustment;
 \end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceQR
+  {C21-S02}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelector.java}
+  {\texttt{B1RetrievalSelector.select(...)}}
+  {26--93}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelectorTest.java}
+  {\texttt{selectorRanksByExpectedDownstreamValueAndFitsContextBudget()}; \texttt{measuredInfrastructureLatencyIsSeparateFromCognitiveLatency()}; \texttt{maintenanceProfileChargesRefreshWhenDueAndRecurringHorizonCost()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelector.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelectorTest.java}
 \end{minipage}
 
 The expression is not the ACT-R activation equation. Nor is its logistic output a calibrated probability simply because the value lies between zero and one. It is the application's scoring rule. The weights and feature values must be understood as configured engineering inputs, not measurements reported by CoALA or Fan and Lan. The paper's B1 proposal motivates the interaction among accessibility, latency, value, and cost; this particular formula and its Java data contracts are the application's implementation choice.\FanLanCite{\S V-A; \S V-B; \S VI-C, B1; Tables V--VI; Appendices B, C-A, and D}
@@ -156,9 +182,9 @@ The candidate separately carries \texttt{measured\allowbreak{}Infrastructure\all
 
 Expected downstream utility is supplied as a candidate feature. It is not the same as source authority or factual confidence. A high-utility estimate is only as trustworthy as the feature-provider contract and evidence used to produce it. The selector multiplies this value by accessibility: a potentially useful memory that is expected to be inaccessible contributes less to the objective. The selector does not itself inspect business truth, decide which supplier commitments are authoritative, or turn a model's plausibility judgement into domain evidence. Those boundaries remain with the data and application services introduced in Chapters 19 and 20.
 
-The actual \texttt{MaintenanceProfile} stores five values: \texttt{admissionValidationCost}, \texttt{refreshCost}, \texttt{recurringCostPerDay}, \texttt{refreshInterval}, and \texttt{lastMaintainedAt}. For each candidate evaluation, \texttt{B1RetrievalSelector} calls \texttt{estimateCost(request.evaluatedAt(), request.maintenanceHorizon())}. The method adds the admission-validation cost, adds the refresh cost when the interval has elapsed since \texttt{lastMaintainedAt}, and adds the recurring daily cost multiplied by the requested horizon in days. It returns an estimate; it does not schedule or execute validation or refresh work.
+The \texttt{MaintenanceProfile} stores five inputs: admission-validation cost, refresh cost, recurring daily cost, refresh interval, and last-maintained time. For each candidate evaluation, B1 calls \texttt{estimateCost(evaluatedAt, horizon)}. That estimate adds the admission-validation cost, adds refresh cost when the configured interval has elapsed, and adds recurring daily cost multiplied by the requested horizon in days. It returns an estimate; it does not schedule or execute validation or refresh work.
 
-The implementation detail matters: \texttt{admissionValidationCost} is added on every estimate. The profile does not say whether this field means a validation operation incurred each time the candidate is evaluated or a one-time historical admission expense. If a provider uses it to represent sunk admission, embedding, or storage work, repeatedly charging it at selection time would conflict with the accounting rule in Part II, Chapter 12. If it represents a genuinely recurring validation operation, that meaning must be made explicit in the provider's feature contract. The source does not encode a separate amortized lifecycle allocation, nor does the selector deduplicate shared costs across candidates. The chapter therefore reports the implemented arithmetic and flags the unresolved field semantics; it does not claim that this implementation has solved sunk-cost accounting.
+The implementation detail matters: \texttt{admission\allowbreak{}Validation\allowbreak{}Cost} is added on every estimate. The profile does not say whether this field means a validation operation incurred each time the candidate is evaluated or a one-time historical admission expense. If a provider uses it to represent sunk admission, embedding, or storage work, repeatedly charging it at selection time would conflict with the accounting rule in Part II, Chapter 12. If it represents a genuinely recurring validation operation, that meaning must be made explicit in the provider's feature contract. The source does not encode a separate amortized lifecycle allocation, nor does the selector deduplicate shared costs across candidates. The chapter therefore reports the implemented arithmetic and flags the unresolved field semantics; it does not claim that this implementation has solved sunk-cost accounting.
 
 Chapter 12's cost-accounting rule remains the design standard: historical storage/admission costs should not be charged afresh on every prompt unless an explicit amortization rule is defined; query-time maintenance should represent incremental work triggered by the current selection; and one operation should not be charged through both paths. The current profile only partially specifies those distinctions. Its cost values are expressed in the selector's utility-point unit, not in observed currency or elapsed time.
 
@@ -243,18 +269,31 @@ The feature update has explicit, bounded arithmetic, but its numeric outputs mus
 Verified outcomes also update the matching outcome counter, cue associations (+0.1 for useful, -0.1 for harmful, 0 for neutral, clamped to [0,1]), and bounded verified-use history. The outcome key is recorded so replay does not apply the same update twice. On a later cycle, feature enrichment combines persisted selection-access and verified-use histories and overlays cue-association strengths while preserving the candidate's provider-supplied utility. The normalized [0,1] statistic remains in the persisted feature state; the selector does not consume it as candidate utility. This correction prevents an uncalibrated scale substitution. It does not implement a calibrated outcome-to-task-utility model, an adaptive selector-weight update, or evidence that later choices become better.
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Only a verified outcome capability can update the memory revisions explicitly attributed to it.},label={lst:ch21-b1-verified-update}]
 public void applyVerifiedOutcome(VerifiedDownstreamOutcomeEvidence verified) {
+    Objects.requireNonNull(verified, "verified");
     var outcome = verified.evidence();
     for (var attribution : outcome.memoryAttributions()) {
         if (!attribution.reference().scopeId().equals(outcome.scopeId()))
-            throw new SecurityException("B1 attributed memory does not belong to outcome scope");
+            throw new SecurityException("B1 attributed memory does not belong to the verified B3 outcome scope");
         update(attribution.reference(), current -> current.applyVerifiedOutcome(
-            outcome.idempotencyKey(), outcome.signal(),
-            attribution.queryCues(), outcome.verifiedAt()));
+            outcome.idempotencyKey(), outcome.signal(), attribution.queryCues(), outcome.verifiedAt()));
     }
 }
 \end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceQR
+  {C21-S03}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1MemoryFeatureLearningService.java}
+  {\texttt{B1MemoryFeatureLearningService.applyVerifiedOutcome(...)}}
+  {63--72}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
+  {\texttt{verifiedDownstreamOutcomeUpdatesOnlyTheExactAttributedB1MemoryRevision()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1MemoryFeatureLearningService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
 \end{minipage}
 
 This is a carefully bounded connection between the two bundles. B3 produces the verified evidence capability and exact candidate attribution; B1 consumes that capability to update the matching memory feature state. A workspace receipt does not become a training signal by itself, and an unverified outcome does not update B1.
@@ -296,6 +335,7 @@ A B3 candidate can carry no memory attribution, one attribution, or several. The
 This boundary is deliberately stricter than comparing candidate labels or semantic similarity. If an adapter cannot establish the exact link, it should omit the attribution rather than infer one. A workspace item may still be admitted without B1 attribution, but a later verified outcome for that item cannot then update an unrelated memory's feature state. The domain adapter's selected-candidate lookup is authoritative for this handoff contract; the runtime validates the supplied mapping but does not independently query a durable evidence-set row to rebuild the association.
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The runtime decorates a workspace candidate only when the domain adapter maps it to an exact selected B1 revision.},label={lst:ch21-b3-attribution}]
 var references = mapping.getOrDefault(candidate.id(), List.of());
 if (references.isEmpty()) return candidate;
@@ -303,11 +343,23 @@ var fingerprint = B3OutcomeEvidenceService.candidateFingerprint(candidate);
 var attributions = references.stream().map(reference -> {
     B1MemoryCandidate source = selectedByReference.get(reference);
     if (source == null)
-        throw new SecurityException("memory revision was not selected in the persisted B1 evidence set");
+        throw new SecurityException("workspace item attributes a memory revision not selected in its persisted B1 evidence set");
     return b1FeatureLearning.attribute(source, queryCues, fingerprint);
 }).toList();
 return candidate.withMemoryAttributions(attributions);
 \end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceNoQR
+  {C21-S04}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {\texttt{CognitiveCycleDecisionServices.attachB1MemoryAttributions(...)}}
+  {422--455}
+  {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
+  {Related host integration: \texttt{durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()}; no focused test asserts this private helper or a persisted B1 feature update.}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
 \end{minipage}
 
 The attribution is not an action capability. It says where a candidate's evidence came from, so that a later verified outcome can be attributed narrowly. It does not allow the consumer to mutate memory or to execute a proposed plan. B1 and B3 both remain separate from the application's external action authorization and grounding boundary described in Chapter 19.
@@ -330,6 +382,7 @@ If mandatory candidates exceed the maximum candidate count, conflict with one an
 The following source excerpt shows the mandatory-first boundary:
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Mandatory workspace candidates are admitted before optional competition and fail without a partial snapshot if they cannot fit.},label={lst:ch21-b3-mandatory}]
 var mandatory = request.candidates().stream()
     .filter(WorkspaceCandidate::mandatory)
@@ -341,9 +394,26 @@ for (WorkspaceCandidate candidate : mandatory) {
         return failedMandatory("mandatory candidates conflict: " + candidate.id());
     if (candidate.contextUnits() > request.capacityUnits() - used)
         return failedMandatory("mandatory candidates exceed workspace capacity");
-    // Add candidate, its newly covered tags, and its context cost.
+    var newTags = new LinkedHashSet<>(candidate.coverageTags());
+    newTags.removeAll(covered);
+    selected.add(new WorkspaceEntry(candidate, adjustedBaseScore(candidate, request.scoringPolicy()), newTags));
+    selectedIds.add(candidate.id());
+    covered.addAll(candidate.coverageTags());
+    used += candidate.contextUnits();
 }
 \end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceQR
+  {C21-S05}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {\texttt{WorkspaceAdmissionService.admit(...)}, mandatory-first block}
+  {66--79}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
+  {\texttt{mandatoryContentIsAdmittedBeforeOptionalContent()}; \texttt{mandatoryContentExceedingCapacityFailsWithoutPartialSnapshot()}; \texttt{mandatoryContentExceedingMaximumCountFails()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
 \end{minipage}
 
 The distinction is between priority and feasibility. Mandatory status protects a candidate from optional ranking; it does not override a hard capacity limit or make incompatible mandatory candidates jointly valid. The test methods \texttt{mandatory\allowbreak{}Content\allowbreak{}Is\allowbreak{}Admitted\allowbreak{}Before\allowbreak{}Optional\allowbreak{}Content}, \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Capacity\allowbreak{}Fails\allowbreak{}Without\allowbreak{}Partial\allowbreak{}Snapshot}, and \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Maximum\allowbreak{}Count\allowbreak{}Fails} exercise these rules.
@@ -367,6 +437,59 @@ This objective is not B1's memory score. It does not use ACT-R-inspired activati
 A workspace coalition is a group of two or more candidates whose combined coverage makes them a meaningful option against individual candidates. The service enumerates candidate combinations up to the configured maximum coalition size, checks that members fit the free capacity and do not conflict with one another or with already selected entries, and requires at least two newly covered tags. It sums the candidates' adjusted base scores, adds the coverage bonus for the coalition's fresh tags, and can add a separate coalition-level outcome adjustment. The proposal records its members, newly covered tags, context cost, score components, competition round, and whether it won. The implemented complementarity signal is therefore explicit but narrow: it is based on caller-supplied coverage tags and configured values, not a learned semantic model of arbitrary pairwise synergy.
 
 The standard \texttt{Workspace\allowbreak{}Coalition\allowbreak{}Competition\allowbreak{}Policy} is a bounds record, not the algorithm. Its default limits coalition size to three and the number of evaluated complete coalition combinations to 512 per workspace admission. \texttt{Workspace\allowbreak{}Admission\allowbreak{}Service} implements the actual enumeration and comparison. The configured counter is shared across the service's iterative admission rounds. It increments when enumeration reaches a complete combination of the target size, before the service checks the combination's aggregate context units and fresh-coverage count. Consequently, a complete combination consumes budget even if it is subsequently rejected because its members do not fit together or do not add at least two fresh tags. By contrast, partial branches pruned earlier because an individual candidate cannot fit the current free capacity, conflicts with an already selected item, or conflicts with a current partial combination do not increment this counter. In each round the service compares feasible singleton candidates with the complete, feasible coalition proposals it has evaluated. It selects the best option under the current context and admission-count budget, records the decision, updates covered tags and capacity, and repeats while slots and eligible candidates remain. A B6 minimum-distinct-workspace-kind directive can require a candidate option that introduces a kind not already represented before the service continues with other kinds.
+
+The most consequential search detail is where the attempt counter advances. It advances only after a recursive branch has produced a complete combination of the requested size; it advances before the aggregate-capacity and fresh-coverage checks. The following excerpt shows that ordering:
+
+\begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={A complete candidate combination consumes one proposal-budget unit before aggregate capacity and fresh-coverage rejection.},label={lst:ch21-b3-coalition-enumeration}]
+if (truncated[0]) return;
+if (current.size() == targetSize) {
+    if (attempts[0] >= budget) {
+        truncated[0] = true;
+        return;
+    }
+    attempts[0]++;
+    int units = current.stream()
+        .mapToInt(WorkspaceCandidate::contextUnits).sum();
+    if (units > freeUnits) return;
+    Set<String> fresh = freshCoverage(current, covered);
+    if (fresh.size() < 2) return;
+    double base = current.stream()
+        .mapToDouble(candidate -> adjustedBaseScore(
+            candidate, request.scoringPolicy())).sum();
+    double bonus = coverageBonus(fresh, request);
+    List<String> ids = current.stream()
+        .map(WorkspaceCandidate::id).sorted().toList();
+    String preferenceKey = WorkspaceCoalitionProposal
+        .preferenceKeyFor(ids, fresh);
+    double coalitionAdjustment = coalitionOutcomeAdjustment
+        .adjustmentFor(request.scopeId(), preferenceKey);
+    if (!Double.isFinite(coalitionAdjustment)
+            || Math.abs(coalitionAdjustment) > 5.0)
+        throw new SecurityException("B3 coalition outcome adjustment is non-finite or exceeds its safety bound");
+    String proposalId = proposalId(round, ids, fresh);
+    proposals.add(new WorkspaceCoalitionProposal(proposalId, round, ids,
+        fresh, units, base, bonus, coalitionAdjustment,
+        base + bonus + coalitionAdjustment, false));
+    return;
+}
+\end{lstlisting}
+\end{minipage}
+
+\BookSourceReferenceQR
+  {C21-S06}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {\texttt{WorkspaceAdmissionService.evaluateCoalitions(...)} and \texttt{enumerate(...)}}
+  {204--254}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
+  {\texttt{alternativeCoalitionsCompeteAsFirstClassOptionsAndRecordTheWinner()}; \texttt{incompleteCoalitionEnumerationFallsBackToSingletonAdmissionAndReportsTruncation()}; \texttt{coalitionCompetitionIsDeterministicAcrossCandidateInputOrder()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
+\end{minipage}
+
+The complete-combination counter is not a counter for every recursive node. The code above also returns immediately after the candidate count is completed; earlier partial branches are pruned by capacity or conflict checks without using an attempt. This is why the default of 512 must remain described as a bound on evaluated complete combinations rather than a hard bound on all recursive operations.
 
 If coalition enumeration reaches its configured complete-combination limit before the round's enumeration is finished, its partial coalition set is not treated as a comparable choice set. The service records the proposals it examined, marks the search as truncated, discards the incomplete coalition option set from the current comparison, and falls back to singleton comparison for that and later rounds. This sacrifices potential coalition options rather than pretending that an incomplete enumeration was exhaustive. The workspace snapshot records the truncation flag so that the result can be interpreted later.
 
@@ -408,6 +531,7 @@ A later outcome report must refer to an accepted persisted receipt, the exact ca
 The receipt evidence stores only the consumed candidate fingerprints and any explicit B1 attributions carried by those consumed candidates. A later verified outcome for one candidate cannot update another candidate or an unconsumed memory. Where B1 attributions exist, the verified signal updates the exact revisions. Where no B1 mapping was supplied, the verified outcome remains evidence about that B3 workspace candidate but does not produce a per-memory B1 update.
 
 \begin{minipage}{\linewidth}
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The outcome service checks the accepted receipt and consumed candidate before verification and persistence.},label={lst:ch21-b3-outcome-gate}]
 WorkspaceReceiptEvidence receipt = repository.findReceipt(
     report.scopeId(), report.receiptId())
@@ -426,7 +550,19 @@ if (!verifier.verify(report.scopeId(), report.receiptId(), report.candidateId(),
 \end{lstlisting}
 \end{minipage}
 
-The test suite covers several parts of this boundary. \texttt{verified\allowbreak{}Outcome\allowbreak{}Must\allowbreak{}Reference\allowbreak{}An\allowbreak{}Accepted\allowbreak{}Consumed\allowbreak{}Candidate\allowbreak{}And\allowbreak{}Verified\allowbreak{}Source\allowbreak{}Evidence} rejects a report that does not satisfy the receipt and evidence contract. \texttt{outcome\allowbreak{}For\allowbreak{}Unconsumed\allowbreak{}Candidate\allowbreak{}Or\allowbreak{}Unverified\allowbreak{}Evidence\allowbreak{}Is\allowbreak{}Rejected} checks rejected associations. \texttt{persisted\allowbreak{}Outcome\allowbreak{}Is\allowbreak{}Reverified\allowbreak{}Before\allowbreak{}Trainer\allowbreak{}Capability\allowbreak{}Is\allowbreak{}Minted} tests read-time revalidation. \texttt{verified\allowbreak{}Downstream\allowbreak{}Outcome\allowbreak{}Updates\allowbreak{}Only\allowbreak{}The\allowbreak{}Exact\allowbreak{}Attributed\allowbreak{}B1\allowbreak{}Memory\allowbreak{}Revision} checks the narrow B1 write path. These are mechanism/service tests; they do not show that the consumer used the content in a way that caused a better business result.
+\BookSourceReferenceQR
+  {C21-S07}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceService.java}
+  {\texttt{B3OutcomeEvidenceService.recordVerifiedOutcome(...)}}
+  {84--107}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
+  {\texttt{verified\allowbreak{}Outcome\allowbreak{}Must\allowbreak{}Reference\allowbreak{}An\allowbreak{}Accepted\allowbreak{}Consumed\allowbreak{}Candidate\allowbreak{}And\allowbreak{}Verified\allowbreak{}Source\allowbreak{}Evidence()}; \texttt{outcome\allowbreak{}For\allowbreak{}Unconsumed\allowbreak{}Candidate\allowbreak{}Or\allowbreak{}Unverified\allowbreak{}Evidence\allowbreak{}Is\allowbreak{}Rejected()}; \texttt{persisted\allowbreak{}Outcome\allowbreak{}Is\allowbreak{}Reverified\allowbreak{}Before\allowbreak{}Trainer\allowbreak{}Capability\allowbreak{}Is\allowbreak{}Minted()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
+\end{minipage}
+
+The first test rejects reports that do not satisfy the accepted-receipt and verified-evidence contract. The second checks that unconsumed candidates and unverified evidence cannot be associated with an outcome. The third revalidates persisted evidence before exposing a training capability. A separate test drives the B3-to-B1 path and checks that only the exact attributed memory revision is updated, with replay remaining idempotent. These are mechanism/service tests; they do not show that the consumer used the content in a way that caused a better business result.
 
 \subsection{Coalition feedback has its own evidence identity}
 \label{subsec:ch21-b3-coalition-feedback}

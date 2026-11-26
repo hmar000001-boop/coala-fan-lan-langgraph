@@ -1,0 +1,32 @@
+Part III / Chapter 21 — incremental changeset manifest
+Base prerequisites: Part_III_Chapter19_QR_SCAFFOLD_CHANGESET_ONLY.zip and Part_III_Chapter20_QR_CHANGESET_ONLY.zip already applied.
+Application source revision used for links: fa8cd5ec0742d7010dbba2c3646852e95062a419
+GitHub repository: hmar000001-boop/supply-chain-agent
+
+MODIFIED
+Tex/part3/chapter21/chapter.tex
+CODE-PRESENTATION-PLAN.md
+
+ADDED
+review/Chapter_21_QR_Source_Review_v3.md
+Tex/diagrams/source-qr/C21-S01.tex
+Tex/diagrams/source-qr/C21-S01.pdf
+Tex/diagrams/source-qr/C21-S02.tex
+Tex/diagrams/source-qr/C21-S02.pdf
+Tex/diagrams/source-qr/C21-S03.tex
+Tex/diagrams/source-qr/C21-S03.pdf
+Tex/diagrams/source-qr/C21-S05.tex
+Tex/diagrams/source-qr/C21-S05.pdf
+Tex/diagrams/source-qr/C21-S06.tex
+Tex/diagrams/source-qr/C21-S06.pdf
+Tex/diagrams/source-qr/C21-S07.tex
+Tex/diagrams/source-qr/C21-S07.pdf
+CHAPTER21_QR_CHANGESET_README.md
+CHAPTER21_CHANGESET_MANIFEST.txt
+CHAPTER21_CHANGESET_SHA256SUMS.txt
+
+DELETED
+(none)
+
+NOT INCLUDED
+Full LaTeX project; Chapter 19/20 files; shared QR macros, scripts, and workflow; supply-chain application repository; generated proof PDF and temporary proof diagrams.

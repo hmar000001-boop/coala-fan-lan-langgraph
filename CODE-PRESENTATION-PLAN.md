@@ -1,10 +1,10 @@
 # Code Presentation and Source Navigation Plan
 
-**Status:** Accepted design; Chapters 19–20 QR source strips implemented and render-checked; Chapters 21–22 are the next mechanism-specific pilot  
+**Status:** Accepted design; Chapters 19–21 QR source strips implemented and render-checked; Chapter 22 (B2) is the next mechanism-specific pilot  
 **Created:** 25 November 2026  
 **Applies to:** Part III, Chapters 19–24  
 **Canonical LaTeX tree:** `Tex/part3/`  
-**Implementation baseline currently reviewed for Chapter 19:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Implementation baseline reviewed for Chapters 19–21:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
 
 > **Provenance note.** The supplied book archive did not contain a file named `CODE-PRESENTATION-PLAN.md`. This is therefore the first version of the plan, created in the book repository; it is not an edit to a previously present copy.
 
@@ -116,15 +116,13 @@ A chapter is not QR-approved merely because LaTeX compiled. Record the commit, r
 
 ## 8. Pilot and rollout order
 
-Chapter 19 now acts as the first layout/source-navigation pilot: C19-S02, C19-S03, and C19-S04 exercise different modules and URL densities. The next mechanism-specific pilot remains the three examples originally selected for the QR architecture review:
+Chapter 19 established the first layout/source-navigation pilot across three different implementation modules. Chapter 20 extended the convention to memory, reasoning, perception, and planning contracts. Chapter 21 now provides the completed B1/B3 mechanism-specific pilot: B1 candidate ranking, verified-outcome attribution, B3 mandatory-first admission, bounded coalition enumeration, and the outcome-verification gate. The remaining selected pilot is Chapter 22 — B2 child-step fencing and parent-context/version validation:
 
-| Pilot | Implementation target | Why it is a useful test |
+| Next pilot | Implementation target | Why it is a useful test |
 | --- | --- | --- |
-| Chapter 21 — B1 | `supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelector.java`, `select(...)` | Primary candidate-ranking and context-budget algorithm; validates a long source link in a mechanism module |
-| Chapter 21 — B3 | `supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java`, `admit(...)` | Workspace/coalition admission and competition; tests a second primary listing and source destination |
 | Chapter 22 — B2 | `supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java`, `resolve(...)` | Parent-context/version fence on child results; checks a distinct critical lifecycle/concurrency boundary |
 
-After the author reviews the Chapter 19 layout and the three mechanism-specific examples, lock the source-strip dimensions, QR macro, caption treatment, and hyperlink behaviour. Then apply the approved format consistently to eligible primary listings in Chapters 19–24. Do not add a chapter-level QR.
+The source-strip dimensions, QR macro, caption treatment, and hyperlink behaviour remain the accepted defaults. Apply them consistently to eligible primary listings in Chapters 19–24. Do not add a chapter-level QR.
 
 ## 9. Chapter 19 source-register created in the first revision
 
@@ -182,3 +180,23 @@ Chapter 20 maps the CoALA memory, internal-action, perception, and planning cont
 All seven source paths and test paths resolve at the pinned commit, not a branch alias. The source line ranges above match the actual one-based line numbers of the pinned source files. Listing 20.3 shows the complete `retrieve(...)` method, including working-memory lookup, scope/expiry checks, and the episodic, semantic, and procedural read paths. For C20-S07, the printed explanation also distinguishes request/authority validation (performed before the `try` block and therefore fail-fast) from simulator/domain-transition failures converted to `WorldTransition.Rejected`.
 
 The Chapter 20 standalone proof was used to check the source-strip layout, QR readability, and PDF link annotations. All seven listing/source-reference pairs remain on the same page. The five QR payloads are generated as vector PDF assets under `Tex/diagrams/source-qr/`; each was decoded from the rendered PDF at 220 DPI and matched the URL on its clickable QR annotation. The two text-only references retain clickable source and test links. This verifies the digital proof only; it is not a physical-print certification. The local proof substitutes DejaVu fonts and temporary diagram placeholders because the production TeX Gyre fonts and generated Mermaid artwork are absent from the supplied archive.
+
+## 13. Chapter 21 source register and QR classification
+
+Chapter 21 follows the B1 retrieval/learning path and the B3 workspace-admission/outcome path against frozen application commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. Seven stable source IDs are assigned. Six primary implementation listings receive QR codes; the private runtime attribution helper remains a text-only supporting reference because the available end-to-end test does not directly assert that helper or a persisted B1 feature update.
+
+| Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
+| --- | --- | ---: | --- | --- |
+| `C21-S01` | `CognitiveCycleDecisionServices.retrieveEvidence(...)` — runtime handoff from M2 retrieval through B1 selection, evidence persistence, reference projection, and access-history recording | 228–277 | `CognitiveCycleDecisionServicesTest.retrievalUsesM2BeforeB1AndPersistsTheSelectedEvidenceSet()`; `selectedLongTermMemoryProjectionIsIdempotentAfterGraphCheckpointInterruption()` | **QR** |
+| `C21-S02` | `B1RetrievalSelector.select(...)` — net-score ranking and context-budget selection | 26–93 | `B1RetrievalSelectorTest.selectorRanksByExpectedDownstreamValueAndFitsContextBudget()`; `measuredInfrastructureLatencyIsSeparateFromCognitiveLatency()`; `maintenanceProfileChargesRefreshWhenDueAndRecurringHorizonCost()` | **QR** |
+| `C21-S03` | `B1MemoryFeatureLearningService.applyVerifiedOutcome(...)` — verified capability and exact memory-revision update | 63–72 | `B3OutcomeEvidenceServiceTest.verifiedDownstreamOutcomeUpdatesOnlyTheExactAttributedB1MemoryRevision()` | **QR** |
+| `C21-S04` | `CognitiveCycleDecisionServices.attachB1MemoryAttributions(...)` — private runtime adapter mapping B3 candidates to exact B1 revisions | 422–455 | Related host integration: `DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()`; this test does not directly assert the private helper or persisted B1 feature update | No QR; supporting helper |
+| `C21-S05` | `WorkspaceAdmissionService.admit(...)` — mandatory-first admission and fail-closed constraints | 66–79 | `WorkspaceAdmissionServiceTest.mandatoryContentIsAdmittedBeforeOptionalContent()`; `mandatoryContentExceedingCapacityFailsWithoutPartialSnapshot()`; `mandatoryContentExceedingMaximumCountFails()` | **QR** |
+| `C21-S06` | `WorkspaceAdmissionService.evaluateCoalitions(...)` / `enumerate(...)` — bounded complete-combination proposal search | 204–254 | `WorkspaceAdmissionServiceTest.alternativeCoalitionsCompeteAsFirstClassOptionsAndRecordTheWinner()`; `incompleteCoalitionEnumerationFallsBackToSingletonAdmissionAndReportsTruncation()`; `coalitionCompetitionIsDeterministicAcrossCandidateInputOrder()` | **QR** |
+| `C21-S07` | `B3OutcomeEvidenceService.recordVerifiedOutcome(...)` — accepted-consumed-receipt and verified-evidence gate | 84–107 | `B3OutcomeEvidenceServiceTest.verifiedOutcomeMustReferenceAnAcceptedConsumedCandidateAndVerifiedSourceEvidence()`; `outcomeForUnconsumedCandidateOrUnverifiedEvidenceIsRejected()`; `persistedOutcomeIsReverifiedBeforeTrainerCapabilityIsMinted()` | **QR** |
+
+The C21-S06 counter increments only when recursion reaches a complete combination of the requested size. It increments before aggregate context-capacity and fresh-coverage rejection. The configured proposal budget therefore bounds evaluated complete combinations; it must not be described as a hard cap on all recursive calls, partial branches, or total CPU work. The tests listed for coalition search exercise alternative proposals, deterministic ordering, and explicit truncation fallback; they do not prove exhaustive optimization or a globally optimal workspace.
+
+C21-S04 remains navigable through a printed source path and clickable source/test references but intentionally receives no QR. The cited durable-host test is related integration evidence, not a focused assertion for the private mapping helper or a durable B1 feature-state update. Keep this distinction visible; do not make the link look like stronger evidence than it is.
+
+The six C21 QR assets are vector PDFs under `Tex/diagrams/source-qr/`, with one `.tex` payload source per QR. The Chapter 21 source strips use the shared `\BookSourceReferenceQR` / `\BookSourceReferenceNoQR` macros introduced and accepted in the Chapter 19 changeset. The final standalone proof compiled to 40 US Letter pages; all seven listing/reference groups stayed on one page, and the six QR payloads decoded at 220 DPI and matched their clickable PDF URI annotations. The QR symbols' clickable outside dimensions are approximately 19.15 × 19.50 mm. The repository QR validator passed for all 14 assets across Chapters 19–21; the scaffold checks passed at six Part III chapters and the Mermaid sources-only check passed for 118 sources. The standalone proof checks layout, scan decoding, and clickable PDF URL parity only; it is not a production-font full-book build or a physical print certification.
