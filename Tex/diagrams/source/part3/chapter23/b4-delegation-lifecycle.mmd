@@ -1,0 +1,13 @@
+flowchart TD
+  accTitle: B4 parent intention and B2 child investigation
+  accDescr: B4 retains the parent objective while B2 owns a bounded child investigation. Startup failure triggers compensating transitions; a successful return restores or reopens parent method reconsideration.
+  P[Active B4 parent intention] --> O[Open bounded B2 impasse case]
+  O --> D[Mark B4 intention delegated]
+  D --> S[Start B2 child investigation]
+  S -->|Start succeeds| C[B2 investigates child problem]
+  S -->|Start fails| K[Compensate B2 case and B4 delegation]
+  C --> R[Child result and parent-context fence]
+  R -->|No method change| N[Return parent intention to active]
+  R -->|Method reconsideration required| Q[Parent intention reconsideration pending]
+  K --> P
+  N --> P

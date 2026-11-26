@@ -1,0 +1,12 @@
+flowchart TD
+  accTitle: B4, B6, and action authority
+  accDescr: Three distinct control responsibilities. B4 protects the objective and governs the method. B6 evaluates uncertainty and compute resources. The action authorization boundary checks a concrete write independently.
+  I[Committed recovery objective] --> B4[B4 intention and method governance]
+  B4 --> M[Active planner method]
+  M --> B6[B6 uncertainty and resource governance]
+  B6 --> D{B6 decision}
+  D -->|Continue| A[Separate action authorization]
+  D -->|Evidence, downshift, interrupt, stop| H[Evidence or control path]
+  A --> V[Revalidate exact proposed write]
+  V --> P[Approval and idempotency checks]
+  P --> X[Dispatch only when authorized]

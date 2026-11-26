@@ -1,0 +1,14 @@
+flowchart TD
+  accTitle: B6 resource decision and execution guard
+  accDescr: The governor returns a control decision from uncertainty, remaining vector budget, required next-step usage, and deadline. Actual work is separately reserved, fenced, started and accounted for by the execution guard and ledger.
+  I[Current uncertainty and resource snapshot] --> G[Meta-control governor]
+  G --> D{Typed decision}
+  D -->|Reduce computation| P[Downshift next planner request]
+  D -->|Evidence, interrupt, stop| H[Evidence or control route]
+  D -->|Continue| R[Execution guard]
+  P --> R
+  R --> L[Acquire reservation lease]
+  L --> F[Mark operation started with fencing token]
+  F --> W[Invoke guarded work and renew lease]
+  W --> A[Commit measured usage]
+  W -->|Failure or invalid measurement| C[Conservatively commit reserved usage]

@@ -1,4 +1,757 @@
 \chapter{Persistent Intention and Resource Governance: B4 and B6}
-\begin{notebox}
-Chapter placeholder. The detailed outline is prepared but requires individual author approval before prose drafting.
-\end{notebox}
+\label{ch:persistent-intention-resource-governance}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+A supply-chain recovery objective can remain authorized even when its current method is no longer suitable. The planner may need a different search strategy, while uncertainty or a shrinking computational budget may require the next attempt to use fewer resources, request evidence, wait for a human decision, or stop. These are related decisions, but they are not the same decision. B4 governs the persistence of the intention and the authority to reconsider its method. B6 governs uncertainty and resource consequences. Neither mechanism grants the capability to execute a reservation, supplier commitment, or other state-changing action; the application still passes through its separate authorization, approval, and revalidation boundary.
+
+This chapter follows those distinctions through the current Java application. It begins with the durable B4 intention record, then follows method reconsideration through the lifecycle service, PostgreSQL compare-and-set, the cognitive-cycle graph, and the next planner call. It then traces B6's scoped uncertainty assessment, optional calibration lifecycle, resource vector, planner downshift, and fenced execution guard. The chapter treats the code as an application-specific engineering realization of the mechanisms discussed in Part II, not as a complete BDI, MIDCA, EPIC, or Sigma implementation.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to distinguish a committed objective from its active method; explain how B4 changes a method without changing the objective fingerprint; trace the version and persistence checks that protect an intention transition; explain how B6 binds uncertainty to an execution and memory scope; distinguish a calibrated assessment from an uncalibrated or research-only shadow value; explain the resource vector and the difference between planner downshift and the shared execution ceiling; trace a reservation lease from acquisition through operation start and accounting; and identify why B4, B6, and action authorization remain separate control boundaries.
+\end{learningbox}
+
+\section{The task can remain valid when its current method no longer is}
+\label{sec:ch23-valid-task-method-change}
+
+\BookExampleLabel{} Suppose the application is coordinating recovery for several delayed customer orders. The authorized objective remains to fulfill those orders while preserving the constraints already attached to the request. A sequential planner has produced a candidate, but fresh evidence makes its current route or allocation method unattractive. The objective need not be discarded merely because one method has become unsuitable. The system may reconsider the method and select a bounded-search strategy while keeping the same protected objective.
+
+A second problem may arise at the same time. The next planning step is computationally expensive, the remaining search budget is low, or the available evidence carries high uncertainty. The application must decide whether to continue, reduce the next planning call's compute envelope, request more evidence, interrupt for an authorized human decision, or stop. It must not silently convert that resource decision into permission to change the business objective.
+
+The questions are therefore separate:
+
+\begin{description}
+  \item[B4 — intention and method.] Does the committed objective remain active? Is the current method still acceptable? Which authorized transition changes the method, suspends the intention, returns from a delegated investigation, or ends the intention after the required evidence and authority checks?
+  \item[B6 — uncertainty and resources.] Is the current uncertainty assessment applicable to this execution and scope? Does the next step fit the remaining resource vector and deadline? Should the system continue, request evidence, downshift, wait for a human decision, or stop?
+  \item[Action authorization — capability and approval.] Even when B4 permits the method and B6 permits work to continue, is this exact proposed state-changing action authorized, approved where required, and still valid when rechecked?
+\end{description}
+
+The separation matters because the same planner method may be used under a smaller budget, and a newly selected method may still produce a proposal that must not be executed. B4 does not grant a supplier-write capability. B6 does not authenticate an operator. Neither one replaces the M3 authorization, idempotency, approval, and observation path. The application graph makes these decisions sequentially visible rather than blending them into one confidence or policy score.\FanLanCite{\S V-C, B4; \S V-E, B6; \S VI-A; Appendix C-C}
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b4-b6-authority-separation.png}
+  {B4 governs a persistent objective and method reference. B6 governs uncertainty and resource consequences. A separate action authorization and approval path controls whether an exact state-changing action may execute.}
+  {fig:ch23-authority-separation}
+
+\section{B4 state: a protected objective and a versioned method binding}
+\label{sec:ch23-b4-state}
+
+\subsection{The intention is more than a planner choice}
+\label{subsec:ch23-intention-record}
+
+The central record is \texttt{RecoveryIntention}. It identifies the intention, memory scope, recovery objective, objective fingerprint, objective owner, protected constraints, current method, lifecycle status, and monotonically increasing version. It also records rationale, the active plan reference, continuation conditions, permitted reconsideration triggers, an authority policy, and terminal metadata where applicable. The record is therefore not merely the selected planner ID. It is the persisted commitment that makes the method binding accountable to an objective and an authority context.
+
+The objective fingerprint is a stable digest of the committed recovery objective. A method change supplies an asserted fingerprint, and the transition rejects a mismatch. The method reference may change; the fingerprint may not. This distinction is the key invariant: the planner is allowed to change how it pursues the authorized task, not to redefine the task as a side effect of switching strategy.
+
+The status vocabulary is explicit: \texttt{ACTIVE}, \texttt{RECONSIDERATION\_PENDING}, \texttt{SUSPENDED}, \texttt{DELEGATED}, \texttt{COMPLETED}, and \texttt{TERMINATED}. Suspension preserves the status to which the intention should resume. Delegation carries a child-case identifier only while the intention is delegated. Completion carries an objective-satisfaction proof whose fingerprint must match the protected objective. Termination carries a typed reason and actor. These structural constraints make several invalid combinations unrepresentable at record construction time.
+
+\Needspace{0.90\textheight}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The record declaration exposes the protected objective identity and versioned method binding; compact-constructor checks are discussed in the text.},label={lst:ch23-recovery-intention-record}]
+public record RecoveryIntention(
+        RecoveryIntentionId id,
+        MemoryScopeId scopeId,
+        RecoveryObjectiveId objectiveId,
+        String objectiveFingerprint,
+        String objectiveOwner,
+        Set<RecoveryConstraint> protectedConstraints,
+        RecoveryMethodReference currentMethod,
+        IntentionStatus status,
+        long version,
+        Instant createdAt,
+        Instant updatedAt,
+        String reason,
+        IntentionStatus resumeStatus,
+        String delegationId,
+        ObjectiveSatisfactionProof completionProof,
+        String rationale,
+        String activePlanReference,
+        ContinuationCondition continuationCondition,
+        Set<ReconsiderationTrigger> reconsiderationTriggers,
+        IntentionAuthorityPolicy authorityPolicy,
+        IntentionTerminationReason terminationReason,
+        String terminatedBy) {
+    // The compact constructor validates fingerprint, lifecycle metadata,
+    // completion evidence, and ownership of the authority policy.
+}
+\end{lstlisting}
+\BookSourceReferenceNoQR
+  {C23-S01}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntention.java}
+  {RecoveryIntention record declaration}
+  {13--38}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+  {\texttt{intentionCapturesImmutableObjectiveFingerprintAndConstraints()} and \texttt{methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntention.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+
+The compact constructor enforces several local invariants: the objective fingerprint must have the expected 64-character lowercase hexadecimal form; timestamps cannot move backwards; suspension must preserve a resume status; a delegation ID exists if and only if the status is delegated; a completion proof exists exactly for a completed intention and must carry the same fingerprint; and terminal metadata is forbidden on non-terminal intentions. The authority policy must name the same objective owner as the intention. Those checks do not prove that the objective is achievable or that its protected constraints are sufficient. They make the persisted intention internally coherent before a service or repository accepts a transition.
+
+\subsection{Reconsideration precedes a method change}
+\label{subsec:ch23-reconsideration-method}
+
+The current method cannot be replaced directly from an arbitrary lifecycle state. The record first requires an active intention and a permitted typed trigger to enter \texttt{RECONSIDERATION\_PENDING}. A later method change is accepted only from that state, only when the asserted objective fingerprint matches, and only when the actor belongs to the intention's transition policy. The new \texttt{RecoveryMethodReference} becomes the current method and supplies the next candidate-plan reference; the intention returns to \texttt{ACTIVE} with its objective identity preserved.
+
+\texttt{RecoveryIntentionService} is the version-aware application service. Its public method delegates to a common update path. That path loads the current value, checks the caller's expected version, applies the typed transition, classifies it, and asks the repository to compare-and-set the replacement. Only after the repository reports a successful commit does the service append the transition to its recorder. A stale expected version or losing concurrent writer is rejected; it is not merged by overwriting the latest intention.
+
+\Needspace{0.90\textheight}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={Method replacement is a typed transition; the shared update path uses the expected intention version and a repository compare-and-set.},label={lst:ch23-b4-method-cas}]
+public RecoveryIntention changeMethod(RecoveryIntentionId id, long version,
+        RecoveryMethodReference method, String objectiveFingerprint,
+        String actor, Instant at) {
+    return update(id, version, actor,
+            value -> value.changeMethod(method, objectiveFingerprint, actor, at));
+}
+
+private RecoveryIntention update(RecoveryIntentionId id, long expected,
+        String actor, UnaryOperator<RecoveryIntention> operation) {
+    String transitionActor = required(actor, "actor");
+    RecoveryIntention current = get(Objects.requireNonNull(id, "id"));
+    if (current.version() != expected)
+        throw new IllegalStateException("intention version conflict");
+    RecoveryIntention next = operation.apply(current);
+    var kind = transitionKind(current, next);
+    if (!repository.compareAndSet(id, expected, next))
+        throw new IllegalStateException("intention changed concurrently");
+    transitionRecorder.record(current, next, kind, transitionActor);
+    return next;
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S02}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionService.java}
+  {changeMethod(...) and private update(...)}
+  {67--70, 130--139}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+  {\texttt{methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()} and \texttt{staleVersionCannotOverwriteConcurrentIntentionUpdate()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+
+The PostgreSQL repository adds a second, durable concurrency check. Its update predicate includes persistence scope, intention ID, expected version, and objective fingerprint. When one row changes, the new version is appended to the intention-history table inside the same JDBC transaction. If no row matches, the transaction rolls back and the caller receives a failed compare-and-set. This makes the current record and its transition-history entry one database transaction; it does not create a distributed transaction with the B2 case repository, the graph checkpoint, or an external action system.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The PostgreSQL B4 repository guards the versioned replacement by scope, ID, expected version, and objective fingerprint, then writes history before commit.},label={lst:ch23-b4-postgres-cas}]
+@Override public boolean compareAndSet(RecoveryIntentionId id, long expectedVersion, RecoveryIntention replacement) {
+    Objects.requireNonNull(id, "id"); Objects.requireNonNull(replacement, "replacement");
+    if (!id.equals(replacement.id())) throw new SecurityException("replacement intention ID changed");
+    if (scopeId != null && !scopeId.equals(replacement.scopeId().value())) throw new SecurityException("replacement intention belongs to another persistence scope");
+    if (replacement.version() != expectedVersion + 1) throw new IllegalArgumentException("replacement intention version must increment by one");
+    String payload = PostgresJsonArtifactRepository.validJson(codec.encode(replacement));
+    try (Connection connection = dataSource.getConnection()) {
+        connection.setAutoCommit(false);
+        try {
+            int changed;
+            try (PreparedStatement update = connection.prepareStatement("""
+                    UPDATE recovery_intention SET version=?,status=?,payload=CAST(? AS jsonb),updated_at=?
+                    WHERE scope_id=? AND intention_id=? AND version=? AND objective_fingerprint=?
+                    """)) {
+                update.setLong(1, replacement.version()); update.setString(2, replacement.status().name());
+                update.setString(3, payload); PostgresJdbc.setInstant(update, 4, replacement.updatedAt());
+                update.setString(5, replacement.scopeId().value()); update.setString(6, id.value());
+                update.setLong(7, expectedVersion); update.setString(8, replacement.objectiveFingerprint());
+                changed = update.executeUpdate();
+            }
+            if (changed == 0) { connection.rollback(); return false; }
+            appendHistory(connection, replacement, payload);
+            connection.commit(); return true;
+        } catch (SQLException | RuntimeException failure) { rollback(connection, failure); throw failure; }
+    } catch (SQLException ex) { throw new PostgresPersistenceException("PostgreSQL B4 intention CAS failed", ex); }
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S04}
+  {supply-chain-agent-infrastructure-postgres}
+  {supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresRecoveryIntentionRepository.java}
+  {compareAndSet(...)}
+  {75--100}
+  {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
+  {\texttt{concurrentIntentionUpdatesUseVersionCasAndPreserveTheProtectedObjective()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresRecoveryIntentionRepository.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
+
+The integration test creates two repository views competing to advance the same intention version. Exactly one compare-and-set wins; the current version advances once, the protected objective fingerprint and constraints remain unchanged, and history contains the initial version plus the single winning update. This is evidence for the repository's optimistic-concurrency boundary under that test setup. It is not a benchmark of database contention, and it does not prove atomicity across multiple repositories.
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b4-objective-method-versioning.png}
+  {The objective fingerprint remains fixed while B4 advances the intention version and replaces the active method and candidate-plan reference after an allowed reconsideration trigger.}
+  {fig:ch23-b4-objective-method-versioning}
+
+\section{B4 runtime governance: the new method must reach the next planner call}
+\label{sec:ch23-b4-runtime-governance}
+
+\subsection{The domain supplies a directive; the lifecycle service enforces it}
+\label{subsec:ch23-b4-govern-intention}
+
+The lifecycle service governs the intention before the next planner call. It first requires a current uncertainty assessment, loads the persisted intention and the selected plan reference, and checks the version carried in graph state. One narrow replay exception is allowed: if the graph checkpoint is exactly one intention version behind because the active-plan binding committed before the checkpoint update, the runtime accepts only that matching active-plan replay. An unrelated concurrent B4 transition causes a reload error rather than silent reconciliation.
+
+If the intention is active and the selected plan reference differs, the lifecycle service binds the selected plan through a new versioned transition. It then asks the domain port for an \texttt{IntentionDirective}. This is an important boundary: the lifecycle service does not invent a domain method preference from a model reflection. The domain supplies a typed action, actor, reason, trigger, replacement method and asserted objective fingerprint as applicable. The service validates the current state and routes the directive through the B4 service. Termination receives an additional host authorization check; only after that check does the runtime call the special host-authorized termination path.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The runtime applies the domain's typed directive through B4 services and independently authorizes termination.},label={lst:ch23-govern-intention}]
+switch (directive.action()) {
+    case CONTINUE -> {
+        if (intention.status() != IntentionStatus.ACTIVE)
+            throw new IllegalStateException("B4 cannot continue a non-active intention");
+    }
+    case RECONSIDER -> updated = intentions.requestReconsideration(
+            intention.id(), intention.version(), directive.reconsiderationTrigger(),
+            decisionActor, directive.reason(), now);
+    case CHANGE_METHOD -> updated = intentions.changeMethod(
+            intention.id(), intention.version(), directive.replacementMethod(),
+            directive.assertedObjectiveFingerprint(), decisionActor, now);
+    case SUSPEND -> updated = intentions.suspend(
+            intention.id(), intention.version(), decisionActor, directive.reason(), now);
+    case TERMINATE -> {
+        if (!authority.isTerminationAuthorized(context, directive.actorId(), now))
+            throw new SecurityException("B4 termination requires an authenticated and authorized operator");
+        updated = intentions.terminateAfterHostAuthorization(intention.id(), intention.version(),
+                directive.actorId(), directive.reason(), directive.terminationReason(), now);
+    }
+    case ESCALATE -> { /* The graph records the terminal path; the objective remains protected. */ }
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S03}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {governIntention(...) decision switch}
+  {477--493}
+  {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
+  {\texttt{b4MethodChangeControlsTheNextFullGraphPlanner\allowbreak WithoutChangingTheCommittedObjective()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
+
+\subsection{A method change is observable at the planner boundary}
+\label{subsec:ch23-next-planner-call}
+
+After B4 governance, the outer graph updates the intention ID and version, method ID, candidate-plan reference, and objective fingerprint in graph state. It discards a planner session when the planner authority has changed or when the directive requested reconsideration or method change. The intention node routes \texttt{CONTINUE} to B6 meta-control, routes \texttt{RECONSIDER} and \texttt{CHANGE\_METHOD} back to context loading and planning, sends suspension to human control, and sends termination to the completion path. The graph therefore gives a method change a concrete consequence: the next planner call receives a new B4 binding rather than merely seeing a log entry.
+
+The full-graph test starts with \texttt{COT\_SEQUENTIAL}, requests reconsideration, and then changes the method to \texttt{tot}. The next planning invocation uses \texttt{TOT\_BOUNDED\_SEARCH}; the planner override carries the same objective fingerprint, the registered method ID and candidate-plan reference, and the current intention identity. The previous planner session is not resumed under the changed method. This is the test's demonstrated behavior, not evidence that the new planner is more effective on a broad workload.
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b4-delegation-lifecycle.png}
+  {B4 keeps the parent objective while a bounded B2 investigation is delegated. A return may restore the active method or request reconsideration; the B2 case remains the child investigation authority.}
+  {fig:ch23-b4-delegation-lifecycle}
+
+\subsection{B2 delegation and termination remain separate transitions}
+\label{subsec:ch23-b4-b2-handoff}
+
+An active B4 intention may delegate a bounded investigation to B2. While delegated, the intention records the child case ID and enters \texttt{DELEGATED}; Chapter 22 covers the case, its child-step controls, and parent-return validation. When the result returns, \texttt{returnFromDelegation(...)} checks that the intention is still delegated to that exact child and that the actor is permitted. A \texttt{NO\_METHOD\_CHANGE} return restores \texttt{ACTIVE}; a return requiring a new method decision enters \texttt{RECONSIDERATION\_PENDING}, and only when the configured trigger set includes \texttt{DELEGATED\_INVESTIGATION\_RETURNED}. The child result does not itself replace the parent objective.
+
+Opening a B2 case, delegating B4, and starting the child are operations across separate contracts and repositories. If a later step fails, the runtime uses compensating transitions where available. That is not a distributed atomic transaction: a process failure can occur between the separately committed operations, and reconciliation must inspect their durable states rather than assume a single cross-store commit.
+
+Termination has a stronger boundary than ordinary method replacement. The default authority policy requires independent host authorization for termination. In the graph path, the runtime calls its host authority port to authenticate and authorize the actor before it uses \texttt{terminateAfterHostAuthorization}. An intention cannot be terminated by an arbitrary model-generated sentence, nor can objective satisfaction be claimed through a termination action. Completion requires an \texttt{ObjectiveSatisfactionProof} that matches the protected fingerprint.
+
+\section{B6 state: uncertainty is scoped, versioned, and evidence-bound}
+\label{sec:ch23-b6-uncertainty}
+
+\subsection{The graph carries a reference, not the authoritative assessment}
+\label{subsec:ch23-uncertainty-reference}
+
+\texttt{UncertaintyAssessment} is an immutable assessment containing its reference, assessment time, validity deadline, provenance reference, calibration metadata, and one signal for every declared uncertainty dimension. Its constructor rejects a missing dimension, a key/value dimension mismatch, and unsupported dimensions. The assessment reference contains an assessment ID, positive version, execution ID, and memory-scope ID. The graph carries this compact reference between nodes; the host-owned assessment store remains the authoritative home of the assessment and its provenance.
+
+The \texttt{isCurrentFor(...)} check requires the reference's execution and memory scope to match the current context and requires the current time to fall inside the assessment's validity interval. A number in the interval [0,1] is not automatically a calibrated probability. The record says so explicitly: calibration status must carry a profile ID, target, positive profile version, validation-evidence reference, and positive validation sample count. A \texttt{NOT\_CALIBRATED} assessment cannot carry those claims.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The uncertainty reference is checkpoint-safe identity. The full assessment remains scoped to its execution and validity window.},label={lst:ch23-uncertainty-reference}]
+public boolean isCurrentFor(String executionId, String memoryScopeId, Instant now) {
+    Objects.requireNonNull(now, "now");
+    return reference.executionId().equals(executionId)
+            && reference.memoryScopeId().equals(memoryScopeId)
+            && !now.isBefore(assessedAt)
+            && now.isBefore(validUntil);
+}
+
+public record Reference(String assessmentId, long version,
+                        String executionId, String memoryScopeId) {
+    public Reference {
+        assessmentId = required(assessmentId, "assessmentId");
+        executionId = required(executionId, "executionId");
+        memoryScopeId = required(memoryScopeId, "memoryScopeId");
+        if (version < 1)
+            throw new IllegalArgumentException("uncertainty assessment version must be positive");
+    }
+}
+\end{lstlisting}
+\BookSourceReferenceNoQR
+  {C23-S05}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/UncertaintyAssessment.java}
+  {isCurrentFor(...) and nested Reference record}
+  {92--114}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {\texttt{uncertaintyAssessmentMustMatchExecutionScopeAndValidityWindow()} and \texttt{missingUncertaintyDimensionIsNotSilentlyTreatedAsZero()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/UncertaintyAssessment.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+
+\subsection{Assessment triggers and calibration lifecycle}
+\label{subsec:ch23-uncertainty-assessment-lifecycle}
+
+The runtime asks the domain for a new assessment using a stable trigger ID together with the execution ID, memory scope, and previous assessment reference to derive an idempotency key. The returned assessment must belong to the current execution and scope and be valid at the current time. The first revision must be version 1. A later revision must retain the same assessment ID and advance exactly one version. When B6 later governs the cycle, its reference must equal the exact reference carried by graph state; a stale or foreign assessment is rejected rather than silently substituted.
+
+Calibration is conditional. \texttt{CognitiveCycleLifecycleServices} accepts an optional \texttt{UncertaintyCalibrationService}; the constructor can store \texttt{null}. If the domain claims that an assessment is already calibrated, the lifecycle service checks that the named profile and version are active for the exact target and memory scope. If the assessment is not calibrated and the optional service is configured, the service attempts calibration against an active scope/target-matched profile. If no active profile is found, the raw assessment is returned unchanged. A research-only shadow profile may transform a disposable view, but it remains marked \texttt{NOT\_CALIBRATED} and is not persisted as an operational calibrated assessment.
+
+The calibration service separates training, independent validation, and activation. It persists a new trained profile; validation consumes a holdout set and an identified reviewer; activation uses a compare-and-set that replaces the active profile for the target. The profile's calibration method checks active status and scope, while the lifecycle validates target and version binding before accepting a calibrated assessment. A persisted assessment is therefore not proof that the underlying model is well calibrated. Only an active, validated, target- and scope-matched profile can support the status label. The relevant tests establish lifecycle checks and selected calibration behavior; they do not establish calibration quality on live operational data.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The runtime derives an idempotent assessment request, rejects unverified calibration claims, and advances one version in the same scoped assessment.},label={lst:ch23-assess-uncertainty}]
+Objects.requireNonNull(context, "context");
+String stableTriggerId = required(triggerId, "triggerId");
+Instant now = clock.instant();
+var previous = context.uncertaintyAssessmentReference();
+String requestIdempotencyKey = uncertaintyAssessmentRequestKey(
+        stableTriggerId, context.executionId(), context.memoryScopeId(), previous);
+UncertaintyAssessment assessment = Objects.requireNonNull(
+        domain.assessUncertainty(context, requestIdempotencyKey, now),
+        "domain returned null uncertainty assessment");
+if (assessment.calibration().status() == UncertaintyAssessment.CalibrationStatus.CALIBRATED) {
+    if (uncertaintyCalibration == null || !uncertaintyCalibration.isActiveVersion(
+            assessment.calibration().profileId(), assessment.calibration().profileVersion(),
+            new MemoryScopeId(context.memoryScopeId()), assessment.calibration().profileTargetId())
+            || !assessment.calibration().profileTargetId().equals(domain.uncertaintyCalibrationTargetId(context))) {
+        throw new SecurityException("host uncertainty assessment claims a calibration profile/version that is not active for its exact target and scope");
+    }
+} else if (uncertaintyCalibration != null) {
+    String targetId = required(domain.uncertaintyCalibrationTargetId(context), "uncertainty calibration target");
+    UncertaintyAssessment calibrated = uncertaintyCalibration.calibrate(assessment, targetId);
+    if (!calibrated.reference().equals(assessment.reference())) {
+        throw new SecurityException("B6 calibration changed the immutable uncertainty assessment reference");
+    }
+    if (calibrated.calibration().status() == UncertaintyAssessment.CalibrationStatus.CALIBRATED) {
+        if (!uncertaintyCalibration.isActiveVersion(calibrated.calibration().profileId(),
+                calibrated.calibration().profileVersion(), new MemoryScopeId(context.memoryScopeId()), targetId)) {
+            throw new SecurityException("B6 calibration profile changed before assessment persistence");
+        }
+        domain.persistCalibratedUncertaintyAssessment(context, calibrated, now);
+        assessment = calibrated;
+    }
+}
+requireCurrentAssessment(assessment, context.executionId(), context.memoryScopeId(), now);
+if (previous == null) {
+    if (assessment.reference().version() != 1L) {
+        throw new IllegalStateException("first uncertainty assessment revision must be version 1");
+    }
+} else if (!assessment.reference().assessmentId().equals(previous.assessmentId())
+        || assessment.reference().version() != previous.version() + 1L) {
+    throw new SecurityException("uncertainty assessment revision must advance exactly one version in the same execution-scoped assessment");
+}
+return assessment.reference();
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S06}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {assessUncertainty(...)}
+  {499--541}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/UncertaintyCalibrationTrainerTest.java}
+  {\texttt{activatedProfileCalibratesAllDimensionsBut\allowbreak UncalibratedAssessmentRemainsUnchanged()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/UncertaintyCalibrationTrainerTest.java}
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b6-uncertainty-revisions.png}
+  {A stable trigger and previous assessment reference produce an idempotent request. The next assessment must retain its identity, advance one version, match the execution and scope, and remain within its validity interval. Calibration is accepted only for an active validated profile bound to the exact target and scope.}
+  {fig:ch23-b6-uncertainty-revisions}
+
+\section{B6 resource governance: a vector, not a single allowance}
+\label{sec:ch23-b6-resource-governance}
+
+\subsection{The budget units are computational, not business inventory}
+\label{subsec:ch23-resource-vector}
+
+The resource vector contains discrete computational and execution units such as \texttt{MODEL\_CALLS}, \texttt{INPUT\_TOKENS}, \texttt{OUTPUT\_TOKENS}, \texttt{REASONING\_EVALUATIONS}, \texttt{SEARCH\_EXPANSIONS}, \texttt{MCTS\_ROLLOUTS}, \texttt{EXTERNAL\_READS}, \texttt{VERIFICATION\_CALLS}, and \texttt{ACTION\_\allowbreak DISPATCHES}. These units are not interchangeable. A planning request may consume search expansions and model calls; a reasoning invocation may consume a model call and a reasoning evaluation; an action-dispatch adapter may charge a dispatch after the separate M3 idempotency ledger grants the attempt.
+
+Inventory, money, supplier capacity, shipment capacity, and order quantities are business-domain resources, not B6 computational budget units. A low search-expansion balance cannot be used to reinterpret an inventory shortage, and a planner downshift does not enlarge a supplier's physical capacity. Those domain facts remain governed by the supply-chain model and simulator. The B6 ledger is an additional execution constraint, not the business-world resource model.
+
+\subsection{The governor returns a typed control decision}
+\label{subsec:ch23-meta-control-governor}
+\Needspace{0.88\textheight}
+
+\texttt{MetaControlGovernor.evaluate(...)} consumes a budget snapshot, a current uncertainty assessment, the resource usage required by the next step, and the current time. Its precedence is explicit. It stops if actual consumption is already over budget or the deadline has passed. It interrupts for a human decision if the next step cannot fit the remaining budget, or if the maximum uncertainty reaches the human-review threshold. It requests evidence when uncertainty reaches the evidence threshold. If uncertainty is below those thresholds but the remaining margin for a required finite resource is low, it returns \texttt{REDUCE\_COMPUTATION} with a typed \texttt{PlannerBudgetDownshift}. Otherwise, it returns \texttt{CONTINUE}.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={B6 applies an ordered policy: exhaustion and deadline first, then feasibility and uncertainty, then a bounded planner downshift.},label={lst:ch23-meta-control-governor}]
+public MetaControlDecision evaluate(ResourceBudgetSnapshot budget, UncertaintyAssessment uncertainty,
+                                    ResourceUsage requiredForNextStep, Instant now) {
+    Objects.requireNonNull(budget, "budget");
+    Objects.requireNonNull(uncertainty, "uncertainty");
+    Objects.requireNonNull(requiredForNextStep, "requiredForNextStep");
+    Objects.requireNonNull(now, "now");
+    double max = uncertainty.maximumUncertainty();
+    if (budget.overBudget())
+    return decision(MetaControlAction.STOP, MetaControlReason.REQUIRED_RESOURCE_EXHAUSTED,
+            ResumeCondition.NEVER, "actual resource consumption exceeded its configured limit", max);
+if (!now.isBefore(budget.budget().deadline()))
+    return decision(MetaControlAction.STOP, MetaControlReason.DEADLINE_EXCEEDED,
+            ResumeCondition.NEVER, "execution deadline has passed", max);
+boolean nextStepBlocked = java.util.Arrays.stream(ResourceUnit.values())
+        .anyMatch(unit -> requiredForNextStep.amount(unit) > budget.remaining(unit));
+if (nextStepBlocked)
+    return decision(MetaControlAction.INTERRUPT_FOR_HUMAN,
+            MetaControlReason.REQUIRED_RESOURCE_EXHAUSTED, ResumeCondition.BUDGET_REPLENISHED,
+            "the next step cannot fit the remaining resource budget; wait for explicitly authorized replenishment", max);
+if (max >= policy.humanReviewUncertainty())
+    return decision(MetaControlAction.INTERRUPT_FOR_HUMAN,
+            MetaControlReason.UNCERTAINTY_REQUIRES_HUMAN_REVIEW, ResumeCondition.HUMAN_DECISION,
+            "uncertainty exceeds the human-review threshold", max);
+if (max >= policy.evidenceRequestUncertainty())
+    return decision(MetaControlAction.REQUEST_EVIDENCE,
+            MetaControlReason.UNCERTAINTY_REQUIRES_EVIDENCE, ResumeCondition.NEW_EVIDENCE,
+            "additional evidence is required before continuing", max);
+boolean low = java.util.Arrays.stream(ResourceUnit.values())
+        .filter(unit -> requiredForNextStep.amount(unit) > 0
+                && budget.budget().limit(unit) != Long.MAX_VALUE && budget.budget().limit(unit) > 0)
+        .anyMatch(unit -> (double) budget.remaining(unit) / budget.budget().limit(unit)
+                <= policy.lowResourceRemainingFraction());
+if (low)
+    return new MetaControlDecision(MetaControlAction.REDUCE_COMPUTATION,
+            MetaControlReason.RESOURCE_MARGIN_LOW, null,
+            "resource margin for the next step is low; reduce the next planner call's consumable compute limits",
+            max, new PlannerBudgetDownshift(policy.plannerBudgetReductionPercent(),
+                    "b6-resource-margin-downshift-v1"));
+return decision(MetaControlAction.CONTINUE, MetaControlReason.WITHIN_BUDGET_AND_UNCERTAINTY,
+        null, "uncertainty and declared next-step resource requirements are within policy", max);
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S07}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernor.java}
+  {evaluate(...)}
+  {10--28}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {\texttt{lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()}; \texttt{deadlineStopsExecution()}; \texttt{criticalPlanUncertaintyInterruptsForHumanDecision()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernor.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+
+The governor's decision is bounded by the resource policy. Its low-margin branch does not grant a larger execution ceiling or authorize extra work. It carries an explicit instruction for the next planning call. The value object constrains that instruction to a reduction from 1 through 90 percent and requires a nonblank policy ID:
+
+\Needspace{0.45\textheight}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The planner downshift is an explicit and bounded next-call directive, not a mutation of the shared execution budget.},label={lst:ch23-planner-downshift}]
+public record PlannerBudgetDownshift(int reductionPercent, String policyId) {
+    public PlannerBudgetDownshift {
+        if (reductionPercent < 1 || reductionPercent > 90)
+            throw new IllegalArgumentException(
+                    "B6 planner-budget reduction must be between 1 and 90 percent");
+        if (policyId == null || policyId.isBlank())
+            throw new IllegalArgumentException("planner downshift policy ID cannot be blank");
+        policyId = policyId.trim();
+    }
+
+    public static PlannerBudgetDownshift halfBudget() {
+        return new PlannerBudgetDownshift(50, "b6-resource-margin-downshift-v1");
+    }
+}
+\end{lstlisting}
+\BookSourceReferenceNoQR
+  {C23-S08}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/PlannerBudgetDownshift.java}
+  {PlannerBudgetDownshift record and halfBudget()}
+  {1--17}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {\texttt{lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/PlannerBudgetDownshift.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+
+In the graph, a downshift is accumulated as a planner-budget scale and reason. The graph requires a non-null typed downshift when the governor returns \texttt{REDUCE\_COMPUTATION}; it reduces the scale and routes to another proposal, subject to a bounded reconsideration count. If no further reduction is possible within the planner's minimum compute envelope, it records \texttt{REDUCTION\_EXHAUSTED}. The change affects the next planner budget (for example, maximum expansions, evaluations, model calls, and rollouts). The tests explicitly check that structural depth, maximum candidates, and the absolute execution deadline are unchanged. Most importantly, the shared PostgreSQL execution budget remains at its original limit. A local downshift is not an update to the durable account.
+
+\BookDiagram[0.47\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b6-resource-budget-guard.png}
+  {The meta-control governor chooses whether to continue, request evidence, interrupt, stop, or reduce the next planning call. The execution guard and durable ledger separately reserve, fence, and account for actual resource-consuming operations.}
+  {fig:ch23-b6-resource-budget-guard}
+
+\section{Execution enforcement: reservation, lease, fencing, and accounting}
+\label{sec:ch23-execution-enforcement}
+
+\subsection{The shared guard reserves before invoking work}
+\label{subsec:ch23-budget-execution-guard}
+
+A planner downshift reduces one planner request, but B6 also needs a separate runtime enforcement boundary for measured operations. The shared execution guard is used by planning and reasoning paths. Its constructor requires a \texttt{LeasedResourceBudgetLedger}; a ledger without lease and fencing capability is rejected. Each operation receives a deterministic reservation identity derived from the execution and operation IDs, and the guard uses a process-local owner ID plus a monotonically increasing fencing token. The durable operation-start transition is committed before the guarded operation runs.
+
+The central ordering is reserve, acquire an active lease, mark the operation started, then invoke the operation while renewing the lease. If the operation throws after it has started, the guard conservatively commits the reserved amount rather than releasing work that may already have consumed resources. If the trusted measurement fails or returns null, it also charges the reservation conservatively. When a valid measurement is available, the actual usage is committed. The heartbeat is cancelled in every exit path. This policy favors accounting safely over pretending that a failed measurement means no resources were consumed.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The shared guard obtains a fenced reservation and commits operation start before the provider is invoked.},label={lst:ch23-resource-budget-execution-guard}]
+public <T> T execute(String executionId, String operationId, ResourceUsage reserved,
+                     Supplier<T> operation, Function<T, ResourceUsage> actualUsage) {
+    String execution = required(executionId, "executionId");
+    String operationKey = required(operationId, "operationId");
+    Objects.requireNonNull(reserved, "reserved");
+    Objects.requireNonNull(operation, "operation");
+    Objects.requireNonNull(actualUsage, "actualUsage");
+
+    ResourceBudget budget = Objects.requireNonNull(budgetProvider.apply(execution),
+            "host returned no B6 budget for execution");
+    ledger.ensureRegistered(execution, budget);
+    Instant acquiredAt = clock.instant();
+    String reservationId = reservationIdFor(execution, operationKey);
+    BudgetReservationLease lease = leasedLedger.acquireLease(execution, reservationId, ownerId,
+            reserved, acquiredAt.plus(leaseDuration), acquiredAt);
+    if (lease.status() == ReservationStatus.COMMITTED)
+        throw new BudgetReservationInUseException("budgeted operation was already completed or conservatively reconciled; refusing to invoke it again");
+    if (lease.status() != ReservationStatus.ACTIVE || !ownerId.equals(lease.ownerId()) || lease.operationStarted())
+        throw new BudgetReservationInUseException("budgeted operation could not obtain an unstarted reservation lease");
+
+    lease = leasedLedger.markOperationStarted(execution, reservationId, ownerId,
+            lease.fencingToken(), clock.instant());
+    long fencingToken = lease.fencingToken();
+    long heartbeatMillis = Math.max(1L, leaseDuration.toMillis() / 3L);
+    AtomicReference<RuntimeException> heartbeatFailure = new AtomicReference<>();
+    ScheduledFuture<?> heartbeat = HEARTBEATS.scheduleWithFixedDelay(() -> {
+        try {
+            Instant now = clock.instant();
+            leasedLedger.renewLease(execution, reservationId, ownerId, fencingToken,
+                    now.plus(leaseDuration), now);
+        } catch (RuntimeException failure) {
+            heartbeatFailure.compareAndSet(null, failure);
+        }
+    }, heartbeatMillis, heartbeatMillis, TimeUnit.MILLISECONDS);
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S09}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuard.java}
+  {execute(...), reservation acquisition and operation-start sequence}
+  {81--116}
+  {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuardTest.java}
+  {\texttt{reservesBeforeWorkAndCommitsTrustedMeasuredUsage()}; \texttt{failedStartedWorkIsConservativelyChargedAtItsReservation()}; \texttt{committedOperationIdentityCannotBeInvokedAgain()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuard.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuardTest.java}
+
+The guard's remaining method body covers operation failure, invalid usage measurement, successful actual-usage commit, and heartbeat cleanup. The failure path intentionally retains the conservative reserved charge after the operation-start boundary. It does not prove that an external side effect succeeded or failed; it accounts for resource use and prevents an ambiguous started operation from being replayed as if it were new. For an external action, the M3 execution ledger and observation/reconciliation path still own the action outcome.
+
+\subsection{PostgreSQL leases make ownership and expiry explicit}
+\label{subsec:ch23-postgres-resource-lease}
+
+The PostgreSQL ledger serializes budget-account operations by locking the execution's budget row inside a transaction. It checks the deadline, performs expired-reservation recovery, and loads an existing reservation. The same reservation ID cannot be reused for a different resource amount. A committed operation is returned as committed and the runtime guard refuses to invoke it again. A live active lease blocks a competing owner. Only a released reservation whose recovery outcome is \texttt{EXPIRED\_BEFORE\_START} and which never crossed the operation-start boundary is eligible for reclamation. Reclaiming it increments the fencing token. A new reservation starts with fencing token 1.
+
+The subsequent \texttt{markOperationStarted}, \texttt{renewLease}, and \texttt{commitOwned} methods require the exact owner and fencing token, and the lease must remain valid. An expired started reservation is not treated like an unstarted reservation that can be safely reclaimed. The recovery policy conservatively accounts for started work because the runtime cannot infer from lease expiry alone that a provider invocation did not happen.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The PostgreSQL ledger reclaims only expired work that never started and increments its fencing token; new leases begin with token 1.},label={lst:ch23-postgres-budget-lease}]
+try (PreparedStatement update = connection.prepareStatement("""
+        UPDATE b6_resource_budget_reservation
+        SET status='ACTIVE',owner_id=?,lease_expires_at=?,fencing_token=fencing_token+1,
+            recovery_outcome='NONE',updated_at=GREATEST(updated_at,?)
+        WHERE scope_id=? AND execution_id=? AND reservation_id=? AND status='RELEASED'
+          AND recovery_outcome='EXPIRED_BEFORE_START' AND started_at IS NULL
+        """)) {
+    update.setString(1, owner);
+    PostgresJdbc.setInstant(update, 2, leaseExpiresAt);
+    PostgresJdbc.setInstant(update, 3, at);
+    update.setString(4, scopeId);
+    update.setString(5, execution);
+    update.setString(6, reservation);
+    if (update.executeUpdate() != 1)
+        throw new IllegalStateException("expired unstarted reservation changed concurrently");
+}
+touchAccount(connection, execution, at);
+return loadLease(connection, execution, reservation, false);
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C23-S10}
+  {supply-chain-agent-infrastructure-postgres}
+  {supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresResourceBudgetLedger.java}
+  {expired-unstarted lease reclamation with fencing-token increment}
+  {279--295}
+  {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/R1DefBudgetLeaseRecoveryIntegrationTest.java}
+  {\texttt{expiredUnstartedReservationIsReclaimedWithANewFenceAndCanRunOnce()}; \texttt{expiredStartedReservationIsFencedAndChargedConservativelyWithoutReplay()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresResourceBudgetLedger.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/R1DefBudgetLeaseRecoveryIntegrationTest.java}
+
+The lease-recovery integration tests exercise two distinct restart rules. An expired reservation that never crossed the operation-start boundary can be reclaimed with a higher fencing token and then run once. An expired reservation that had started is fenced, conservatively charged, and not replayed. These tests support the specific recovery transitions under the PostgreSQL integration fixture; they are not a general claim that lease expiry reveals the outcome of an external operation.
+
+Separately, the M8B4D PostgreSQL integration test demonstrates that M5 planning and M3 reasoning use one shared budget account in the tested host wiring. It reserves and commits measured planner usage, then calls a reasoning action backed by \texttt{BudgetedReasoningProvider}, and reads both charges from the same account. The reasoning adapter counts one model call and one reasoning evaluation; it does not guess input or output token counts. A second test closes the PostgreSQL data source and verifies that the reasoning provider is not invoked. This is a fail-closed result for that adapter and configuration, not proof that every possible host composition has a PostgreSQL ledger enabled.
+
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The M3 reasoning adapter charges a model invocation and evaluation through the same B6 execution guard.},label={lst:ch23-budgeted-reasoning-adapter}]
+@Override
+public ReasoningAssessment assess(ActionContext context, ReasoningRequest request) {
+    Objects.requireNonNull(context, "context");
+    Objects.requireNonNull(request, "request");
+    try {
+        return budgetGuard.execute(context.executionId(),
+                "reasoning:" + context.correlationId(), USAGE,
+                () -> delegate.assess(request), ignored -> USAGE);
+    } catch (ResourceBudgetExceededException exhausted) {
+        throw new ActionExecutionException(new ActionFailure(
+                ActionFailureCode.RESOURCE_BUDGET_EXHAUSTED,
+                exhausted.getMessage(), false, false));
+    }
+}
+\end{lstlisting}
+\BookSourceReferenceNoQR
+  {C23-S11}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java}
+  {assess(...)}
+  {43--53}
+  {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4DPostgresBudgetExecutionIntegrationTest.java}
+  {\texttt{m5PlanningAndM3ReasoningConsumeOneSharedPostgresBudgetAccount()}; \texttt{closedPostgresBudgetStoreBlocksReasoningBeforeProviderInvocation()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4DPostgresBudgetExecutionIntegrationTest.java}
+
+The companion \texttt{ResourceBudgeted\allowbreak ActionExecution} adapter applies one \texttt{ACTION\_\allowbreak DISPATCHES} unit to an M3 handler invocation, but its documented position is after the M3 idempotency ledger has granted the attempt. If a handler returns and B6 cannot commit its usage, the adapter reports an unknown outcome and requires reconciliation before retrying. The same guard can therefore constrain planning, reasoning, and action dispatch, while the respective M5/M3 components retain their own operation and business-outcome semantics. A resource-budget exception is not an authorization decision, and an unknown side-effect outcome is not a safe retry signal.
+
+\section{The graph keeps B4, B6, and action authorization in separate lanes}
+\label{sec:ch23-separated-control-lanes}
+
+The outer cognitive-cycle graph exposes separate nodes named \texttt{b4-intention-\allowbreak governance} and \texttt{b6-meta-\allowbreak control}. After the planner evaluates a candidate, the graph refreshes uncertainty before entering B4 intention governance. A B4 \texttt{CONTINUE} proceeds to B6. A B4 reconsideration or method change returns to context loading and planning; suspension waits for human control; termination follows the completion path; other outcomes escalate. After B6, only \texttt{CONTINUE} routes to the authorization node. Evidence requests wait for evidence, a downshift returns to planning, interruption waits for a human decision, and the remaining terminal outcome escalates.
+
+A human response is authenticated against a host-issued response reference and actor ID. After human control supplies evidence or authorizes a downshift/continuation, the graph refreshes uncertainty before running B6 again. When B6 returns \texttt{CONTINUE}, the next node is action authorization. The action authorization path can return \texttt{NO\_APPROVAL\_REQUIRED} or require explicit approval; the graph then revalidates the plan before execution. A method change or a resource downshift therefore does not skip the action boundary.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.21\linewidth}XX}
+\toprule
+\textbf{Decision} & \textbf{Owner and evidence} & \textbf{It cannot do this} \\
+\midrule
+Keep or change the active method & B4 intention service, using the persisted intention version, permitted actor, reconsideration trigger, and asserted objective fingerprint. & Rewrite the objective fingerprint or grant an external action capability. \\
+Suspend, delegate, complete, or terminate the intention & B4 state transition; delegation is paired with B2 child identity; completion requires a matching satisfaction proof; terminal action requires the configured host authorization. & Treat a child finding or model reflection as objective satisfaction or operator authentication. \\
+Continue, request evidence, downshift, interrupt, or stop & B6 governor using a current scoped uncertainty assessment, the resource snapshot, required next-step usage, and deadline. & Change the business goal, authenticate a human, or enlarge the durable execution ceiling through a planner downshift. \\
+Authorize and approve a concrete write & Separate M3 capability authorizer, host approval policy, revalidation, idempotency ledger, and action dispatcher. & Infer authorization from the planner method, an uncertainty score, a B2 result, or remaining budget. \\
+\bottomrule
+\end{tabularx}
+\caption{B4, B6, and action authorization govern different questions in the same cognitive cycle.}
+\label{tab:ch23-authority-map}
+\end{table}
+
+This ordering is an engineering control boundary, not a claim that the graph itself is the authoritative source of every record. The graph checkpoint carries intention and uncertainty references, planning method and candidate references, a B6 budget scale, reasons, and routing state. The persisted B4 intention repository, host-owned uncertainty assessment store, and B6 resource ledger hold their own authoritative data. A checkpoint can resume orchestration; it does not replace those records.
+
+\BookDiagram[0.47\textheight]
+  {Tex/diagrams/generated/part3/chapter23/b4-b6-next-planner-trace.png}
+  {B4 chooses the method binding while retaining the objective fingerprint. B6 separately applies a downshift to the next planner request. The same subsequent planner call observes both decisions, after which action authorization remains a distinct node.}
+  {fig:ch23-b4-b6-next-planner-trace}
+
+\section{B5 and GraSP remain a separate boundary}
+\label{sec:ch23-b5-boundary}
+
+This chapter does not introduce a GraSP implementation. Part II Chapter 17 closed the bounded B5/GraSP review as a separate candidate boundary. The application's procedural memory, B2 recovery-procedure draft and promotion path, B1 retrieval, and B4/B6 lifecycle services should not be relabelled as GraSP. They may support recovery and knowledge reuse, but they do not establish the GraSP evidence-gated specialization, verification, and compilation mechanism described in that earlier comparison. Nothing in the B4/B6 implementation requires reopening the B5 candidate decision.
+
+\section{B4 and B6 compose on the same subsequent planner call}
+\label{sec:ch23-combined-b4-b6}
+
+The clearest combined evidence is a full-graph integration test for the B4/B6 composition. It starts from the sequential planner, requests reconsideration, changes the method to the registered \texttt{tot} method, and then observes a subsequent planner invocation under B6 downshift. The controlled invocation still uses \texttt{TOT\_BOUNDED\_SEARCH}; its expansion and evaluation budgets are halved, and the planner-selection override still carries the unchanged objective fingerprint. B6 reduces compute without overriding the method selected by B4.
+
+A second full-graph test isolates the resource effect. It verifies that the first planning call receives the baseline envelope and the second receives half the expansion, evaluation, model-call, and rollout limits. It also checks that maximum search depth, maximum candidate count, and the absolute deadline remain unchanged. The test then reads the shared execution ledger: its search-expansion ceiling remains 100, consumed work is at least 80, and no reservation remains in flight. The distinction is observable in test assertions, not merely explained in prose.
+
+The PostgreSQL integration test adds a different kind of evidence: planning and M3 reasoning charge one shared durable account, and the closed-store test proves the reasoning provider is not invoked before the unavailable budget store can enforce the reservation. These tests demonstrate selected full-graph and persistence paths. They do not establish production service-level objectives, the quality of calibration on a live distribution, or empirical improvement in supply-chain outcomes.
+
+\section{Persistence and the seven-field reading of B4 and B6}
+\label{sec:ch23-seven-field-reading}
+
+The S/C/T/P/F/L/R tuple is an analytical mechanism description introduced in Chapter 10, not a required Java class layout. It asks what state the mechanism consumes, who controls it, what triggers a transition, where state persists, how failure is represented, how learning changes future behavior, and how resources or governance constrain operation. Unknown or conditional properties must remain explicit instead of being inferred from a mechanism's name.\FanLanCite{\S II-C; \S V-C; \S V-E; Appendix C-C}
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.10\linewidth} >{\raggedright\arraybackslash}p{0.49\linewidth} >{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\caption{B4 through the seven analytical fields.}\label{tab:ch23-b4-seven-fields}\\
+\toprule
+\textbf{Field} & \textbf{Application reading} & \textbf{Qualification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Field} & \textbf{Application reading} & \textbf{Qualification} \\
+\midrule
+\endhead
+\textbf{S} & \texttt{RecoveryIntention}: objective ID/fingerprint, protected constraints, method, active plan, status, version, rationale, triggers and authority policy. & Does not prove feasibility or objective truth. \\
+\textbf{C} & Domain-provided typed directive; B4 service and actor policy enforce permitted transitions; host authorization controls terminal action where required. & The service does not autonomously invent the business method or authenticate an operator. \\
+\textbf{T} & Typed reconsideration triggers, delegated investigation return, continuation expiry, and explicit host/domain directives. & The configured trigger set controls which events can enter reconsideration. \\
+\textbf{P} & Repository CAS and append-only intention transition history; PostgreSQL update and history append share one transaction. & Graph checkpoint carries references and current planning bindings, not the authoritative intention object. \\
+\textbf{F} & Stale version, objective mismatch, unauthorized actor, illegal status transition, invalid completion proof, or failed repository CAS rejects the transition. & No distributed transaction spans B4, B2, the graph checkpoint, and action execution. \\
+\textbf{L} & Versioned transition recorder and test fixtures provide traceability for method changes and other lifecycle events. & No demonstrated self-learning policy that automatically improves B4 method selection. \\
+\textbf{R} & Protected objective fingerprint, actor policy, host-authorized termination, bounded graph reconsideration count, and B2 child boundary. & Method authority remains distinct from action capability and external write approval. \\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.10\linewidth} >{\raggedright\arraybackslash}p{0.49\linewidth} >{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\caption{B6 through the seven analytical fields.}\label{tab:ch23-b6-seven-fields}\\
+\toprule
+\textbf{Field} & \textbf{Application reading} & \textbf{Qualification} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Field} & \textbf{Application reading} & \textbf{Qualification} \\
+\midrule
+\endhead
+\textbf{S} & Scoped, versioned \texttt{UncertaintyAssessment}; resource vector, budget snapshot, reservations, leases, and usage records. & The graph carries the assessment reference; host-owned storage holds the assessment and provenance. \\
+\textbf{C} & \texttt{MetaControlGovernor}, graph meta-control route, optional calibration service, and shared \texttt{ResourceBudgetExecution\allowbreak Guard}. & Calibration and durable budget wiring depend on host composition. \\
+\textbf{T} & Assessment trigger and validity, resource/deadline snapshot, next-step requirements, uncertainty thresholds, and lease lifecycle. & The governor only sees the host-provided assessment and next-step estimate. \\
+\textbf{P} & Host-owned assessment store/profile repository; resource budget ledger and PostgreSQL reservation/lease rows. & A checkpoint reference does not persist the complete assessment or ledger. \\
+\textbf{F} & Stale or foreign assessment, missing dimension, invalid calibration claim, exhausted budget, expired/fenced lease, invalid measurement, or unavailable ledger. & Started work is conservatively charged when the result or measurement is uncertain; external action outcomes still require M3 reconciliation. \\
+\textbf{L} & Calibration profiles have training, independent validation and activation stages; current scores can be transformed by an active profile. & No online calibration quality or operational outcome improvement is established by these tests. \\
+\textbf{R} & Resource-unit ceilings, deadline, uncertainty thresholds, typed planner downshift, lease/fencing controls, human interruption and stop decisions. & Downshift changes one next planner request; it does not enlarge or rewrite the shared execution ceiling. \\
+\bottomrule
+\end{longtable}
+
+The implementation map makes two boundaries especially important. First, B4's method transition history is not a learning operator that automatically selects better strategies; the next method arrives through a typed domain directive and a registered planner mapping. Second, B6's calibration lifecycle is available only when its service and repository are configured. The source and tests support active-profile validation and uncalibrated fallback, but they do not justify saying that every host's uncertainty values are calibrated.
+
+\section{Tests, limitations, recap, and exercises}
+\label{sec:ch23-tests-recap}
+
+\subsection{What the tests establish}
+\label{subsec:ch23-test-map}
+
+The test map below separates a behavior asserted by a test from a stronger property that remains outside its scope.
+
+\small\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.25\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.27\linewidth}@{}}
+\caption{B4/B6 tests and their evidence limits. Exact test names are printed in the source-reference strips above.}\label{tab:ch23-test-map}\\
+\toprule
+\textbf{Test group} & \textbf{What it demonstrates} & \textbf{What it does not demonstrate} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Test group} & \textbf{What it demonstrates} & \textbf{What it does not demonstrate} \\
+\midrule
+\endhead
+B4 record and service tests & Objective fingerprint and protected constraints persist across a method change; stale versions cannot overwrite a newer value. & Method superiority or objective feasibility. \\
+B4 PostgreSQL restart integration & Two repository views race; one version wins and history contains the initial state plus one winning transition. & Contention benchmarks or a distributed transaction. \\
+B4 full-graph workflow & The replacement ToT method reaches the next planner call with the same objective fingerprint and no stale planner-session resume. & General planner quality or workload superiority. \\
+B6 assessment/governor tests & Scope, execution and validity are checked; missing dimensions are rejected rather than treated as zero. & Accuracy of host uncertainty estimates. \\
+B6 calibration trainer tests & An active target/scope profile calibrates; the uncalibrated path remains unchanged. & Calibration quality on a live distribution. \\
+B6 resource-policy tests & Typed downshift under low margin and stop at deadline. & That lower compute preserves solution quality. \\
+Runtime execution-guard tests & Reservation precedes work; trusted usage is committed; started failures are charged conservatively. & Whether an external side effect occurred. \\
+B6 full-graph budget test & The next planner request is reduced while the durable shared execution ceiling remains unchanged. & All host compositions use the same ledger. \\
+PostgreSQL shared-budget integration & Planning and reasoning charge one PostgreSQL account; an unavailable store blocks the tested reasoning adapter before provider invocation. & A universal guarantee for every provider and action adapter. \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+The evidence is deliberately layered. Unit tests cover local record and governor invariants; runtime tests cover guard behavior; full-graph tests cover the effect on the next planner call; PostgreSQL integration tests cover selected persistence and fail-closed paths. Passing tests establish those assertions for the tested configuration. They do not certify deployment, calibration quality, concurrency performance, or empirical supply-chain benefit.
+
+\begin{chapterrecap}
+B4 preserves a committed recovery objective while governing its method and intention lifecycle. The objective fingerprint and protected constraints remain fixed across typed reconsideration and method change. The service checks actor and version, and the PostgreSQL repository applies a compare-and-set guarded by scope, ID, expected version, and objective fingerprint while appending history in the same transaction. The runtime receives a domain-supplied directive and makes the resulting method visible to the next planner call; a full-graph test shows the change from sequential reasoning to bounded tree search without changing the objective. Delegation to B2, return from the child, completion, and host-authorized termination remain separate lifecycle transitions.
+
+B6 consumes a scoped and versioned uncertainty assessment together with a resource snapshot and the next step's estimated requirements. The assessment is not automatically a calibrated probability, and the calibration service is optional in host composition. The governor chooses among continue, request evidence, reduce computation, interrupt for human control, or stop according to explicit precedence. A planner downshift reduces the next planning call but leaves the shared execution ceiling unchanged. Actual planning, reasoning, and action-dispatch work can be subjected to a shared reservation and fencing guard; started work is conservatively charged when its outcome or measurement is not trustworthy enough for release. The PostgreSQL test demonstrates shared accounting for M5 planning and M3 reasoning in the tested wiring, while the action path retains the separate M3 idempotency, authorization, approval, and reconciliation boundaries.
+
+B4, B6, and action authorization are complementary but non-interchangeable. B4 cannot grant an action capability; B6 cannot change the goal or authenticate an operator; and remaining budget cannot replace a capability grant or an approval. These Java contracts are an application-specific engineering interpretation of Fan and Lan's mechanism framing. They are not complete reproductions of BDI, MIDCA, EPIC, or Sigma, and they do not implement the closed B5/GraSP candidate.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and practical exercises}
+\begin{enumerate}
+  \item What information in \texttt{RecoveryIntention} is protected when the method changes? Why is the objective fingerprint not a planner method ID?
+  \item Which typed transition must occur before \texttt{changeMethod(...)} succeeds? Which actor and version checks are applied?
+  \item What does the PostgreSQL intention compare-and-set include in its \texttt{WHERE} predicate? Why is the history append inside the same transaction?
+  \item Which part of the B4 method directive is supplied by the domain, and which checks are enforced by the runtime lifecycle service?
+  \item What does the full-graph test prove about the next planner invocation? What would be required to prove that ToT is generally better than CoT for this workload?
+  \item When a B4 intention is delegated to B2, which record owns the child investigation and which record preserves the parent commitment? What happens on a \texttt{NO\_METHOD\_CHANGE} return?
+  \item Why does an unverified model reflection not authorize termination of the B4 intention? What additional proof is required for completion?
+  \item What identifies one B6 uncertainty assessment across graph nodes? Why are execution, memory scope, version, assessment time, and validity deadline all relevant?
+  \item Under what conditions may a B6 value be labelled calibrated? How does a research-only shadow profile differ from an activated profile?
+  \item List the resource units in the current B6 vector. Which supply-chain resources are explicitly outside that vector?
+  \item In what order does \texttt{MetaControlGovernor} evaluate exhaustion, deadline, next-step feasibility, uncertainty thresholds, and low resource margin?
+  \item Why does a planner downshift not change the shared execution ceiling? Which planner fields change, and which structural limits remain fixed in the full-graph test?
+  \item What must happen before a budgeted operation is invoked? Why is an expired started lease treated differently from an expired unstarted lease?
+  \item Which test demonstrates that M5 planning and M3 reasoning use one PostgreSQL budget account? What does the closed-store test establish?
+  \item Trace the graph after B6 returns \texttt{CONTINUE}. Which separate stages still stand between the planner's proposal and a supply-chain write?
+\end{enumerate}
+
+\paragraph{Practical exercise.} Suppose a valid recovery objective has two registered methods. The first method is now expensive and the next-step uncertainty is high, but the objective's protected constraints have not changed. Define a permitted B4 reconsideration trigger and a replacement method; state which fingerprint must be asserted and which version must be updated. Separately define a B6 resource vector, current uncertainty reference, required next-step usage, and thresholds. Trace one case in which B6 requests evidence and another in which it downshifts the next planner call. Finally, propose a supplier reservation action and identify the capability grant, host approval if required, revalidation, M3 idempotency boundary, B6 dispatch reservation, and post-action observation needed before claiming the business objective has been satisfied.
+\end{reviewquestions}
+
+\section*{Source and example note}
+\addcontentsline{toc}{section}{Source and example note}
+
+Fan and Lan supply the B4 and B6 mechanism framing; Part II Chapters 15 and 16 provide their earlier analysis, and Chapter 18 explains their distinct authority boundaries. The implementation paths, typed records, actor policy, PostgreSQL compare-and-set, calibration lifecycle, resource ledger, and graph routing are application engineering choices. The chapter's scenario is illustrative unless explicitly identified as a test fixture. The tests support only their stated assertions; this chapter makes no claim of production deployment, operational calibration quality, planner superiority, or causal supply-chain benefit.
+
+\FanLanCite{\S V-C, B4; \S V-E, B6; \S VI-A; Appendix C-C}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 24 brings the application-level graph, memory, planning, execution, checkpoint, persistence, and test boundaries together. It will treat orchestration as the composition layer over the already distinct CoALA memory responsibilities and Fan--Lan mechanisms, not as the implementation of their internal decision algorithms.

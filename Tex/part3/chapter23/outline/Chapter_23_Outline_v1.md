@@ -2,7 +2,7 @@
 
 **Book:** *From Cognitive Architectures to Production Agentic Systems: Understanding CoALA, Fan & Lan, and Engineering Complex Agents with Java*  
 **Part:** III — approved six-chapter structure (Chapters 19–24)  
-**Outline status:** proposed for individual author approval; no chapter prose drafted  
+**Outline status:** drafted and source-checked against the supplied frozen application snapshot  
 **Implementation baseline:** supplied `supply-chain-agent-main` Java repository snapshot  
 **Teaching role:** show how the application preserves an authorized task objective while changing methods, and how uncertainty/resource governance constrains the work without taking over goal authority.
 
@@ -188,3 +188,23 @@ Show the state record before the service method; show the graph trigger/caller a
 - A checkpoint is not an intention record.
 - No Java implementation here should be called a complete BDI, MIDCA, EPIC or Sigma implementation.
 - B5/GraSP remains a closed-candidate boundary from Part II, not a required sixth mechanism.
+
+
+## 8. Completion record — 26 November 2026
+
+The chapter prose has been drafted and checked against application commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The final source register contains eleven references: seven QR-enabled primary implementation listings (`C23-S02`, `C23-S03`, `C23-S04`, `C23-S06`, `C23-S07`, `C23-S09`, `C23-S10`) and four text-only supporting references (`C23-S01`, `C23-S05`, `C23-S08`, `C23-S11`).
+
+The chapter distinguishes the persisted B4 intention from the B6 uncertainty/resource controls and from the separate M3 action authorization/approval boundary. It documents optional uncertainty calibration as optional, and it limits test claims to the exact tested unit, graph, runtime and PostgreSQL integration paths. This is not a production deployment or calibration-quality claim.
+
+Six Mermaid sources are supplied for the chapter figures. The source/reference validator passes for Chapters 1–23 (124 Mermaid files). Rendering the Mermaid PNGs requires the repository-pinned Mermaid CLI in `tools/mermaid`; that package could not be installed in the authoring environment, so the chapter changeset supplies the Mermaid source and the updated render/build scripts, not generated PNG files.
+
+
+## 8. Completion and validation record — 26 November 2026
+
+The Chapter 23 draft has been checked against the supplied application snapshot pinned by the archive comment to `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The B4 and B6 source files, the eleven cited source paths, and all named test methods were checked against that local snapshot. This was a source-reference audit; the chapter authoring pass did not rerun the application Maven test suite.
+
+The chapter contains eleven source references: seven primary implementation spotlights with QR codes (`C23-S02`, `C23-S03`, `C23-S04`, `C23-S06`, `C23-S07`, `C23-S09`, `C23-S10`) and four supporting entries with clickable text references only (`C23-S01`, `C23-S05`, `C23-S08`, `C23-S11`). A standalone proof PDF was inspected page by page. All eleven listing/source-reference groups are on the same page; all seven QR symbols decode to their commit-pinned source URLs at a 300-DPI page rendering; and the corresponding source and test hyperlinks are present in the PDF.
+
+The proof PDF has 35 pages and compiled with no overfull boxes or unresolved citations. It used DejaVu substitute fonts and temporary Graphviz stand-ins for the chapter's six Mermaid figures. The repository-pinned Mermaid CLI could not be installed in the authoring environment, so the official Mermaid PNG render remains a local build step. This is not a production-font proof or a physical print certification.
+
+`python3 scripts/check-source-qrs.py` validates all 28 source QR assets in the accumulated Chapters 19–23 tree. `bash scripts/check-diagrams.sh --sources-only` validates 124 Mermaid sources and figure references through Chapter 23. The scaffold check passes on the canonical six-chapter Part III tree after applying the already-approved Chapter 19 deletion list for obsolete placeholder directories 25–30; this Chapter 23 changeset does not repeat those deletions.

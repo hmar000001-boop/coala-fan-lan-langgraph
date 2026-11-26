@@ -1,0 +1,12 @@
+flowchart TD
+  accTitle: B4 objective and method versioning
+  accDescr: A permitted reconsideration changes the method and intention version while the committed objective fingerprint remains unchanged.
+  A[Active intention version n] --> T[Permitted reconsideration trigger]
+  T --> R[Reconsideration pending]
+  R --> C[Check actor, expected version, and asserted objective fingerprint]
+  C -->|Checks pass| U[Compare-and-set replacement]
+  C -->|Check fails| F[Reject transition]
+  U -->|CAS succeeds| H[Append intention history in same transaction]
+  H --> N[Active intention version n plus 1]
+  N --> M[New method and plan reference]
+  M --> O[Same protected objective fingerprint]

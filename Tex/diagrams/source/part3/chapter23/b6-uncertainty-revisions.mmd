@@ -1,0 +1,16 @@
+flowchart TD
+  accTitle: B6 uncertainty assessment revisions
+  accDescr: Each assessment request is tied to a stable trigger, execution, memory scope and previous reference. The returned assessment must be current and advance exactly one version. Calibration is accepted only for an active validated profile bound to target and scope.
+  T[Stable trigger plus previous reference] --> K[Derive idempotency key]
+  K --> D[Domain creates assessment]
+  D --> C{Calibration claimed or available?}
+  C -->|Claimed calibrated| V[Verify active profile version, target, and scope]
+  C -->|Not calibrated and service enabled| E[Attempt scoped calibration]
+  C -->|Service absent| U[Keep uncalibrated assessment]
+  E -->|Active validated profile| P[Persist calibrated assessment]
+  E -->|No active profile or shadow only| U
+  V --> R[Validate execution, scope, validity, and revision]
+  P --> R
+  U --> R
+  R -->|Same ID, next version| G[Publish assessment reference]
+  R -->|Mismatch or stale| F[Reject assessment]

@@ -22,8 +22,8 @@ count3=$(find "$ROOT/Tex/part3" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc 
 }
 for n in 01 02 03 04 05 06 07 08; do test -s "$ROOT/Tex/part1/chapter$n/chapter.tex"; done
 # Part III must remain exactly six canonical build chapters: 19-24.
-# Chapters 19-22 are drafted from individually approved outlines; Chapters 23-24 remain placeholders.
-for n in 23 24; do
+# Chapter 23 is now drafted and source-checked; Chapter 24 remains the only placeholder.
+for n in 24; do
   chapter="$ROOT/Tex/part3/chapter$n/chapter.tex"
   test -s "$chapter" || { echo "Missing Part III chapter scaffold: chapter$n" >&2; exit 1; }
   grep -q 'Chapter placeholder' "$chapter" || {
@@ -94,6 +94,26 @@ for diagram in b2-parent-child-ownership b2-subgraph-sequence b2-child-step-rece
   grep -q 'accTitle:' "$source" || { echo "Missing Chapter 22 Mermaid accTitle: $source" >&2; exit 1; }
   grep -q 'accDescr:' "$source" || { echo "Missing Chapter 22 Mermaid accDescr: $source" >&2; exit 1; }
   grep -q "$diagram.png" "$ROOT/Tex/part3/chapter22/chapter.tex" || { echo "Chapter 22 does not reference $diagram.png" >&2; exit 1; }
+done
+# Chapter 23 is drafted; its source-checked outline, standalone driver, and six accessible Mermaid sources are required.
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part3/chapter23/chapter.tex" || {
+  echo "Part III Chapter 23 must contain drafted prose." >&2; exit 1;
+}
+test -s "$ROOT/Tex/part3/chapter23/outline/Chapter_23_Outline_v1.md" || {
+  echo "Missing Chapter 23 source-checked outline." >&2; exit 1;
+}
+grep -q 'Outline status:.*drafted and source-checked' "$ROOT/Tex/part3/chapter23/outline/Chapter_23_Outline_v1.md" || {
+  echo "Chapter 23 outline must record its drafted/source-checked status." >&2; exit 1;
+}
+test -s "$ROOT/Tex/standalone/chapter23.tex" || {
+  echo "Missing Chapter 23 standalone build entry." >&2; exit 1;
+}
+for diagram in b4-b6-authority-separation b4-objective-method-versioning b4-delegation-lifecycle b6-uncertainty-revisions b6-resource-budget-guard b4-b6-next-planner-trace; do
+  source="$ROOT/Tex/diagrams/source/part3/chapter23/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 23 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Chapter 23 Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Chapter 23 Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part3/chapter23/chapter.tex" || { echo "Chapter 23 does not reference $diagram.png" >&2; exit 1; }
 done
 for spec in \
   '20|CoALA in Code: Memory, Actions, and Planning' \
@@ -392,4 +412,4 @@ done
 for term in compositionalcontrol crossbundledependency boundedsynthesisruntime authorityboundary outcomeattribution compositionalablation partialcomposition resourcereservation; do
   grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 18 glossary entry: $term" >&2; exit 1; }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-22 contain drafted prose; Chapters 23-24 remain outline-gated; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-23 contain drafted prose; Chapter 24 remains outline-gated; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources and Chapter 23 has six."

@@ -1,10 +1,10 @@
 # Code Presentation and Source Navigation Plan
 
-**Status:** Accepted design; Chapters 19–22 QR source strips implemented and render-checked; Chapter 23 (B4/B6) is next  
+**Status:** Accepted design; Chapters 19–23 source strips implemented; Chapters 19–22 render-checked; Chapter 23 source, QR payloads, and standalone layout checked  
 **Created:** 25 November 2026  
 **Applies to:** Part III, Chapters 19–24  
 **Canonical LaTeX tree:** `Tex/part3/`  
-**Implementation baseline reviewed for Chapters 19–22:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Implementation baseline reviewed for Chapters 19–23:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
 
 > **Provenance note.** The supplied book archive did not contain a file named `CODE-PRESENTATION-PLAN.md`. This is therefore the first version of the plan, created in the book repository; it is not an edit to a previously present copy.
 
@@ -116,13 +116,9 @@ A chapter is not QR-approved merely because LaTeX compiled. Record the commit, r
 
 ## 8. Pilot and rollout order
 
-Chapter 19 established the first layout/source-navigation pilot across three different implementation modules. Chapter 20 extended the convention to memory, reasoning, perception, and planning contracts. Chapter 21 now provides the completed B1/B3 mechanism-specific pilot: B1 candidate ranking, verified-outcome attribution, B3 mandatory-first admission, bounded coalition enumeration, and the outcome-verification gate. The remaining selected pilot is Chapter 22 — B2 child-step fencing and parent-context/version validation:
+Chapter 19 established the source-strip layout across three implementation modules. Chapter 20 extended the convention to memory, reasoning, perception and planning contracts. Chapter 21 completed the B1/B3 mechanism-specific pilot. Chapter 22 completed the B2 child-step fencing and parent-context/version validation pilot. Chapter 23 now extends the convention to B4 persistent intention and B6 resource/uncertainty governance. The remaining chapter in the Part III rollout is Chapter 24, which integrates the application-level graph and runtime composition; it should use the same source-reference rules without adding a chapter-level QR.
 
-| Next pilot | Implementation target | Why it is a useful test |
-| --- | --- | --- |
-| Chapter 22 — B2 | `supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java`, `resolve(...)` | Parent-context/version fence on child results; checks a distinct critical lifecycle/concurrency boundary |
-
-The source-strip dimensions, QR macro, caption treatment, and hyperlink behaviour remain the accepted defaults. Apply them consistently to eligible primary listings in Chapters 19–24. Do not add a chapter-level QR.
+The source-strip dimensions, QR macro, caption treatment, visible path and test references, and clickable-link behaviour remain the accepted defaults. Apply QR only to primary implementation listings. Supporting records and small definitions retain text-only source strips. The final source register for each chapter must be appended to this plan as that chapter is completed.
 
 ## 9. Chapter 19 source-register created in the first revision
 
@@ -225,3 +221,34 @@ The Chapter 22 discussion distinguishes three separate enforcement locations: `r
 The optional recovery-procedure path remains explicitly staged. `approve(...)` changes the B2 draft to `APPROVED` only. `stageApprovedDraft(...)` publishes an immutable artifact and a CoALA procedural-memory `DRAFT`; it does not activate it. `validate(...)` requires a reviewer independent of the B2 draft approver, and `activate(...)` requires a separately validated version plus an activator independent of both earlier actors. The linked tests exercise these boundaries but do not establish that the stored procedure executes an action.
 
 The Chapter 22 local standalone proof is used only for typography, source-strip cohesion, QR decoding, and PDF link verification. Production-font full-book compilation and physical-print certification remain separate release checks.
+
+## 15. Chapter 23 source register and B4/B6 QR classification
+
+Chapter 23 follows the B4 intention lifecycle and B6 uncertainty/resource governance against the exact application snapshot identified by the supplied archive's ZIP comment: `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The archive's `CHANGESET_INFO` also contains a separate CI-evidence overlay base reference (`c49c543`); that overlay does not replace the application-code snapshot used by this chapter. The Chapter 23 QR and test URLs are pinned to the full `fa8cd5e` commit, not to a branch.
+
+Eleven source IDs are assigned. Seven primary implementation listings receive QR codes; four supporting record/helper/adaptor excerpts retain clickable text references only.
+
+| Source ID | Implementation target | Source range | Proof test(s) | QR status |
+| --- | --- | ---: | --- | --- |
+| `C23-S01` | `RecoveryIntention` record declaration — protected objective and method binding | 13–38 | `RecoveryIntentionServiceTest.intentionCapturesImmutableObjectiveFingerprintAndConstraints()`; `methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()` | No QR; supporting record |
+| `C23-S02` | `RecoveryIntentionService.changeMethod(...)` and common versioned `update(...)` path | 67–70, 130–139 | `RecoveryIntentionServiceTest.methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()`; `staleVersionCannotOverwriteConcurrentIntentionUpdate()` | **QR** |
+| `C23-S03` | `CognitiveCycleLifecycleServices.governIntention(...)` typed directive switch, including host-authorized termination | 477–493 | `M8B4FullGraphWorkflowTest.b4MethodChangeControlsTheNextFullGraphPlannerWithoutChangingTheCommittedObjective()` | **QR** |
+| `C23-S04` | `PostgresRecoveryIntentionRepository.compareAndSet(...)` — scope, ID, version, objective fingerprint, and history transaction | 75–100 | `M8B4CRestartReconciliationIntegrationTest.concurrentIntentionUpdatesUseVersionCasAndPreserveTheProtectedObjective()` | **QR** |
+| `C23-S05` | `UncertaintyAssessment.isCurrentFor(...)` and checkpoint-safe `Reference` | 92–114 | `MetaControlGovernorTest.uncertaintyAssessmentMustMatchExecutionScopeAndValidityWindow()`; `missingUncertaintyDimensionIsNotSilentlyTreatedAsZero()` | No QR; supporting identity/contract |
+| `C23-S06` | `CognitiveCycleLifecycleServices.assessUncertainty(...)` — idempotent request, optional calibration checks, and monotonic revision | 499–541 | `UncertaintyCalibrationTrainerTest.activatedProfileCalibratesAllDimensionsButUncalibratedAssessmentRemainsUnchanged()` | **QR** |
+| `C23-S07` | `MetaControlGovernor.evaluate(...)` — ordered stop, interrupt, evidence, downshift and continue precedence | 10–28 | `MetaControlGovernorTest.lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()`; `deadlineStopsExecution()`; `criticalPlanUncertaintyInterruptsForHumanDecision()` | **QR** |
+| `C23-S08` | `PlannerBudgetDownshift` bounded value object and `halfBudget()` factory | 1–17 | `MetaControlGovernorTest.lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()` | No QR; supporting value object |
+| `C23-S09` | `ResourceBudgetExecutionGuard.execute(...)` reservation, lease acquisition, operation-start fencing and heartbeat | 81–116 | `ResourceBudgetExecutionGuardTest.reservesBeforeWorkAndCommitsTrustedMeasuredUsage()`; `failedStartedWorkIsConservativelyChargedAtItsReservation()`; `committedOperationIdentityCannotBeInvokedAgain()` | **QR** |
+| `C23-S10` | `PostgresResourceBudgetLedger.acquireLease(...)` — safe reclaim of expired unstarted reservation with fencing-token increment | 279–295 | `R1DefBudgetLeaseRecoveryIntegrationTest.expiredUnstartedReservationIsReclaimedWithANewFenceAndCanRunOnce()`; `expiredStartedReservationIsFencedAndChargedConservativelyWithoutReplay()` | **QR** |
+| `C23-S11` | `BudgetedReasoningProvider.assess(...)` — M3 reasoning routed through shared B6 guard | 43–53 | `M8B4DPostgresBudgetExecutionIntegrationTest.m5PlanningAndM3ReasoningConsumeOneSharedPostgresBudgetAccount()`; `closedPostgresBudgetStoreBlocksReasoningBeforeProviderInvocation()` | No QR; supporting adapter excerpt |
+
+The four no-QR entries remain navigable through their printed source path, source ID and clickable PDF links. The seven QR-enabled entries use the same full commit-pinned `blob` URL for the QR, source ID, printed path and **Open exact source** hyperlink; test links use the matching test file at the same commit. Each QR has explicit quiet-zone padding and a standalone vector PDF asset.
+
+The B4 evidence is layered: local service tests cover objective identity and stale-version rejection; the full-graph test shows a changed method reaching the next planner call; and the PostgreSQL restart integration test demonstrates one winner for a concurrent version CAS with history recorded. These are not a distributed transaction across intention, B2 case, graph checkpoint and external action stores.
+
+The B6 evidence covers scoped assessment identity/validity, optional calibration, ordered meta-control decisions, guard reservation/operation-start/accounting, and two distinct PostgreSQL expiry outcomes. An expired unstarted reservation can be reclaimed under a newer fencing token; an expired started reservation is conservatively charged and not replayed. The M8B4D test separately covers shared M5-planning/M3-reasoning accounting. None of these tests establishes live calibration quality, universal host wiring, external action outcome, or production deployment.
+
+Six diagram sources are added under `Tex/diagrams/source/part3/chapter23/`. `scripts/check-diagrams.sh` now includes Chapter 23 in its source/reference inventory, and `scripts/build-chapters.sh` includes the Chapter 23 standalone driver. The build driver now regenerates the vector QR assets and runs `scripts/check-source-qrs.py` before rendering diagrams and compiling chapters. Mermaid PNGs are generated by the repository's pinned Mermaid CLI using `scripts/render-diagrams.sh`; they are build outputs and are not part of the chapter-only changeset.
+
+The standalone layout proof has 35 pages. Automated PDF inspection confirms that all eleven listing/source-reference pairs (seven QR and four text-only) remain on the same page, all source and test links are present, and all seven QR symbols decode to the exact source permalink at 300-DPI rendering. The PDF proof used substitute DejaVu fonts and temporary Graphviz-rendered stand-ins for the six Mermaid figures because the repository-pinned Mermaid CLI and production TeX Gyre fonts were unavailable in the authoring environment. This verifies layout and link placement, not final production typography, official Mermaid rendering, or physical print scanning.
+

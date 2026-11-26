@@ -1,0 +1,11 @@
+flowchart TD
+  accTitle: B4 and B6 compose on the next planner call
+  accDescr: B4 changes the method binding without changing the committed objective fingerprint. B6 independently downshifts the next planner compute envelope. The next planner call observes both decisions; subsequent writes still pass through action authorization.
+  O[Protected objective fingerprint] --> B4[B4 selects replacement method]
+  B4 --> M[Planner method binding]
+  U[Current uncertainty and resource margin] --> B6[B6 selects typed downshift]
+  B6 --> C[Next-call compute envelope]
+  M --> P[Next planner invocation]
+  C --> P
+  P --> Q[Candidate proposal]
+  Q --> A[Separate action authorization and revalidation]
