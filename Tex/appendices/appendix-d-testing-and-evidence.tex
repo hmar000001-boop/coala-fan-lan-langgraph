@@ -1,0 +1,71 @@
+\chapter{Testing, Evidence, and Source Traceability}
+\label{app:testing}
+
+The application uses several test layers because no single test style can establish every property discussed in Part III. Unit tests, simulator tests, graph-workflow tests, PostgreSQL integration tests, and repository-level CI guards answer different questions. This appendix provides a route through those forms of evidence and explains their limits.
+
+\section{Read a test by its claim}
+
+Before treating a passing test as evidence, identify the claim it checks. A test name is a useful navigation aid, but the assertions, fixtures, test doubles, environment conditions, and setup determine what it actually establishes.
+
+\begin{longtable}{P{0.20\textwidth} P{0.36\textwidth} P{0.34\textwidth}}
+\caption{Test layers and the claims they can support.}\label{tab:appendix-d-test-layers}\\
+\toprule
+\textbf{Test layer} & \textbf{Representative evidence} & \textbf{What it does not establish by itself} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Test layer} & \textbf{Representative evidence} & \textbf{What it does not establish by itself} \\
+\midrule
+\endhead
+Domain invariants & Supply-chain snapshot invariant tests reject invalid quantities, duplicate identities, and inconsistent world states. & Correct graph orchestration or behavior against a live supply-chain system. \\
+Deterministic simulator & Supply-chain simulator tests check typed commands, valid transitions, and domain effects. & External ERP, warehouse, supplier, or carrier behavior; the simulator is a modeled world. \\
+Memory, planning, and mechanism units & Service and selector tests exercise local contracts and decisions for memory, B1, B2, B3, B4, B6, and planner strategies. & Correctness of every path when all components are composed into one graph. \\
+Graph/workflow tests & Full-graph workflow tests exercise selected paths, including authority and lifecycle boundaries. & A universal proof for all fixtures, all failure conditions, or every research mechanism. \\
+PostgreSQL integration tests & Memory-persistence, graph-checkpoint, and restart/reconciliation integration tests exercise database-backed stores and recovery paths. & Durability of state that is deliberately held outside those repositories, including the complete simulated world. \\
+Durable host end-to-end test & The durable-host REQ-09 PostgreSQL end-to-end test exercises a composed host with approval, action execution, reconciliation, restart, and memory-reuse assertions. & Coverage of every mechanism branch. B2 child investigation has separate graph/workflow evidence and must not be inferred from this single REQ-09 path. \\
+\bottomrule
+\end{longtable}
+
+\section{Useful starting points in the test tree}
+
+The paths below are representative starting points. They are not a complete inventory of the repository's tests.
+
+\begin{itemize}
+  \item \textbf{Domain and simulator:} \path{supply-chain-agent-domain/src/test/java/dev/supplychain/agent/domain/world/SupplyChainSnapshotInvariantTest.java} and \path{supply-chain-agent-simulator/src/test/java/dev/supplychain/agent/simulator/SupplyChainSimulatorTest.java}.
+  \item \textbf{Memory and planning:} tests under \path{supply-chain-agent-memory/src/test/java} and \path{supply-chain-agent-planning/src/test/java}, including planner-specific tests for sequential reasoning, bounded thought search, and MCTS.
+  \item \textbf{Mechanisms:} tests under \path{supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms}, grouped by B1, B2, B3, B4, B6, and feedback responsibilities.
+  \item \textbf{Runtime graph:} \path{supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java} and related lifecycle, decision, checkpoint, and framework-compatibility tests.
+  \item \textbf{PostgreSQL persistence and recovery:} tests under the PostgreSQL infrastructure module, including memory, checkpoint, action-ledger, budget, intention, and restart/reconciliation integration tests.
+  \item \textbf{Application composition and workflow:} \path{supply-chain-agent-app/src/test/java} and \path{supply-chain-agent-evaluation/src/test/java}, especially the durable-host and full-graph workflow tests.
+\end{itemize}
+
+\section{PostgreSQL-gated tests}
+
+Several integration-test classes or methods are annotated with JUnit's \texttt{@EnabledIfSystemProperty} condition for \texttt{phase0.postgres=true}. They require a reachable PostgreSQL database and the corresponding environment configuration. The GitHub Actions workflow supplies PostgreSQL 16.4 and runs the Maven build with that property enabled. A local build without the property can compile and run ordinary unit tests while leaving those PostgreSQL-backed tests disabled.
+
+The end-to-end REQ-09 test is especially useful, but it must be read at its actual scope. Its successful path demonstrates the tested approval, simulated action, uncertain acknowledgement, reconciliation, restart, and cross-cycle memory behavior configured by its fixtures. It is not the only evidence for the complete application, and it does not traverse every optional branch. In particular, separate tests are needed to support claims about B2 child investigation and its recovery artifacts. Chapter~24 identifies the principal restart scenarios and their individual purposes.
+
+\section{CI evidence and its limits}
+
+The repository's \path{.github/workflows/ci.yml} runs architecture and composition guard scripts before executing the Maven reactor with PostgreSQL integration tests enabled. It also runs additional security checks and generates selected evaluation artifacts. The guard scripts validate repository-specific constraints such as module composition, dependency boundaries, evidence requirements, and test inventories. They are useful checks, but they do not replace behavioral tests.
+
+A green CI run means that the configured workflow completed for the checked revision and environment. It does not imply that every possible input, concurrency schedule, external integration, or deployment environment has been tested. Similarly, deterministic evaluation fixtures can support repeatable comparisons within their defined protocol, but the existence of a test or generated artifact is not evidence of empirical superiority unless the study design, data, metrics, and results support that conclusion.
+
+The following distinctions should remain explicit:
+\begin{itemize}
+  \item A \textbf{unit test} supports a local contract or decision under its inputs.
+  \item An \textbf{integration test} supports the exercised interaction among components or infrastructure.
+  \item A \textbf{full-graph test} supports the workflow path and branches that its fixture actually traverses.
+  \item A \textbf{CI run} supports the configured checks for one revision and environment.
+  \item An \textbf{empirical research claim} requires an appropriate experimental design and data; it cannot be inferred from ordinary software tests alone.
+\end{itemize}
+
+\section{Following source references}
+
+The source links and QR codes in Part III point to specific files in the companion repository. The existing code URLs in Chapters 20--24 are pinned to a single Git revision, \texttt{fa8cd5ec0742d701\allowbreak{}0dbba2c3646852e950\allowbreak{}62a419}. Use those links when you need to inspect the exact source location associated with a printed explanation. A path alone is not a version identifier: a file may change on the repository's default branch after the book's cited revision.
+
+For a useful source-to-test reading sequence, start with the production class cited beside a chapter's claim, then open the named test or its enclosing test class, and finally inspect the collaborating interface or repository adapter. This order helps distinguish what the component promises from what the test fixture supplies. For the broader module map, use Appendix~\ref{app:architecture}; for state ownership and recovery boundaries, use Appendix~\ref{app:persistence}.
+
+\begin{notebox}
+The companion project is a reference implementation against a deterministic simulated supply-chain world. Passing tests provide evidence for the behaviors actually exercised. They do not establish live external integration, production deployment readiness, or the complete reproduction of a research mechanism unless those specific claims have their own evidence.
+\end{notebox}

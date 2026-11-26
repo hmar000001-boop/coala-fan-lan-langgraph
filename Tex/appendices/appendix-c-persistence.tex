@@ -1,0 +1,61 @@
+\chapter{Memory, Runtime State, and Persistence}
+\label{app:persistence}
+
+Part III uses several kinds of state that are easy to conflate when reading a graph-based agent. This appendix separates CoALA memory, planning artifacts, graph checkpoints, mechanism-specific records, and the simulated external world. They may share a PostgreSQL data source in the durable host, but they serve different purposes and have different recovery semantics.
+
+\section{Start with ownership, not the database}
+
+A useful first question is not ``Is this stored in PostgreSQL?'' but ``Which component owns this information, and what operation is allowed to change it?'' A graph checkpoint preserves enough runtime state to resume a graph execution. A CoALA memory repository stores information intended to be retrieved or reused as memory. A mechanism-specific repository stores records needed by a mechanism's contract. An action ledger records execution identity and outcomes. None of these automatically becomes the authoritative representation of the simulated supply-chain world.
+
+\section{Persistence map}
+
+The durable host composes a set of PostgreSQL adapters through \texttt{PostgresAgentPersistence} and \texttt{PostgresRuntimePersistence}. The table below summarizes the principal ownership boundaries visible in the application source.
+
+\begin{longtable}{P{0.19\textwidth} P{0.39\textwidth} P{0.32\textwidth}}
+\caption{Selected state and persistence responsibilities in the durable host.}\label{tab:appendix-c-persistence}\\
+\toprule
+\textbf{State or record} & \textbf{Owner and adapter} & \textbf{Important boundary} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{State or record} & \textbf{Owner and adapter} & \textbf{Important boundary} \\
+\midrule
+\endhead
+CoALA working memory & Working-memory service and PostgreSQL working-memory repository. & Active, scoped memory with a lifecycle/expiry policy; it is not the complete graph checkpoint. \\
+Episodic memory & Episodic-memory service and PostgreSQL episode repository. & Stores experience records with review, idempotency, and retention behavior; an episode is not automatically verified semantic truth. \\
+Semantic memory & Semantic-memory service and PostgreSQL semantic-fact repository. & Stores facts with provenance and admission policy. \\
+Procedural memory & Procedural-memory service and PostgreSQL procedural-memory repository. & Stores governed procedure artifacts; activation and use are separate from merely having a stored procedure. \\
+Planner sessions and artifacts & PostgreSQL planner-session and planning-artifact stores. & Preserve planner-session and planning-artifact state; a planner session is not a persistent intention. \\
+Graph checkpoint & LangGraph4j PostgreSQL saver, created by the checkpoint-saver factory. & Supports graph resume by a stable thread identity derived from the memory scope and execution ID. It is not the repository for every other state type. \\
+Runtime lifecycle records & Adapters created by \texttt{PostgresRuntimePersistence}, including observation, approval, action-batch, action-ledger, impasse, child-investigation, and messaging stores. & Records are scoped and have their own contracts; they should not be collapsed into an undifferentiated ``agent state'' table. \\
+B1 learned features & PostgreSQL B1 memory-feature repository. & Persists B1 feature/learning evidence separately from the four base CoALA memory repositories. \\
+B2 investigation and recovery & PostgreSQL impasse and child-artifact stores, child-step receipts, recovery-procedure draft repository, and immutable artifact store. & A child case disposition, a recovery draft, and parent-objective satisfaction are distinct facts. \\
+B3 downstream evidence & PostgreSQL B3 outcome-evidence repository and service. & Broadcast receipts and separately verified downstream outcomes are durable; B3 workspace snapshots are not. \\
+B4 recovery intention & PostgreSQL recovery-intention repository. & Versioned intention updates use compare-and-set semantics; intention persistence does not grant action authority. \\
+B6 resource governance & PostgreSQL resource-budget ledger, used by the shared execution guard. & Budget reservations and leases are distinct from uncertainty assessments and from the graph's checkpoint state. \\
+Optional B6 calibration profiles & Optional PostgreSQL uncertainty-calibration profile repository, assembled when the host receives the corresponding codec. & The profile repository is not a general store for every current uncertainty assessment. \\
+\bottomrule
+\end{longtable}
+
+\section{Graph checkpoint is not CoALA memory}
+
+The durable host creates the LangGraph4j PostgreSQL saver with the same managed data source used by the PostgreSQL infrastructure. The saver stores graph execution checkpoints. A deterministic thread identifier is derived from the memory-scope identifier and execution identifier, so a resumed run can address the same graph thread while a separate execution receives a different thread identity.
+
+This checkpoint is a runtime recovery mechanism. It does not replace the four CoALA memory repositories. Working, episodic, semantic, and procedural memory have their own models, lifecycle services, retrieval rules, and repositories. A graph state may carry an identifier or a projection of information from one of those stores, but the checkpoint does not thereby become the memory store itself. Conversely, a memory record does not contain everything required to resume a graph at a particular node.
+
+\section{Mechanism-specific boundaries}
+
+Several mechanism boundaries deserve particular attention:
+
+\begin{itemize}
+  \item \textbf{B3 workspace.} In the durable host, workspace snapshots are intentionally stored in \texttt{InMemoryWorkspaceRepository} and are per-cycle/ephemeral. The host persists broadcast receipts and downstream outcomes separately in PostgreSQL. Durable evidence about a broadcast must not be described as durable storage of the workspace snapshot itself.
+  \item \textbf{B6 uncertainty.} The lifecycle port owns creation of an immutable uncertainty-assessment revision, exact-revision lookup, and the durable persistence contract for a calibrated assessment. The host can optionally assemble a calibration service backed by a PostgreSQL calibration-profile repository. That profile repository does not, by itself, persist the complete set of assessment revisions. The resource-budget ledger is a separate store with a different responsibility.
+  \item \textbf{Simulated world.} The durable host receives the simulation-world adapter through its application-supplied ports. The PostgreSQL persistence composition described here stores graph, memory, planning, approval, and execution records; it does not define a general PostgreSQL repository for the entire \texttt{SupplyChainSnapshot}. A simulator or test-world adapter may maintain its world state separately. Do not infer cross-process durability of the simulated world from a durable graph checkpoint or action ledger.
+  \item \textbf{Action reconciliation.} The action ledger, batch store, approvals, and observation records support idempotency, authority revalidation, and recovery from ambiguous outcomes. They do not make an external side effect and a PostgreSQL transaction one atomic operation. The application must reconcile the external-world outcome through the relevant host and domain contracts.
+\end{itemize}
+
+\section{How to reason about a restart}
+
+When reading a restart test or designing a recovery path, identify the exact boundary being restarted. Reconstructing the application host, replacing a database connection pool, resuming a graph checkpoint, recovering an action-ledger lease, and restarting a separate JVM are not interchangeable experiments. Each test should name the state it reloads, the operation it retries or reconciles, and the evidence it uses to decide whether an external effect already occurred.
+
+A safe summary is therefore specific: a given test may demonstrate that an intention, approval, budget reservation, checkpoint, or action record can be reloaded and used in a stated scenario. It does not establish that all application state is durable, or that the simulator's world is automatically restored by PostgreSQL. For the corresponding test categories and their limits, see Appendix~\ref{app:testing} and Chapter~24.

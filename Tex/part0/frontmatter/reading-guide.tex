@@ -1,12 +1,66 @@
 \chapter*{How to Read This Book}
 \addcontentsline{toc}{chapter}{How to Read This Book}
 
-The book is organized as a progression from conceptual foundations to mechanism analysis and then to one coherent engineering application:
+This book is designed as a progression from architecture, to mechanism analysis, to engineering. The recommended route is sequential. Each part introduces ideas that later chapters reuse, and Part III assumes that the reader can already distinguish an architectural role from the mechanism or implementation that realizes it.
+
+\section*{1. The three-part learning path}
 
 \begin{itemize}
-  \item \textbf{Part I (Chapters 1--8)} develops CoALA from its conceptual foundations through its architectural dimensions, memory, internal and external actions, planning, evaluation, selection, and iterative decision process. Read this part without importing mechanisms from later research into the original framework.
-  \item \textbf{Part II (Chapters 9--18)} studies Fan and Lan's mechanism-level review. It explains the analytical representation, historical and modern mechanism mappings, the residual mechanism bundles, the closed B5/GraSP case, and their synthesis. Keep the review's stated evidence and validity boundaries in view.
-  \item \textbf{Part III (Chapters 19--24)} applies the ideas to one Java supply-chain disruption-management application operating against a deterministic simulated world. Chapter 19 introduces the domain and engineering foundations; Chapter 20 maps CoALA to the code; Chapters 21--23 examine the application's engineering counterparts for selected B1/B3, B2, and B4/B6 control responsibilities; and Chapter 24 explains the graph/runtime composition and test-backed simulated workflow. These are not claims of complete reproduction of every source mechanism. LangGraph4j, LangChain4j, and PostgreSQL are implementation technologies, not additional theoretical foundations. The application is a teaching/reference demonstration, not a deployed enterprise integration.
+  \item \textbf{Part I (Chapters 1--8): CoALA and the organization of language agents.} Begin with the motivation for cognitive architectures, then study CoALA's architectural dimensions, memory, internal actions, external actions, planning, evaluation and selection, and the iterative decision process. The purpose is to establish a shared vocabulary. Read the framework as presented in its source; do not import the later mechanism labels from Part II into the original paper.
+  \item \textbf{Part II (Chapters 9--18): Fan and Lan's mechanism-level analysis.} This part explains why feature labels alone are insufficient, introduces the seven-field mechanism representation, and examines historical and modern mechanisms. The focused chapters study B1, B2, B3, B4, and B6, then consider the closed B5/GraSP case and the relationships among the mechanisms. Keep the review's evidence and depth classifications visible: a proposed mechanism bundle, a source-described mechanism, and a demonstrated implementation are different kinds of claims.
+  \item \textbf{Part III (Chapters 19--24): one Java supply-chain reference application.} The application is introduced through its domain and deterministic simulator, then mapped to CoALA's memory, actions, and planning. The next chapters examine selected B1/B3, B2, and B4/B6 responsibilities. The final chapter composes the workflow through graph orchestration, PostgreSQL-backed persistence, approval, simulated execution, and reconciliation. This part is a worked engineering example, not a claim that every source mechanism has been reproduced or that the application is connected to a live supply chain.
 \end{itemize}
 
-The intended reader has basic programming knowledge. Each technical idea is introduced through a problem, followed by intuition, terminology, and a precise account. In Part III, distinguish the source-described mechanisms from the book's own engineering decisions, and treat the implementation as one worked system rather than a universal production template.
+The strongest learning route is to complete Parts I and II before beginning Part III. Readers with a particular interest may use Part II as a focused mechanism reference after Part I, or use Part III as an implementation study after reviewing the relevant concepts. These alternate routes are less complete: skipping the earlier explanations can make later mechanism names, state boundaries, and evidence qualifications difficult to interpret.
+
+\section*{2. Intended audience and prerequisites}
+
+The book assumes basic programming literacy and familiarity with ordinary software concepts such as data structures, interfaces, state, and tests. It does not assume that the reader has previously studied CoALA, cognitive architectures, or Fan and Lan's review. Those foundations are introduced in Parts I and II.
+
+Part III uses Java 21, Maven, LangGraph4j, LangChain4j, and PostgreSQL. Readers who want to compile the application or run its tests should be comfortable reading Java and using a command-line build tool. Basic SQL and relational-database knowledge will help with the persistence discussion, but the appendices identify the relevant repositories, configuration, and verification commands. A local environment is not required to understand the architectural arguments or the selected code excerpts.
+
+This is not a Java language course, a database administration manual, or a tutorial for every framework used in the application. The code is presented to explain architectural responsibilities and their boundaries. Consult the project's own documentation for framework features beyond the uses described in the chapters.
+
+\section*{3. A practical way to read a chapter}
+
+Start with the chapter's opening orientation and learning outcomes, where provided. Before reading implementation detail, identify the problem being addressed and the decision or responsibility the chapter is trying to explain. Then use the diagrams to understand the actors, state, and direction of control before following individual code paths.
+
+When reading a code example, ask four questions:
+\begin{enumerate}
+  \item What information enters this component, and what result or state change does it produce?
+  \item Which component owns the decision, and which component merely transports or records it?
+  \item What state is temporary, what state is retained, and what event makes a transition valid?
+  \item Which test or source reference supports the explanation, and what does that evidence leave unproven?
+\end{enumerate}
+
+Code listings are selected excerpts, not complete copies of the repository. The linked source file may contain validation, constructors, collaborators, or failure handling that do not fit in the printed listing. Follow the source link when those details matter. Many chapters close with a recap, review questions, or an exercise; the exact combination varies by chapter, so use the chapter's own closing sections rather than assuming every chapter has an identical format.
+
+\section*{4. Keep four kinds of statements separate}
+
+The book deliberately distinguishes four kinds of material:
+\begin{description}
+  \item[Research claim.] A statement attributed to CoALA or to Fan and Lan. Its scope should be checked against the cited source and the section or table identified in the chapter.
+  \item[Teaching example.] A scenario or simplified trace created to make an idea easier to follow. It illustrates a concept but is not evidence that a real system or the reference application behaves that way.
+  \item[Engineering decision.] A design choice made for the Java application, such as a typed contract, repository, planner adapter, graph node, persistence boundary, or test fixture. It should not be mistaken for a mechanism prescribed by either paper.
+  \item[Test evidence.] An assertion or integration result from the supplied repository. It supports the specific behavior exercised by that test under its stated fixture and environment; it does not automatically prove an entire mechanism, a research hypothesis, or production readiness.
+\end{description}
+
+This distinction is particularly important in Part III. The application implements selected responsibilities associated with B1, B2, B3, B4, and B6. A code-level engineering counterpart is not necessarily a complete reproduction of the source mechanism. B5/GraSP is retained as a boundary in the theoretical discussion, not presented as an implemented application mechanism.
+
+\section*{5. Naming conventions and implementation layers}
+
+The B-labels B1, B2, B3, B4, B5, and B6 refer to mechanism identifiers used in Fan and Lan's review. By contrast, M-labels such as M0--M8 appear in the application's development and validation records as milestone or workstream identifiers. They are not additional Fan and Lan mechanisms. When a chapter uses both vocabularies, preserve the distinction.
+
+Likewise, the planning algorithm and the runtime framework are separate layers. CoT-style sequential reasoning, bounded ToT-inspired search, and domain-grounded Monte Carlo tree search (MCTS) inspired by RAP are planning strategies. LangGraph4j orchestrates the stateful application workflow; LangChain4j provides the model adapter boundary. Neither framework should be read as the implementation of those algorithms. The Java services and domain contracts define the application's business rules and authority boundaries.
+
+\section*{6. Following code, QR references, and tests}
+
+Part III points to selected Java source files and tests in the companion repository. Hyperlinks and QR codes are intended to take the reader to a specific source location, not to replace the explanation in the chapter. Use the chapter's nearby text to understand why the file matters, then inspect the surrounding method and its collaborators when necessary. A cited test is evidence for the behavior named in the chapter; the full test class may cover additional cases, while the test may also rely on fixtures or ports supplied by the test harness.
+
+The repository is organized as a Maven multi-module project. Appendix~A maps the modules and their responsibilities. Appendix~B describes the toolchain and verification commands. Appendix~C distinguishes graph checkpoints, CoALA memory, runtime records, and external-world state. Appendix~D explains the main test layers and how to interpret their evidence.
+
+\section*{7. Using the technical appendices}
+
+The appendices are reference material, not extra chapters in the conceptual progression. Consult them when you need to locate a module or class, prepare a build environment, understand the persistence boundaries, or determine what a particular category of test can establish. They summarize the supplied reference application and should be read together with the commit-pinned source references in Part III.
+
+A naming caution is useful for Part II: references there to ``Appendix A'' or ``Appendix D'' may refer to appendices in Fan and Lan's paper. The lettered appendices at the end of this book are separate material. The surrounding sentence and citation identify which source is intended.

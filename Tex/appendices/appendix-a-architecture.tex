@@ -1,0 +1,86 @@
+\chapter{Application Repository and Architecture}
+\label{app:architecture}
+
+This appendix is a navigation aid for the Java application used in Part III. It describes the Maven modules and the main responsibility boundaries visible in the supplied repository. It is not a substitute for the source code, and the mapping from CoALA or Fan and Lan concepts to Java packages is intentionally not one-to-one.
+
+\section{Repository orientation}
+
+The companion project is a Maven multi-module repository. The root \path{pom.xml} declares eleven modules. Each module has its own \path{pom.xml}, production sources under \path{src/main/java}, and, where applicable, tests under \path{src/test/java}. The modules are separated by responsibility so that domain rules, memory, mechanisms, planning, orchestration, and infrastructure can be inspected without treating the entire application as one undifferentiated agent class.
+
+\begin{longtable}{P{0.26\textwidth} P{0.62\textwidth}}
+\caption{Maven modules and their primary responsibilities.}\label{tab:appendix-a-modules}\\
+\toprule
+\textbf{Module} & \textbf{Primary responsibility} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Module} & \textbf{Primary responsibility (continued)} \\
+\midrule
+\endhead
+\path{supply-chain-agent-domain} & Framework-independent supply-chain entities, value objects, and domain invariants. This is where business facts and valid domain states are represented. \\
+\path{supply-chain-agent-core} & Framework-neutral application and domain contracts used across the system. \\
+\path{supply-chain-agent-memory} & CoALA-oriented memory models, lifecycle services, retrieval contracts, and repository ports. \\
+\path{supply-chain-agent-actions} & Typed action contracts, capability enforcement, memory actions, perception, and simulator-backed grounding. \\
+\path{supply-chain-agent-mechanisms} & Framework-neutral, testable engineering realizations of the selected B1, B2, B3, B4, and B6 responsibilities. \\
+\path{supply-chain-agent-planning} & Separate planning strategies and their shared contracts: CoT-style sequential planning, bounded ToT-inspired search, and domain-grounded RAP-inspired MCTS. \\
+\path{supply-chain-agent-simulator} & Deterministic domain transitions used for scenario execution and planning evaluation. \\
+\path{supply-chain-agent-runtime} & Cognitive-cycle orchestration, graph state, decision and lifecycle services, and framework-facing adapters. \\
+\path{supply-chain-agent-infrastructure-postgres} & PostgreSQL migrations and repository adapters for memory, planner sessions, checkpoints, and selected runtime records. \\
+\path{supply-chain-agent-app} & Application composition and host entry points that connect domain ports, services, runtime, and persistence. \\
+\path{supply-chain-agent-evaluation} & Versioned scenario fixtures and deterministic, proposal-oriented planning and workflow evaluation. \\
+\bottomrule
+\end{longtable}
+
+\section{A responsibility map}
+
+The following map is a guide to where to begin reading. A concept may cross several modules because an architectural role, a mechanism, and its persistence adapter are different responsibilities.
+
+\begin{longtable}{P{0.23\textwidth} P{0.32\textwidth} P{0.33\textwidth}}
+\caption{Conceptual responsibilities and useful code locations.}\label{tab:appendix-a-crosswalk}\\
+\toprule
+\textbf{Concern} & \textbf{Main module or package} & \textbf{Related boundary} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Concern} & \textbf{Main module or package} & \textbf{Related boundary} \\
+\midrule
+\endhead
+Business entities and invariants & \path{supply-chain-agent-domain} & Domain validation is not delegated to an LLM or graph node. \\
+World transitions & \path{supply-chain-agent-simulator} & A command produces a deterministic simulated transition; the world adapter is supplied to the host. \\
+CoALA memory & \path{supply-chain-agent-memory} & Repository ports are implemented by PostgreSQL adapters in the infrastructure module. \\
+Internal and external actions & \path{supply-chain-agent-actions} & Typed action contracts are registered and dispatched through application/runtime services. \\
+B1, B2, B3, B4, and B6 responsibilities & \path{supply-chain-agent-mechanisms} & Mechanism services remain framework-neutral and are invoked by runtime decision or lifecycle services. \\
+Planning algorithms & \path{supply-chain-agent-planning} & Planner strategies are selected through a shared planning contract; they are not implemented by LangGraph4j. \\
+Cognitive-cycle orchestration & \path{supply-chain-agent-runtime} & LangGraph4j provides graph execution and checkpoint integration. \\
+Model-facing integration & \path{supply-chain-agent-runtime} (LangChain4j adapters) & Model access is behind an application-facing adapter; domain authority remains outside the model adapter. \\
+Durable adapters & \path{supply-chain-agent-infrastructure-postgres} & PostgreSQL implements selected repository, ledger, and checkpoint boundaries. \\
+Composition and configured ports & \path{supply-chain-agent-app} & The host supplies domain, world, authority, and policy adapters. \\
+Scenarios and evaluation & \path{supply-chain-agent-evaluation} & Test fixtures and deterministic evaluation are not live supply-chain integrations. \\
+\bottomrule
+\end{longtable}
+
+\section{The main composition path}
+
+A useful reading path through the code is:
+
+\begin{enumerate}
+  \item Start with the domain model and simulator to understand the business facts and valid transitions.
+  \item Read the memory, action, mechanism, and planning modules to understand the capabilities available to the cognitive cycle.
+  \item Follow the runtime decision and lifecycle services to see when those capabilities are invoked and which state is carried between graph nodes.
+  \item Inspect the PostgreSQL infrastructure module to identify which contracts have durable adapters.
+  \item Finish with the application host to see how the services, repositories, graph, world adapter, and authority ports are assembled.
+\end{enumerate}
+
+The dependency structure is deliberately not a claim that each CoALA component is a separately deployed service. Several architectural responsibilities are implemented by cooperating Java classes within one application. The application uses module boundaries to make those responsibilities testable and traceable.
+
+\section{Mechanism labels, milestone labels, and frameworks}
+
+B1, B2, B3, B4, B5, and B6 are mechanism identifiers used by Fan and Lan. The reference application has engineering implementations for selected B1, B2, B3, B4, and B6 responsibilities. This does not establish full equivalence to every source-described mechanism. B5/GraSP is not presented as an implemented application mechanism.
+
+M-labels such as M0--M8 appear in repository change records, architecture checks, and development documentation. They identify project milestones or workstreams, not additional mechanisms in Fan and Lan's taxonomy. The labels should not be substituted for one another.
+
+Finally, keep planning algorithms separate from runtime frameworks. The sequential, bounded-search, and MCTS-inspired planners are separate strategies behind planning contracts. LangGraph4j coordinates graph state and control flow; LangChain4j provides the model-facing adapter boundary. Neither framework is the source of the application's domain rules, authorization policy, or planning algorithm.
+
+\begin{notebox}
+The code references in Chapters 20--24 and their QR links provide the precise source locations used in the worked explanations. This appendix gives a module-level map so that readers can navigate beyond those selected excerpts without assuming that a single module contains the whole implementation of a concept.
+\end{notebox}

@@ -1,0 +1,87 @@
+\chapter{Build, Configuration, and Verification}
+\label{app:build}
+
+This appendix records the toolchain and the principal build and verification paths in the supplied application. Version values are taken from the repository's root Maven configuration and wrapper properties. They describe the reference project snapshot, not a recommendation to use the same versions in unrelated projects.
+
+\section{Required toolchain}
+
+The root \path{pom.xml} sets the Java compiler release to 21 and its Maven Enforcer rules require Java 21 and Maven 3.9.16 or later. The repository includes a custom Maven Wrapper bootstrapper that downloads Apache Maven 3.9.16 from the configured Apache distribution endpoints and verifies the archive against a pinned SHA-512 checksum. Use the wrapper from the repository root so the project-defined Maven version is selected.
+
+\begin{itemize}
+  \item \textbf{Java:} JDK 21.
+  \item \textbf{Maven:} the repository wrapper, pinned to Apache Maven 3.9.16.
+  \item \textbf{PostgreSQL:} required for the PostgreSQL-backed integration-test path. The GitHub Actions workflow uses PostgreSQL 16.4.
+  \item \textbf{Operating system:} the CI workflow runs on Ubuntu 24.04. The Maven project itself is not limited to that CI operating system, but local shell commands below use POSIX syntax.
+\end{itemize}
+
+Selected dependency and build-plugin pins are summarized below.
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{P{0.43\textwidth} P{0.20\textwidth} X}
+\toprule
+\textbf{Component} & \textbf{Version} & \textbf{Use in the project} \\
+\midrule
+LangGraph4j & 1.8.20 & Graph execution and PostgreSQL checkpoint integration. \\
+LangChain4j & 1.23.0 & Model-facing Java adapter API. \\
+PostgreSQL JDBC & 42.7.8 & JDBC connectivity. \\
+HikariCP & 7.1.0 & Bounded JDBC connection pooling. \\
+SLF4J API & 2.0.20 & Logging API alignment. \\
+JUnit Jupiter & 5.12.2 & Java test framework. \\
+Maven Compiler Plugin & 3.14.0 & Java 21 compilation. \\
+Maven Surefire Plugin & 3.5.3 & Test execution. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Build and test commands}
+
+From the repository root, the ordinary reactor build is:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+./mvnw -B -ntp clean install
+\end{lstlisting}
+
+This builds the Maven modules and runs tests whose conditions are satisfied in the local environment. PostgreSQL-backed tests are guarded by the system property \texttt{phase0.postgres=true}; without that property, those tests are not enabled merely because the project can compile.
+
+To run the PostgreSQL integration-test path, first make a PostgreSQL database available and set connection variables in the shell or the local environment. The repository's \path{.env.example} documents the supported names. A typical local environment uses the following values, with the password supplied securely rather than committed to a file:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=supply_chain_agent
+export PGUSER=postgres
+export PGPASSWORD="<read from your local secret store>"
+export PGSSLMODE=prefer
+
+./mvnw -B -ntp -Dphase0.postgres=true clean install
+\end{lstlisting}
+
+The configuration reader also supports \texttt{PGCONNECT\_TIMEOUT}, \texttt{PGSOCKET\_TIMEOUT}, and \texttt{PGAPPNAME}. Its defaults are 10 seconds, 30 seconds, and \texttt{supply-chain-agent}, respectively. The default host, port, database, user, and SSL mode are \texttt{localhost}, 5432, \texttt{supply\_chain\_agent}, \texttt{postgres}, and \texttt{prefer}. The accepted SSL modes are \texttt{disable}, \texttt{prefer}, \texttt{require}, \texttt{verify-ca}, and \texttt{verify-full}. The password default is empty. The configuration object's string representation redacts the password; this does not remove the caller's responsibility to protect environment values and secrets.
+
+\section{What the CI workflow verifies}
+
+The authoritative GitHub Actions workflow is \path{.github/workflows/ci.yml}. It starts a PostgreSQL 16.4 service, sets Java 21, and invokes the Maven Wrapper with \texttt{-Dphase0.postgres=true clean install}. Before the Maven build, it runs repository architecture and evidence guard scripts. The workflow also runs additional security and evaluation-artifact steps. Those workflow steps are specific to this repository and should not be confused with a single JUnit test command.
+
+A local successful build is useful, but it is not identical to a successful hosted CI run. The CI environment supplies a known PostgreSQL service and runs the repository's scripted guards and other workflow steps. When reporting verification, identify the exact command and environment used rather than writing only that the project ``passes CI''.
+
+\section{The local intake smoke entry point}
+
+The application module configures \texttt{dev.supplychain.agent.app.Phase0Application} as its Maven Exec Plugin main class. This entry point is a deliberately small deterministic smoke example. It creates a fixed-response chat model that returns \texttt{READY}, compiles the supply-chain intake graph with LangGraph4j's in-memory \texttt{MemorySaver}, submits a sample supplier-capacity request, and prints the resulting outcome, intent, and summary. It requires no provider credentials or PostgreSQL connection.
+
+From the repository root, after building the reactor, the configured smoke entry point can be run with:
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+./mvnw -B -ntp clean install
+./mvnw -B -ntp -f supply-chain-agent-app/pom.xml exec:java
+\end{lstlisting}
+
+The first command builds and installs the reactor modules into the local Maven repository. The second invokes the app module's configured main class. It is an illustrative local path; a reader should first use the Java and Maven versions required by the project and should inspect the output rather than interpreting a successful smoke run as a full application acceptance test.
+
+It is important not to mistake this smoke entry point for the complete durable cognitive-cycle application. It exercises the intake graph only. The durable application host is assembled through \texttt{DurableCognitiveApplicationHost.open} or \texttt{assemble}, and requires an application-supplied \texttt{Ports} configuration for the domain, lifecycle, authority, planning, perception, simulated world, and policy collaborators. The supplied repository does not turn the intake smoke main class into a universal launcher for a live supply-chain service.
+
+\section{Configuration and operational caution}
+
+The reference application reads PostgreSQL connection properties from environment values. Use a secret manager or local secret injection for passwords; do not place real credentials in source control, sample configuration, screenshots, or test output. The default connection-pool settings in the code are bounded values for this reference composition, not a capacity recommendation for an arbitrary deployment. Database sizing, TLS policy, secret rotation, backups, observability, and operational ownership must be assessed for a real environment.
+
+For module responsibilities, see Appendix~\ref{app:architecture}. For the records and state boundaries that PostgreSQL does and does not own, see Appendix~\ref{app:persistence}.
