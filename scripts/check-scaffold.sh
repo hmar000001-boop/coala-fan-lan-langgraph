@@ -9,7 +9,7 @@ for required in \
   Tex/part1/chapter05/chapter.tex Tex/part1/chapter06/chapter.tex \
   Tex/part1/chapter07/chapter.tex Tex/part1/chapter08/chapter.tex \
   Tex/part2/chapter09/chapter.tex Tex/part2/chapter10/chapter.tex Tex/part2/chapter11/chapter.tex Tex/part2/chapter12/chapter.tex Tex/part2/chapter13/chapter.tex Tex/part2/chapter14/chapter.tex Tex/part2/chapter15/chapter.tex Tex/part2/chapter16/chapter.tex Tex/part2/chapter17/chapter.tex Tex/part2/chapter18/chapter.tex \
-  Tex/part3/chapter19/chapter.tex Tex/part3/chapter20/chapter.tex Tex/part3/chapter21/chapter.tex Tex/part3/chapter22/chapter.tex Tex/part3/chapter23/chapter.tex Tex/part3/chapter24/chapter.tex Tex/standalone/chapter19.tex Tex/standalone/chapter20.tex Tex/standalone/chapter21.tex Tex/standalone/chapter22.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex Tex/standalone/chapter18.tex \
+  Tex/part3/chapter19/chapter.tex Tex/part3/chapter20/chapter.tex Tex/part3/chapter21/chapter.tex Tex/part3/chapter22/chapter.tex Tex/part3/chapter23/chapter.tex Tex/part3/chapter24/chapter.tex Tex/standalone/chapter19.tex Tex/standalone/chapter20.tex Tex/standalone/chapter21.tex Tex/standalone/chapter22.tex Tex/standalone/chapter23.tex Tex/standalone/chapter24.tex Tex/standalone/chapter09.tex Tex/standalone/chapter10.tex Tex/standalone/chapter11.tex Tex/standalone/chapter12.tex Tex/standalone/chapter13.tex Tex/standalone/chapter14.tex Tex/standalone/chapter15.tex Tex/standalone/chapter16.tex Tex/standalone/chapter17.tex Tex/standalone/chapter18.tex \
   Tex/bibliography/references.bib \
   .github/workflows/build-book.yml; do
   test -s "$ROOT/$required" || { echo "Missing required file: $required" >&2; exit 1; }
@@ -22,13 +22,28 @@ count3=$(find "$ROOT/Tex/part3" -maxdepth 2 -path '*/chapter*/chapter.tex' | wc 
 }
 for n in 01 02 03 04 05 06 07 08; do test -s "$ROOT/Tex/part1/chapter$n/chapter.tex"; done
 # Part III must remain exactly six canonical build chapters: 19-24.
-# Chapter 23 is now drafted and source-checked; Chapter 24 remains the only placeholder.
-for n in 24; do
-  chapter="$ROOT/Tex/part3/chapter$n/chapter.tex"
-  test -s "$chapter" || { echo "Missing Part III chapter scaffold: chapter$n" >&2; exit 1; }
-  grep -q 'Chapter placeholder' "$chapter" || {
-    echo "Part III Chapter $n must remain a placeholder until its outline is individually approved." >&2; exit 1;
-  }
+# Chapter 24 is drafted and source-checked; the approved Part III sequence is complete.
+! grep -q 'Chapter placeholder' "$ROOT/Tex/part3/chapter24/chapter.tex" || {
+  echo "Part III Chapter 24 must contain drafted prose." >&2; exit 1;
+}
+grep -Fq '\chapter{Composing the Supply-Chain Agent: Graph Orchestration, Persistence, and Simulated Execution}' "$ROOT/Tex/part3/chapter24/chapter.tex" || {
+  echo "Part III Chapter 24 title does not match the approved scope." >&2; exit 1;
+}
+test -s "$ROOT/Tex/part3/chapter24/outline/Chapter_24_Outline_v1.md" || {
+  echo "Missing Chapter 24 source-checked Markdown outline." >&2; exit 1;
+}
+grep -q 'Outline status:.*drafted and source-checked' "$ROOT/Tex/part3/chapter24/outline/Chapter_24_Outline_v1.md" || {
+  echo "Chapter 24 outline must record its drafted/source-checked status." >&2; exit 1;
+}
+test -s "$ROOT/Tex/standalone/chapter24.tex" || {
+  echo "Missing Chapter 24 standalone build entry." >&2; exit 1;
+}
+for diagram in application-composition-and-service-ports cognitive-cycle-graph-routing graph-state-and-authoritative-records postgres-persistence-domains approval-dispatch-unknown-outcome-reconciliation req09-two-cycle-durable-host-timeline restart-boundaries-are-not-interchangeable; do
+  source="$ROOT/Tex/diagrams/source/part3/chapter24/$diagram.mmd"
+  test -s "$source" || { echo "Missing Chapter 24 Mermaid source: $source" >&2; exit 1; }
+  grep -q 'accTitle:' "$source" || { echo "Missing Chapter 24 Mermaid accTitle: $source" >&2; exit 1; }
+  grep -q 'accDescr:' "$source" || { echo "Missing Chapter 24 Mermaid accDescr: $source" >&2; exit 1; }
+  grep -q "$diagram.png" "$ROOT/Tex/part3/chapter24/chapter.tex" || { echo "Chapter 24 does not reference $diagram.png" >&2; exit 1; }
 done
 ! grep -q 'Chapter placeholder' "$ROOT/Tex/part3/chapter19/chapter.tex" || {
   echo "Part III Chapter 19 must contain drafted prose." >&2; exit 1;
@@ -412,4 +427,4 @@ done
 for term in compositionalcontrol crossbundledependency boundedsynthesisruntime authorityboundary outcomeattribution compositionalablation partialcomposition resourcereservation; do
   grep -Fq "\\newglossaryentry{$term}" "$ROOT/Tex/glossary/terms.tex" || { echo "Missing Chapter 18 glossary entry: $term" >&2; exit 1; }
 done
-echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-23 contain drafted prose; Chapter 24 remains outline-gated; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources and Chapter 23 has six."
+echo "Repository structure verified: Part I $count chapters; Part II $count2; Part III $count3. Chapters 1-24 contain drafted prose; Chapters 16-18 retain one canonical Markdown-only outline each; Chapter 18 has nine accessible Mermaid sources, Chapter 23 has six, and Chapter 24 has seven."

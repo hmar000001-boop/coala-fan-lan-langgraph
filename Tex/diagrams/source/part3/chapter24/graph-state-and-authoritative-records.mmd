@@ -1,0 +1,23 @@
+flowchart LR
+  accTitle: Graph state references and authoritative records
+  accDescr: CognitiveCycleState contains checkpoint-friendly identifiers, versions, flags, and routing values. These references point to separate authoritative repositories for CoALA memory, mechanism state, approvals and actions, observations, and the simulated world. The PostgreSQL checkpoint stores graph continuation state but does not replace those records.
+  subgraph STATE[CognitiveCycleState]
+    IDS[Execution and scope IDs]
+    REFS[Memory, evidence, intention, plan and observation IDs]
+    ROUTE[Versions, counters and route decisions]
+  end
+  CP[(PostgreSQL graph checkpoint)]
+  STATE <--> CP
+  subgraph STORES[Authoritative owners]
+    MEM[(CoALA memory repositories)]
+    MECH[(B1 B2 B3 B4 B6 runtime records)]
+    AUTH[(Approval and action ledgers)]
+    OBS[(Observation and outcome records)]
+    WORLD[(Simulated world snapshot)]
+  end
+  REFS -. identifiers only .-> MEM
+  REFS -. identifiers only .-> MECH
+  REFS -. identifiers only .-> AUTH
+  REFS -. identifiers only .-> OBS
+  REFS -. external reference .-> WORLD
+  ROUTE --> CP

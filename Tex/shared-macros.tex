@@ -64,7 +64,7 @@
   \par\smallskip
 }
 
-\newcommand{\BookSourceReferenceQR}[9]{%
+\newcommand{\BookSourceReferenceQRContent}[9]{%
   \par\smallskip\noindent
   \begin{minipage}[c]{0.785\linewidth}%
     \BookSourceReferenceText{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}%
@@ -75,10 +75,19 @@
     % The source QR is a vector PDF asset generated with qrcode.sty.
     % Embedding it as a graphic lets hyperref create a real clickable area
     % around the full printed symbol (including its four-module quiet zone).
-    \href{#8}{\mbox{{\setlength{\fboxsep}{0pt}\colorbox{white}{\includegraphics[height=19.5mm]{Tex/diagrams/source-qr/#1.pdf}}}}}\par
+    \href{#8}{\mbox{{\setlength{\fboxsep}{0pt}\colorbox{white}{\includegraphics[height=\BookSourceQRHeight]{Tex/diagrams/source-qr/#1.pdf}}}}}\par
     {\scriptsize\sffamily Scan to inspect}%
   \end{minipage}%
   \par\smallskip
+}
+
+% Standard source references use a 19.5 mm QR including the quiet zone.
+% Very dense commit-pinned URLs may opt into the 21 mm variant.
+\newcommand{\BookSourceReferenceQR}[9]{%
+  {\def\BookSourceQRHeight{19.5mm}\BookSourceReferenceQRContent{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}}%
+}
+\newcommand{\BookSourceReferenceQRLong}[9]{%
+  {\def\BookSourceQRHeight{21mm}\BookSourceReferenceQRContent{#1}{#2}{#3}{#4}{#5}{#6}{#7}{#8}{#9}}%
 }
 
 

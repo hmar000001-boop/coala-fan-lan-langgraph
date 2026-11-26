@@ -2,8 +2,8 @@
 
 **Book:** *From Cognitive Architectures to Production Agentic Systems: Understanding CoALA, Fan & Lan, and Engineering Complex Agents with Java*  
 **Part:** III — approved six-chapter structure (Chapters 19–24)  
-**Outline status:** proposed for individual author approval; no chapter prose drafted  
-**Implementation baseline:** supplied `supply-chain-agent-main` Java repository snapshot  
+**Outline status:** drafted and source-checked; author-directed drafting authorized 26 November 2026  
+**Implementation baseline:** supplied `supply-chain-agent-main` archive, ZIP comment commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`; the `c49c543` reference in `CHANGESET_INFO` is a CI-evidence overlay base and contains no Java source changes  
 **Teaching role:** connect the application services into the actual cognitive graph and durable host, then demonstrate the simulated supply-chain workflow through separate, accurately bounded integration tests.
 
 ## 1. Purpose and teaching contract
@@ -11,6 +11,8 @@
 Chapters 20–23 explain the CoALA capabilities and the B1/B2/B3/B4/B6 control responsibilities in the source. Chapter 24 shows how the repository composes those capabilities into one application. The reader should be able to follow a request from host ingress through the graph, memory, planning, mechanism governance, exact approval, simulated execution, observation/reconciliation and outcome recording.
 
 This is not a deployment chapter or a framework tutorial. It is a guided explanation of one application-specific composition. LangGraph4j, LangChain4j and PostgreSQL are explained only to the extent needed to understand the actual code. The primary supply-chain walkthrough is deterministic and test-backed; it is not a claim of live-model execution or production deployment.
+
+The chapter was drafted against the supplied application files and cross-checked against the commit-pinned GitHub source paths. The source register distinguishes seven primary implementations receiving QR codes from supporting contracts/adapters/tests that retain clickable text references. The chapter does not use a moving branch URL.
 
 ## 2. Learning outcomes
 

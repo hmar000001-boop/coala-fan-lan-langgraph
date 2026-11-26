@@ -1,0 +1,25 @@
+flowchart TB
+  accTitle: Application composition and service ports
+  accDescr: The durable host assembles trusted ports, persistence, decision services and lifecycle services. An operations adapter connects the services to the cognitive graph. Policies remain inside their domain and mechanism owners.
+  subgraph HOST[Durable application host]
+    PORTS[Trusted host ports and adapters]
+    DB[PostgreSQL persistence adapters]
+    DEC[Decision services]
+    LIFE[Lifecycle services]
+    ADAPT[CognitiveCycleServiceOperations]
+    APP[CognitiveCycleApplicationGraph]
+    PORTS --> DEC
+    PORTS --> LIFE
+    DB --> DEC
+    DB --> LIFE
+    DEC --> ADAPT
+    LIFE --> ADAPT
+    ADAPT --> APP
+  end
+  GRAPH[LangGraph4j CognitiveCycleGraph]
+  APP --> GRAPH
+  DOMAIN[Domain rules and simulator authority]
+  ACTION[Capability and action boundary]
+  DEC <--> DOMAIN
+  LIFE --> ACTION
+  LIFE <--> DOMAIN

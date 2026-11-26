@@ -1,0 +1,38 @@
+flowchart TB
+  accTitle: Cognitive cycle graph routing
+  accDescr: The cognitive graph moves from initialization and interpretation to context and evidence, workspace and planning, recovery and governance, authorization and execution, then observation and learning. Clarification, evidence, planning, human control, approval, and memory update create conditional loops or interruptions. Terminal paths are completion and escalation.
+  START([Start]) --> INIT[Initialize]
+  INIT --> INT[Interpret]
+  INT -->|ready| CTX[Load context]
+  INT -->|clarification| CLAR[Await clarification]
+  CLAR --> INT
+  INT -->|unknown or out of scope| ESC[Escalate]
+  CTX --> UNC[Assess uncertainty]
+  UNC --> RET[Retrieve evidence]
+  RET -->|more evidence| EVID[Await evidence]
+  EVID --> CTX
+  RET -->|blocked| B2[B2 recovery]
+  B2 -->|reconsider| CTX
+  RET -->|usable| WS[B3 workspace]
+  WS --> PROP[Propose candidates]
+  PROP --> EVAL[Evaluate candidates]
+  EVAL -->|retry or evidence| PROP
+  EVAL -->|selected| B4[B4 intention]
+  B4 --> B6[B6 meta-control]
+  B6 -->|re-propose| PROP
+  B6 -->|human decision| HUMAN[Await human control]
+  HUMAN --> B6
+  B6 -->|authorize| AUTH[Authorize candidate]
+  AUTH -->|approval needed| APPROVE[Await exact approval]
+  APPROVE --> REVALIDATE[Revalidate plan and approval]
+  AUTH -->|pre-authorized| REVALIDATE
+  REVALIDATE -->|current| EXEC[Execute authorized action]
+  REVALIDATE -->|stale or new evidence| CTX
+  EXEC --> OBS[Observe and reconcile]
+  OBS --> WM[Update working memory]
+  WM --> LEARN[Record outcome episode]
+  LEARN --> COMPLETE([Complete])
+  OBS -->|conflict or reload| CTX
+  B6 -->|stop or unsafe| ESC
+  ESC --> END([End])
+  COMPLETE --> END

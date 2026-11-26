@@ -12,7 +12,7 @@ Part III is a teaching/reference demonstration, not a deployed enterprise integr
 
 ## Manuscript status
 
-Chapters 1–22 are drafted and integrated from individually approved outlines. Chapters 19–22 form the current Part III manuscript; Chapters 23–24 remain outline-gated and require individual author approval before prose drafting.
+Chapters 1–24 contain drafted prose. Part III Chapters 19–24 have been drafted and source-checked against the supplied application snapshot. Their source registers distinguish primary implementation listings with per-listing QR codes from supporting contracts and excerpts that retain clickable text references.
 
 ## Repository layout
 
@@ -50,7 +50,7 @@ bash scripts/build-book.sh
 
 The build renders the editable `.mmd` sources to PNG before XeLaTeX compilation. Generated PNGs are build artifacts and should not be added to source control. The CI workflow is the production build authority.
 
-To build the authored chapters in Parts I, II, and the drafted Chapters 19–22 separately:
+To build the authored chapters in Parts I, II, and all drafted Part III Chapters 19–24 separately:
 
 ```bash
 bash scripts/build-chapters.sh
@@ -65,7 +65,7 @@ bash scripts/build-part.sh part2
 bash scripts/build-part.sh part3
 ```
 
-`quality-checks.sh` validates the generated PDF metadata, expected chapter headings, US Letter page dimensions, and unresolved citations/references. The scaffold check enforces the six-chapter Part III structure, requires drafted prose and individually approved outlines for Chapters 19–22, and keeps Chapters 23–24 as placeholders until their individual outlines are approved.
+`quality-checks.sh` validates the generated PDF metadata, expected chapter headings, US Letter page dimensions, and unresolved citations/references. The scaffold check enforces the six-chapter Part III structure, requires drafted prose, source-checked outlines, standalone drivers, and accessible Mermaid sources for all six Part III Chapters 19–24.
 
 ## Source discipline
 

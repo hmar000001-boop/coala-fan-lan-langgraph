@@ -1,0 +1,26 @@
+flowchart TB
+  accTitle: REQ-09 two-cycle durable host timeline
+  accDescr: Cycle one is run by host instance A to an approval interrupt, instance B applies the simulator effect and loses its acknowledgement, then instance C resumes and reconciles without a second dispatch. Host C then starts a second execution in the same memory scope, which imports the first observation, obtains a separate approval and applies a second effect.
+  subgraph CYCLE1[Cycle 1: first disruption]
+    A[Host A starts graph]
+    A --> PAUSE[Checkpoint at exact approval]
+    PAUSE --> AUTH[External test authority approves]
+    AUTH --> B[Host B resumes]
+    B --> APPLY[Simulator applies one effect]
+    APPLY --> LOST[Acknowledgement deliberately lost]
+    LOST --> UNKNOWN[Action batch is UNKNOWN_OUTCOME]
+    UNKNOWN --> C[Host C reopens from PostgreSQL]
+    C --> RECON[Reconcile simulator evidence]
+    RECON --> OBS1[Persist observation and complete B4 intention]
+  end
+  subgraph CYCLE2[Cycle 2: second disruption in same scope]
+    OBS1 --> START2[Host C starts second execution]
+    START2 --> PRIOR[Import prior-cycle observation]
+    PRIOR --> PAUSE2[New exact approval interrupt]
+    PAUSE2 --> AUTH2[Second distinct approval]
+    AUTH2 --> APPLY2[Second simulator effect]
+    APPLY2 --> OBS2[Persist second observation]
+  end
+  COUNT[Simulator transitions: one after cycle 1, two after cycle 2]
+  OBS1 --> COUNT
+  OBS2 --> COUNT

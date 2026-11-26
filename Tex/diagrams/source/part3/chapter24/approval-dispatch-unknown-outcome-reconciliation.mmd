@@ -1,0 +1,20 @@
+flowchart TB
+  accTitle: Approval, dispatch, unknown outcome and reconciliation
+  accDescr: Candidate selection leads to plan-bound authorization and a pause for an exact approval when required. Freshness and feasibility are revalidated before the action dispatcher applies capability, idempotency, fencing and budget checks. A lost acknowledgement after an effect creates UNKNOWN_OUTCOME. The workflow reconciles authoritative simulator state instead of blindly retrying.
+  CAND[Selected candidate proposal] --> AUTH[Prepare exact plan-bound approval]
+  AUTH --> WAIT[Await trusted host approval]
+  WAIT --> REVAL[Revalidate approval, plan, candidate and authority]
+  REVAL --> DISP[ActionDispatcher]
+  DISP --> CAP[Capability and resource-scope check]
+  CAP --> IDEM[Idempotency and fencing claim]
+  IDEM --> EXEC[Invoke simulator handler]
+  EXEC --> ACK{Receipt acknowledged?}
+  ACK -->|yes| RECEIPT[Persist action receipt]
+  ACK -->|no or ambiguous| UNKNOWN[Record UNKNOWN_OUTCOME]
+  UNKNOWN --> RECON[Observe and reconcile]
+  RECON --> WORLD[Read authoritative simulated world]
+  WORLD -->|effect applied| SAT[Record business outcome as satisfied]
+  WORLD -->|definitively not applied| SAFE[Consider a safe retry under current authority]
+  SAT --> MEMORY[Persist observation to working memory]
+  RECEIPT --> MEMORY
+  SAFE --> REVAL

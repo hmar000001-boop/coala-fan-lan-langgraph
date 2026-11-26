@@ -1,0 +1,11 @@
+flowchart TB
+  accTitle: Different restart tests prove different boundaries
+  accDescr: Four distinct tests must not be conflated. The primary REQ-09 test reconstructs three durable host instances in one JVM and reconciles a simulated effect. A replacement-pool integration test also remains in one JVM. A focused action-ledger probe uses two JVMs and a file-marker provider with a small graph. A full-graph fresh-JVM test resumes a clarification checkpoint and ends in escalation, not a completed external-effect reconciliation.
+  REQ09[REQ-09 durable host test] --> SAME[Same JVM, host A then B then C]
+  SAME --> BUSINESS[Full two-cycle simulator workflow and reconciliation]
+  POOL[Replacement-pool test] --> SAMEPOOL[Same JVM, rebuilt persistence/host objects]
+  SAMEPOOL --> MEMORY[Memory and ambiguous-write reconciliation boundaries]
+  PROBE[Focused action-ledger probe] --> JVM2[Two independent JVMs]
+  JVM2 --> MARKER[File marker, unknown outcome, authoritative reconciliation]
+  GRAPH[Full-graph clarification test] --> FRESH[Two independent JVMs]
+  FRESH --> ESC[Resume at clarification and terminate ESCALATED]

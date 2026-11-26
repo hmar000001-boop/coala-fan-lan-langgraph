@@ -22,6 +22,10 @@ def extract_macro_args(text: str, macro: str, count: int) -> list[list[str]]:
         if start < 0:
             break
         pos = start + len(marker)
+        # Do not treat the longer macro name as a prefix match.
+        if pos < len(text) and text[pos].isalpha():
+            offset = pos
+            continue
         args: list[str] = []
         while len(args) < count:
             while pos < len(text) and text[pos].isspace():
@@ -56,8 +60,12 @@ def main() -> int:
     checked = 0
     for chapter in CHAPTERS:
         text = chapter.read_text(encoding="utf-8")
-        for args in extract_macro_args(text, "BookSourceReferenceQR", 9):
-            source_id, url = args[0].strip(), args[7].strip()
+        qr_calls = (
+            extract_macro_args(text, "BookSourceReferenceQR", 9)
+            + extract_macro_args(text, "BookSourceReferenceQRLong", 9)
+        )
+        for args in qr_calls:
+            source_id, url = args[0].strip(), args[7].strip().replace(r"\#", "#")
             if source_id in seen:
                 raise ValueError(f"Duplicate QR source ID: {source_id}")
             seen.add(source_id)

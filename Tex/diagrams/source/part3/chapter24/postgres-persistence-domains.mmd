@@ -1,0 +1,18 @@
+flowchart TB
+  accTitle: Persistence domains in the durable host
+  accDescr: One PostgreSQL DataSource and migration boundary backs several repositories: four CoALA memories, planner sessions and mechanism/runtime records, B2 drafts and artifacts, B3 receipts and outcomes, B4 intentions, B6 budget and optional calibration, action plans/batches/observations, and LangGraph4j checkpoints. B3 workspace snapshots are in-memory and ephemeral in the present host composition; the simulated world is a separate adapter.
+  DS[(Shared PostgreSQL DataSource)]
+  DS --> MEM[CoALA memory repositories]
+  DS --> RUN[Runtime and planner records]
+  DS --> B2[B2 cases, drafts and artifacts]
+  DS --> B3[B3 receipts and verified outcomes]
+  DS --> B4[B4 intention and history]
+  DS --> B6[B6 budget and optional calibration]
+  DS --> ACT[Action plans, approvals, batches and observations]
+  DS --> CP[LangGraph4j checkpoint saver]
+  WS[InMemoryWorkspaceRepository]:::ephemeral
+  SIM[Simulated world adapter]:::external
+  RUN -. workspace is not persisted here .-> WS
+  ACT -. reconciliation reads .-> SIM
+  classDef ephemeral fill:#fff7e6,stroke:#bd7c13,color:#4c3500
+  classDef external fill:#eef6ff,stroke:#3974a8,color:#173550
