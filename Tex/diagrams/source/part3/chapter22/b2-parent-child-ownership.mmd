@@ -1,0 +1,13 @@
+flowchart LR
+accTitle: Parent and child ownership in B2 recovery
+accDescr: The parent request and objective remain owned by the active B4 intention. B2 stores a compact parent identity and version snapshot, delegates a bounded subset of read capabilities to the child investigation, and accepts findings only after the parent identity checks. The child does not receive the full objective or capability grant.
+    PARENT[Parent request and objective] --> INTENTION[Active B4 intention]
+    INTENTION --> CASE[B2 case with parent identity and version]
+    CASE --> CHILD[Bounded child investigation]
+    CHILD --> RESULT[Typed findings and assumptions]
+    RESULT --> CHECK[Parent and result identity checks]
+    CHECK --> RETURN[Return to the same B4 intention]
+    RETURN --> INTENTION
+    GRANT[Parent capability grant] --> SUBSET[Child capability subset]
+    SUBSET --> CASE
+    NOTE[No parent objective copy or write capability] -. boundary .-> CHILD

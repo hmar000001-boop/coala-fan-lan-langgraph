@@ -1,0 +1,11 @@
+flowchart LR
+accTitle: Four-node B2 resolution subgraph
+accDescr: The B2 subgraph runs four linear nodes: open the child case and delegate the active intention, investigate through typed host ports, refresh the same scoped uncertainty assessment by exactly one revision, then validate the child result against the current parent before returning.
+    START([Start]) --> OPEN[open-child]
+    OPEN --> INVESTIGATE[investigate-child]
+    INVESTIGATE --> REFRESH[refresh-uncertainty-after-investigation]
+    REFRESH --> RETURN[validate-parent-return]
+    RETURN --> END([End])
+    OPEN -. B4 delegation .-> B4[Parent intention]
+    RETURN -. B4 return .-> B4
+    INVESTIGATE -. host supplied read steps .-> HOST[Domain adapter]

@@ -1,0 +1,13 @@
+flowchart LR
+accTitle: Governed B2 recovery-procedure reuse lifecycle
+accDescr: A resolved B2 case may produce an optional typed draft. A trusted approver approves the draft, but staging only creates an immutable artifact and a CoALA procedural-memory draft. An independent reviewer validates it, a separate actor activates it, and retrieval returns planning knowledge for an exact scope and condition key without executing the referenced action.
+    CASE[Resolved B2 case] --> FACTORY[Optional host proposal]
+    FACTORY --> DRAFT[Recovery draft]
+    DRAFT --> APPROVE[Trusted B2 approval]
+    APPROVE --> STAGE[Immutable artifact and CoALA DRAFT]
+    STAGE --> VALIDATE[Independent procedure reviewer]
+    VALIDATE --> ACTIVATE[Independent activator]
+    ACTIVATE --> ACTIVE[ACTIVE runbook]
+    ACTIVE --> RETRIEVE[Exact scope and condition retrieval]
+    RETRIEVE --> KNOWLEDGE[Planning knowledge only]
+    KNOWLEDGE -. no direct dispatch .-> BOUNDARY[Action authorization remains separate]

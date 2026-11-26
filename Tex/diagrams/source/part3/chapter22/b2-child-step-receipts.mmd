@@ -1,0 +1,13 @@
+flowchart TB
+accTitle: B2 child-step claim and receipt control
+accDescr: A declared child step is claimed before its action budget is recorded and its read-only domain operation runs. A completed receipt can be replayed without rerunning the step. An in-progress claim is rejected. An unknown outcome requires explicit reconciliation before retry, and fencing tokens prevent an expired worker from completing a newer claim.
+    PLAN[Declared typed step] --> CLAIM[Claim step receipt]
+    CLAIM -->|ACQUIRED| BUDGET[Record B2 action budget]
+    CLAIM -->|COMPLETED| REUSE[Reuse recorded findings]
+    CLAIM -->|IN_PROGRESS| STOP1[Reject concurrent execution]
+    CLAIM -->|UNKNOWN_OUTCOME| STOP2[Require reconciliation]
+    BUDGET --> EXECUTE[Execute read-only domain step]
+    EXECUTE -->|Success| COMPLETE[Complete with fencing token]
+    EXECUTE -->|Failure or interruption| UNKNOWN[Record unknown outcome]
+    UNKNOWN --> RECONCILE[Reconcile exact result or non-application]
+    RECONCILE --> CLAIM

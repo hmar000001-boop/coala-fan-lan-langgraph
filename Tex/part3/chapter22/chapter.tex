@@ -1,4 +1,417 @@
 \chapter{Typed Impasses and Protected Recovery: B2}
-\begin{notebox}
-Chapter placeholder. The detailed outline is prepared but requires individual author approval before prose drafting.
-\end{notebox}
+\label{ch:typed-impasses-protected-recovery}
+
+\section*{Chapter at a glance}
+\phantomsection
+\addcontentsline{toc}{section}{Chapter at a glance}
+
+A blocked decision does not automatically justify another attempt, and a failure message is not yet a recovery policy. The application needs to know which parent request is blocked, what local question may be investigated, which capabilities the investigation may use, and what evidence must accompany its return. It must also preserve the parent objective while the child investigates. This chapter follows the B2 implementation from a host-supplied typed impasse through a versioned case, a bounded child investigation, a parent-return check, and an optional path toward a reusable recovery procedure.
+
+The application does not implement Soar's native superstate/substate architecture or its goal-dependency-set regeneration. It uses Java records and services to establish a narrower parent-linked recovery boundary. The host supplies the typed signal and investigation plan; the B2 case constrains scope, capability, time, and action count; the runtime sequences the work; and a result can enter procedural memory only through additional, separately governed steps. The chapter distinguishes those steps because a resolved case, an approved draft, an active procedure, and a completed business objective are different states.
+
+\begin{learningbox}
+By the end of this chapter, you should be able to distinguish a raw blocker from an application-supplied typed impasse; explain the parent identity captured by a B2 case; trace B2 opening, B4 delegation, child investigation, uncertainty refresh, and parent return; identify the fixed child capability allow-list and the separate time, action-count, and step-receipt controls; state exactly what parent-return validation checks; explain why a resolved case does not automatically become procedural memory; trace the draft, approval, staging, validation, activation, and retrieval boundaries; and interpret the relevant tests without claiming a full Soar reproduction or demonstrated learning benefit.
+\end{learningbox}
+
+\section{A blocked decision is not yet a recovery policy}
+\label{sec:ch22-blocked-decision}
+
+Imagine a supply-chain request to recover several delayed customer orders. The planner has a candidate allocation, but an important supplier commitment is missing: the application cannot determine whether the supplier has confirmed the quantity needed for the recovery window. Re-running the same planning call without changing the available evidence may reproduce the same ambiguity. Recording the error is useful for diagnosis, but it does not tell the runtime what may be investigated or how a result should be returned.
+
+\BookExampleLabel{} In the small example used throughout this chapter, the parent request remains the same: fulfill the affected orders under their existing constraints. The local question is narrower: has the supplier confirmed the requested recovery quantity for the relevant delivery window? The child investigation may inspect permitted supplier, order, inventory, shipment, or memory information and return findings. It does not replace the parent objective with a new goal, reserve inventory, place a purchase order, reroute a shipment, or otherwise change the modeled supply-chain world.
+
+A blind retry, a generic failure log, and a bounded investigation solve different problems. A retry is appropriate for some known transient failures, especially when the operation is idempotent and its outcome can be established. A log preserves an observation for later diagnosis. A B2 case is useful when the runtime needs a typed, bounded investigation whose result must be associated with an unchanged parent request. B2 does not replace every retry policy, and it does not turn every unsuccessful model call into an impasse.
+
+The connection to Part II Chapter 13 is conceptual rather than literal. Fan and Lan use B2 to describe a coupled mechanism for typed diagnosis, protected recovery, result return, and guarded reuse. In Soar, an impasse is connected to operator selection and native substate semantics. This application instead receives a typed signal from its host/domain boundary and manages a child investigation through its own contracts. We will use the B2 vocabulary to examine the code, but we will not call these Java objects Soar substates or claim that the implementation regenerates Soar goal dependency sets.\FanLanCite{\S VI-C, B2; Appendix C-B, R2a; Appendix C-C, R2b}
+
+The central invariant is simple: the parent remains the owner of the task. The child receives a bounded investigative responsibility and returns findings tied to the parent identity. The child does not acquire authority to redefine the task or execute a domain write. The parent identity must still match when the result returns.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part3/chapter22/b2-parent-child-ownership.png}
+  {The parent request and B4 intention remain authoritative. B2 records a compact parent identity and version, delegates only a bounded capability subset, and returns typed findings for validation against that same parent. The child does not receive the full objective or parent capability grant.}
+  {fig:ch22-parent-child-ownership}
+
+\section{Typed signal, versioned case, and parent snapshot}
+\label{sec:ch22-typed-signal-case}
+
+\subsection{A signal is already typed}
+\label{subsec:ch22-signal}
+
+The B2 signal is an \texttt{ImpasseSignal}. It carries an \texttt{ImpasseType}, an \texttt{Impasse\allowbreak Severity}, a subject reference, a concise summary, evidence references, and the time at which the signal was detected. The type vocabulary is deliberately bounded: \texttt{CONFLICTING\_\allowbreak EVIDENCE}, \texttt{MISSING\_\allowbreak CONFIRMATION}, \texttt{NO\_\allowbreak FEASIBLE\_\allowbreak CANDIDATE}, \texttt{MISSING\_\allowbreak DEPENDENCY}, \texttt{QUALIFICATION\_\allowbreak MISMATCH}, \texttt{STALE\_\allowbreak ASSUMPTION}, and \texttt{UNRESOLVED\_\allowbreak PRECONDITION}. Severity is one of \texttt{LOW}, \texttt{MEDIUM}, \texttt{HIGH}, or \texttt{CRITICAL}.
+
+The signal's stable key combines its type and subject reference. That key supports deterministic consolidation when multiple typed validators report the same kind of issue about the same subject. \texttt{Deterministic\allowbreak Impasse\allowbreak Detector.\allowbreak consolidate} groups on that key, unions the evidence references, retains the descriptive fields from the higher-severity signal, keeps the later detection time, and sorts the resulting signals by descending severity followed by type and subject. It does not read free-form error text and infer a business-failure category.
+
+That distinction matters in the active runtime path. \texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services.\allowbreak open\allowbreak Impasse} calls the host/domain port \texttt{impasse\allowbreak Open\allowbreak Request(context, now)} and receives an \texttt{Impasse\allowbreak Open\allowbreak Request} containing an already typed signal, parent and child capability sets, a deadline, and a maximum child-action count. The lifecycle then opens the case using that signal directly. \texttt{Impasse\allowbreak Resolution\allowbreak Service.\allowbreak detect} exposes the detector's consolidation function, but the active \texttt{openImpasse} method does not automatically invoke it to classify every live failure. The host/domain adapter is therefore part of the typed-trigger boundary.
+
+\subsection{The parent snapshot is an identity tuple}
+\label{subsec:ch22-parent-snapshot}
+
+Before opening the case, the lifecycle loads the authoritative working-memory snapshot and constructs a \texttt{Parent\allowbreak Context\allowbreak Snapshot} from exactly four values: memory scope, request ID, working-memory version, and objective fingerprint. This object is intentionally small. It is not a copy of the objective, the working-memory contents, the plan, the parent's capability grant, or every external dependency that might matter to the business problem. Its purpose is to identify the parent state to which a child result must return.
+
+The case record, \texttt{Impasse\allowbreak Resolution\allowbreak Case}, stores this identity with the execution ID, typed signal, child capability set, opening time, deadline, maximum and used child actions, lifecycle status, optimistic version, optional result, and terminal reason. Its status is one of \texttt{OPEN}, \texttt{INVESTIGATING}, \texttt{RESOLVED}, \texttt{REJECTED}, \texttt{ESCALATED}, or \texttt{EXPIRED}. The case is versioned independently of the working-memory snapshot and of the graph state.
+
+The result crossing the child boundary is similarly constrained. \texttt{Child\allowbreak Resolution\allowbreak Result} contains the case ID, parent request ID, parent working-memory version, objective fingerprint, a \texttt{Resolution\allowbreak Disposition}, evidence-backed findings, assumptions, and a production timestamp. Each \texttt{Resolution\allowbreak Finding} must have at least one evidence reference. The result deliberately contains no new parent objective, no capability set, and no domain command. It is a finding packet tied to a parent identity, not a mutation request.
+
+A compact view of the boundary is useful:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The parent snapshot and child result identify a return boundary without copying the parent objective or granting child capabilities.},label={lst:ch22-parent-result-contract}]
+record ParentContextSnapshot(
+    MemoryScopeId scopeId,
+    String requestId,
+    long workingMemoryVersion,
+    String objectiveFingerprint) { }
+
+record ChildResolutionResult(
+    String caseId,
+    String parentRequestId,
+    long parentWorkingMemoryVersion,
+    String objectiveFingerprint,
+    ResolutionDisposition disposition,
+    List<ResolutionFinding> findings,
+    List<String> assumptions,
+    Instant producedAt) { }
+\end{lstlisting}
+\end{minipage}
+
+The listing omits constructor validation, but its fields show what crosses the boundary. The case checks the remaining invariants when it is opened and when a result is returned. It is important not to read a parent snapshot as a temporal database snapshot or a Soar goal dependency set. The code binds the return to four parent identity values; it does not reproduce every dependency-tracking facility proposed in Part II Chapter 13.
+
+The result disposition is separate from the case status. \texttt{EVIDENCE\_\allowbreak CONFIRMED}, \texttt{HYPOTHESIS\_\allowbreak PROPOSED}, and \texttt{UNRESOLVED} describe the child result. \texttt{RESOLVED}, \texttt{ESCALATED}, and the other values describe the case lifecycle. The distinction becomes important at parent return, where the implementation maps dispositions to case statuses.
+
+\section{Opening B2 and delegating the parent intention}
+\label{sec:ch22-open-delegate}
+
+\subsection{The opening sequence}
+\label{subsec:ch22-open-sequence}
+
+The active method is \texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services.\allowbreak open\allowbreak Impasse}. It first requires a current uncertainty assessment, loads the current working-memory snapshot and active recovery intention, and asks the host/domain port for an \texttt{Impasse\allowbreak Open\allowbreak Request}. It then captures the parent scope, request ID, current working-memory version, and domain-provided objective fingerprint in a \texttt{Parent\allowbreak Context\allowbreak Snapshot}. Only after these values are available does it call \texttt{Impasse\allowbreak Resolution\allowbreak Service.\allowbreak open}.
+
+Opening the case enforces three related restrictions. The case scope must equal the parent snapshot scope. The child capability set must be a subset of the capabilities granted to the parent. It must also be a nonempty subset of the implementation's fixed child allow-list: \texttt{MEMORY\_\allowbreak RETRIEVE}, \texttt{REASONING\_\allowbreak INVOKE}, \texttt{SUPPLIER\_READ}, \texttt{INVENTORY\_\allowbreak READ}, \texttt{ORDER\_READ}, \texttt{SHIPMENT\_READ}, and \texttt{QUALITY\_READ}. A host cannot add a write capability simply by putting it in the child set.
+
+The capability check is enforced by the B2 case contract, not by a sentence in a model prompt. The case also requires a deadline later than its opening time and a positive maximum action count. It begins in \texttt{OPEN}, with zero child actions used and version zero. The service persists the new case through its repository before the lifecycle coordinates the parent intention.
+
+\subsection{B4 delegation remains the authority over the parent intention}
+\label{subsec:ch22-b4-delegation}
+
+After opening the B2 case, the lifecycle checks that the current B4 intention is still \texttt{ACTIVE} at the version carried by the cycle context. It then calls \texttt{Recovery\allowbreak Intention\allowbreak Service.\allowbreak delegate} with the exact case ID and starts the case as \texttt{INVESTIGATING}. This is the B2/B4 seam: B2 owns the bounded investigation case, while B4 continues to own the parent intention and its objective. Chapter 23 will examine B4's lifecycle and method authority in full; this chapter needs only the delegation boundary.
+
+The code treats delegation and case start as one logical transition, but not as one database transaction spanning both repositories. If the active intention cannot delegate or the B2 case cannot start, the lifecycle attempts compensation. It reloads the case and rejects it if it remains open or investigating. If delegation succeeded, it reloads the intention and attempts to return it from the exact delegation with \texttt{NO\_\allowbreak METHOD\_\allowbreak CHANGE}. Compensation failures are attached to the original failure and surfaced. This is a best-effort consistency protocol, not proof of distributed atomicity.
+
+The relevant source sequence can be summarized without reproducing the full lifecycle method:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,caption={The host supplies a typed request; B2 captures the parent identity, then B4 delegates and B2 starts the case.},label={lst:ch22-open-impasse}]
+var request = domain.impasseOpenRequest(context, now);
+ParentContextSnapshot parent = new ParentContextSnapshot(
+    memory.scopeId(), context.requestId(), memory.version(),
+    domain.objectiveFingerprint(context));
+var opened = impasses.open(request.caseId(), memory.scopeId(),
+    context.executionId(), parent, request.signal(),
+    request.parentCapabilities(), request.childCapabilities(),
+    now, request.deadline(), request.maximumChildActions());
+intentions.delegate(intention.id(), intention.version(), opened.id(), now);
+impasses.start(opened.id(), opened.version(), now);
+\end{lstlisting}
+\end{minipage}
+
+The source order matters: the parent snapshot is captured before the child runs; the typed signal and capabilities come from the host/domain port; and the B4 intention is delegated only after the case exists. The test \texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services\allowbreak Test.\allowbreak b2\allowbreak Resolution\allowbreak Runs\allowbreak Only\allowbreak Declared\allowbreak Child\allowbreak Capabilities\allowbreak And\allowbreak Returns\allowbreak To\allowbreak Parent\allowbreak Intention} exercises the successful lifecycle path. A separate test rejects an attempt to use a capability outside the delegated scope. Neither test turns the two repositories into a cross-store transaction.
+
+\BookDiagram[0.46\textheight]
+  {Tex/diagrams/generated/part3/chapter22/b2-subgraph-sequence.png}
+  {The B2 subgraph is a four-node linear sequence. The open and return operations meet the B4 intention boundary; the investigation uses host-supplied read steps; and uncertainty is refreshed before the parent result is validated.}
+  {fig:ch22-subgraph-sequence}
+
+\section{Investigating inside the bounded child boundary}
+\label{sec:ch22-child-investigation}
+
+\subsection{The host proposes typed steps; the runtime enforces the case}
+\label{subsec:ch22-typed-steps}
+
+The host/domain port \texttt{plan\allowbreak Child\allowbreak Investigation} returns a \texttt{Child\allowbreak Investigation\allowbreak Plan}. The plan contains a list of \texttt{Child\allowbreak Investigation\allowbreak Step} values, an intended disposition, assumptions, and a typed \texttt{Delegation\allowbreak Return}. Each step has a step ID, one capability, and a concise description. The port contract says that planning must not execute the steps; a separate \texttt{execute\allowbreak Child\allowbreak Investigation\allowbreak Step} port executes exactly one previously declared read-only step under the B2 case scope.
+
+The lifecycle checks that the case belongs to the active execution and parent request. It rejects duplicate step IDs and rejects any step whose capability is not in the case's delegated capability set. The host may choose the investigation plan, but it cannot bypass the case's capability contract. The plan also has a structural constraint: a non-unresolved disposition requires at least one step. After execution, if no findings were produced, the lifecycle downgrades the result disposition to \texttt{UNRESOLVED}. Conversely, findings paired with a plan that declared \texttt{UNRESOLVED} cause an error rather than allowing the inconsistency to pass through.
+
+The case's \texttt{recordAction} transition is called before the host executes each step. It requires the case to be live, in \texttt{INVESTIGATING}, within the delegated capability set, and below the maximum child-action count. The count is a mechanism-level budget: once recorded, a failed or interrupted attempt has still consumed an action slot. The outer graph recursion limit is a different limit, and the child-step receipt store described next is a different control again.
+
+\subsection{Durable child-step receipts and fencing}
+\label{subsec:ch22-step-receipts}
+
+In the durable host composition, \texttt{Postgres\allowbreak Runtime\allowbreak Persistence} supplies a PostgreSQL-backed \texttt{Child\allowbreak Investigation\allowbreak Step\allowbreak Store}. Before executing a step, the lifecycle computes an input fingerprint from the case ID, execution ID, parent working-memory version, objective fingerprint, step ID, capability, and step description. The store then claims the step. A completed claim returns its stored findings, so a checkpoint replay does not execute the same completed read again. An in-progress claim is rejected. An unknown-outcome claim is also rejected until an explicit reconciliation establishes the exact result or proves that the read did not complete.
+
+An acquired claim carries a fencing token. The lifecycle records the B2 action count, calls the read-only domain operation, and completes or fails the receipt using that token. The PostgreSQL adapter requires the claim to remain owned and unexpired before accepting a completion. If the lease expires, the receipt does not silently authorize a second execution. It moves to an unknown-outcome path that requires reconciliation; reconciliation can either record recovered findings or mark the step as not applied, after which a new claim may be acquired with a higher fencing token.
+
+These states are worth keeping separate:
+
+\begin{itemize}
+  \item \texttt{ACQUIRED} means a worker currently owns the claim and fencing token.
+  \item \texttt{COMPLETED} means a receipt contains findings that can be reused without rerunning the read.
+  \item \texttt{IN\_PROGRESS} means another live claim owns the step, so a second worker must not execute it concurrently.
+  \item \texttt{UNKNOWN\_\allowbreak OUTCOME} means the previous attempt cannot yet be classified as completed or not applied; reconciliation is required before retry.
+\end{itemize}
+
+The receipt is not a business-fact verifier. It prevents duplicate or stale step execution and preserves the outcome of a read step. Whether the evidence is fresh, in scope, and appropriate for reuse is checked later when a recovery-procedure draft is proposed and governed. The child-step receipt also does not replace the B2 case's action budget or deadline.
+
+\BookDiagram[0.50\textheight]
+  {Tex/diagrams/generated/part3/chapter22/b2-child-step-receipts.png}
+  {A durable child-step receipt reuses completed findings, rejects a concurrent live claim, and requires explicit reconciliation for an unknown outcome. Fencing tokens prevent an expired worker from completing a newer claim.}
+  {fig:ch22-step-receipts}
+
+\subsection{The B2 subgraph is an orchestrator, not the authoritative case}
+\label{subsec:ch22-b2-subgraph}
+
+The source defines four linear nodes in \texttt{B2\allowbreak Resolution\allowbreak Subgraph}: \texttt{open-child}, \texttt{investigate-\allowbreak child}, \texttt{refresh-\allowbreak uncertainty-\allowbreak after-\allowbreak investigation}, and \texttt{validate-\allowbreak parent-\allowbreak return}. The first node opens the case and coordinates B4 delegation. The second plans and executes the bounded read steps. The third asks the lifecycle to create the next uncertainty assessment. It requires the same assessment ID, execution, and memory scope, with the version advancing by exactly one. The final node validates the child result against the current parent and returns the B4 intention when the case ID matches the active delegation.
+
+\texttt{B2\allowbreak Resolution\allowbreak Graph\allowbreak State} carries scalar identifiers and versioned references needed by those nodes: request and execution IDs, memory scope, working-memory ID and version, evidence and workspace references, intention ID and version, planner and candidate references, impasse case ID and reason, uncertainty assessment ID and version, investigation reference, disposition, and optional recovery-draft ID. It does not contain the authoritative objective, a copy of the working-memory contents, or the parent capability set. The child context is reconstructed from those references; authority remains in the B2 case and owning services.
+
+The subgraph is compiled with a fresh generated thread ID on invocation, and the shown B2 compile path does not attach a dedicated B2 checkpointer. That observation must not be confused with the durable case, child-step receipt, and child-artifact repositories, nor with the outer cognitive-cycle checkpoint. The outer graph's persistence and restart behavior is reserved for Chapter 24. A graph state object is not itself the authoritative B2 case, and a checkpoint does not create typed capability or parent-return semantics by itself.
+
+\section{Returning a result: parent identity, disposition, and verification}
+\label{sec:ch22-parent-return}
+
+\subsection{What the parent-return path checks}
+\label{subsec:ch22-return-checks}
+
+The method \texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services.\allowbreak validate\allowbreak Impasse\allowbreak Return} first requires a current uncertainty assessment and loads the stored child artifact for the exact case. It reloads the case and the latest working-memory snapshot, then asks the domain port for the current parent context. Before resolving the case, it checks that the domain-provided parent snapshot agrees with the authoritative memory scope and version, current request ID, and current objective fingerprint.
+
+The call to \texttt{Impasse\allowbreak Resolution\allowbreak Service.\allowbreak resolve} then applies the case-level checks. The current parent must match the case's scope, request ID, working-memory version, and objective fingerprint. The child result must match the case ID and the same parent request, version, and objective fingerprint. Its timestamp must fall within the case interval. The service applies the transition using the case's expected optimistic version, so a concurrent case update is rejected rather than overwritten.
+
+The checks protect a specific boundary: a child result cannot be attached to a different request or silently applied after the captured parent identity has changed. They do not prove that every narrative finding is true. The result contains evidence references and assumptions from the host/domain investigation. The parent-return method does not call \texttt{Recovery\allowbreak Draft\allowbreak Evidence\allowbreak Verifier} to dereference every finding at this point. Evidence scope and freshness are checked later if a procedure draft is requested, again during approval, and again during staging or retrieval.
+
+\BookDiagram[0.48\textheight]
+  {Tex/diagrams/generated/part3/chapter22/b2-return-and-draft-checks.png}
+  {Parent return checks the identity and version of the parent and child result. Evidence dereferencing and registered-action verification belong to the later procedure-draft and governance path, not to the parent identity check alone.}
+  {fig:ch22-return-draft-checks}
+
+\subsection{A disposition is not a case status}
+\label{subsec:ch22-disposition-status}
+
+If the child result is \texttt{UNRESOLVED}, \texttt{Impasse\allowbreak Resolution\allowbreak Case.\allowbreak resolve} moves the case to \texttt{ESCALATED} and retains the unresolved result and terminal reason. Any other disposition is mapped to case status \texttt{RESOLVED}. The positive-result constructor requires at least one finding, and each finding requires at least one evidence reference. These are useful structural safeguards, but they are not an independent truth evaluation of the referenced source.
+
+There is an implementation edge that must be stated plainly. The enum declares \texttt{HYPOTHESIS\_\allowbreak PROPOSED}, but the inspected production call sites and current B2 tests use \texttt{EVIDENCE\_\allowbreak CONFIRMED} and \texttt{UNRESOLVED}; no test exercises a positive \texttt{HYPOTHESIS\_\allowbreak PROPOSED} result. The case transition treats every non-\texttt{UNRESOLVED} disposition as \texttt{RESOLVED}, and the draft service's eligibility check excludes only \texttt{UNRESOLVED}. If a host began emitting \texttt{HYPOTHESIS\_\allowbreak PROPOSED}, the current code would not impose a separate hypothesis-only gate before draft eligibility. The chapter therefore does not describe that path as tested or safe. The active exercised path is the evidence-confirmed disposition, while hypothesis handling remains an explicit coverage and semantic gap in the accepted source.
+
+\subsection{Returning to B4 is a separate state transition}
+\label{subsec:ch22-return-b4}
+
+After the case has been resolved or escalated, the lifecycle loads the current B4 intention. If it is still delegated, the delegation ID must equal the B2 case ID. The lifecycle then calls \texttt{return\allowbreak From\allowbreak Delegation} with the \texttt{Delegation\allowbreak Return} value stored alongside the child result. B2 does not decide that the parent objective is complete; it returns the intention to its owning B4 lifecycle. Chapter 23 will explain the meaning and authority of B4 return values.
+
+The case update and the B4 intention return are sequential service/repository operations. The code does not wrap them in one cross-repository transaction. The B2 opening path has explicit best-effort compensation when start/delegation fails; the parent-return path should not be described as a globally atomic two-record commit. This distinction is part of the implementation's failure semantics, not a reason to blur the two states.
+
+\section{A recovery-procedure draft is a proposal, not an executable skill}
+\label{sec:ch22-recovery-draft}
+
+A result that resolves the current case does not have to become a reusable procedure. The durable host can configure a \texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Service} together with a \texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Request\allowbreak Factory}; the constructor requires those two components to be present or absent as a pair. If they are absent, no R2 draft is produced. If they are configured, the host-owned factory receives the resolved case, child result, current parent snapshot, and cycle context and returns either an optional typed request or no proposal. The factory contract says that its action IDs must be registered and its condition keys opaque; narrative findings are evidence, not action instructions.
+
+The request contains a draft ID, impasse case ID and expected case version, memory scope and current parent snapshot, a condition key, registered action IDs, precondition keys, expected-postcondition keys, failure-condition keys, and expiry. The keys follow a constrained identifier syntax; they are not arbitrary free-form instructions. The action IDs must be unique. The request factory is an application adapter, not an implicit compiler that extracts executable steps from a paragraph written by a model.
+
+\texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Service.\allowbreak create\allowbreak Draft} checks the exact B2 case version and requires a resolved case with a non-unresolved result. It verifies that the draft request's scope and parent snapshot match the case's scope, parent request, working-memory version, and objective fingerprint. It constrains the draft's validity interval to the case interval. It then flattens and deduplicates the evidence references attached to the findings and calls the injected \texttt{Recovery\allowbreak Draft\allowbreak Evidence\allowbreak Verifier}. The verifier is a trusted host adapter that dereferences each reference and checks scope, version, and validity at the supplied time.
+
+The service resolves every requested action ID through the current action registry and stores an immutable reference to the registered descriptor, including its required capability, effect, and descriptor fingerprint. It combines the case identity, parent identity, condition and guard keys, action references, evidence, and expiry into a source fingerprint. The resulting \texttt{Recovery\allowbreak Procedure\allowbreak Draft} is in status \texttt{DRAFT}; it contains no generated command parameters or executable instruction body. An exact retry with the same draft ID and source returns the existing draft. Reusing the ID for a different source or proposal is rejected.
+
+The full-graph evaluation test demonstrates the limit of this step. \texttt{M8\allowbreak B4\allowbreak Full\allowbreak Graph\allowbreak Workflow\allowbreak Test.\allowbreak full\allowbreak Graph\allowbreak Resolved\allowbreak B2\allowbreak Return\allowbreak Creates\allowbreak Typed\allowbreak Recovery\allowbreak Draft\allowbreak And\allowbreak Carries\allowbreak Reference} runs a deterministic scenario through the composed graph, observes one registered read-only child step, and verifies that a typed recovery draft exists in \texttt{DRAFT} status. It does not approve, stage, validate, or activate that draft. Those transitions belong to the separate governance services below.
+
+\section{Approval, staging, validation, and activation are separate}
+\label{sec:ch22-procedure-governance}
+
+\subsection{B2 approval changes draft state only}
+\label{subsec:ch22-b2-approval}
+
+The first governance step is \texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Service.\allowbreak approve}. It checks the expected draft version, requires the current parent snapshot to match the draft's scope, request ID, working-memory version, and objective fingerprint, and verifies that the evidence is still valid. It resolves the current action descriptors again and rejects any descriptor that has changed since draft creation. The approval timestamp must not be in the future, and the injected \texttt{Recovery\allowbreak Procedure\allowbreak Approval\allowbreak Authority} must authorize the exact typed draft, approver, approval reference, and time. A compare-and-set transition changes the draft from \texttt{DRAFT} to \texttt{APPROVED}. This authorizes review state only; it does not execute any action.
+
+The distinction is important because an approved draft is not yet a CoALA procedural-memory item. Approval says that an authorized reviewer accepts this typed proposal under the current parent and evidence constraints. It does not authorize the referenced action at a future execution time, and it does not bypass the later procedural-memory review and activation lifecycle.
+
+\subsection{Staging publishes an immutable artifact and a procedural draft}
+\label{subsec:ch22-staging}
+
+\texttt{Recovery\allowbreak Procedure\allowbreak Promotion\allowbreak Service.\allowbreak stage\allowbreak Approved\allowbreak Draft} accepts only an approved, unexpired draft at its expected version and in the requested scope. Before staging, it re-verifies the evidence and registered action descriptors. It creates a typed \texttt{Recovery\allowbreak Procedure\allowbreak Artifact} from the approved draft and publishes that payload to the artifact store. The artifact is immutable and content-addressed; it contains the registered action references, opaque condition keys, evidence, source fingerprint, and approval metadata, not free-form executable instructions.
+
+The promotion service then creates a CoALA \texttt{Procedure\allowbreak Version} of kind \texttt{RUNBOOK} and status \texttt{DRAFT}. Its provenance is bound to the B2 draft and source fingerprint. If the same approved draft is staged again, the service returns the existing matching version rather than appending a duplicate. Concurrent appends are retried only within the service's fixed bound. The word \emph{staging} is intentional: this operation does not validate, activate, or execute the procedure.
+
+\subsection{Independent procedural review and activation}
+\label{subsec:ch22-procedure-activation}
+
+A reviewer must be independent of the person who approved the B2 draft. The service delegates to the CoALA procedural-memory lifecycle to validate the staged \texttt{Procedure\allowbreak Version}. Activation is a further transition: the version must already be \texttt{VALIDATED}, and the activating actor must be independent of both the B2 draft approver and the procedural reviewer. Only then can the procedure become \texttt{ACTIVE}.
+
+Retrieval is also conditional. \texttt{retrieveActive} looks up a procedure for an exact memory scope and opaque condition key. It accepts only an active recovery runbook, dereferences the immutable artifact under the expected scope, checks its identity and provenance against the procedural-memory version, and re-verifies evidence and current action descriptors. A changed descriptor or stale/foreign evidence blocks retrieval. The service returns a \texttt{Reusable\allowbreak Recovery\allowbreak Procedure}, which is planning knowledge, not an executable command. The registered actions still require the ordinary capability, approval, validation, and dispatch boundaries explained in Chapter 19.
+
+This lifecycle is related to CoALA procedural memory, whose general responsibilities and lifecycle were introduced in Chapters 3 and 20. Chapter 21 showed that an active approved recovery procedure can later become an ordinary B1 retrieval candidate. We do not repeat those general memory mechanics here. The B2-specific point is that a child finding is only one input to a governed proposal; it does not automatically compile a skill or grant the procedure permission to execute.\CoALACite{\S 4.1--4.2; \S 4.6; Table 2}\FanLanCite{\S VI-C, B2; Appendix C-B, R2a; Appendix D}
+
+\BookDiagram[0.54\textheight]
+  {Tex/diagrams/generated/part3/chapter22/b2-procedure-reuse-lifecycle.png}
+  {A resolved case may produce an optional draft. B2 approval permits staging only; independent procedural validation and activation are required before an exact-scope active runbook can be retrieved as planning knowledge. No step in this path dispatches the registered action.}
+  {fig:ch22-procedure-lifecycle}
+
+\section{Persistence and the seven-field reading of B2}
+\label{sec:ch22-persistence-seven-fields}
+
+\subsection{B2 records are distinct from graph state}
+\label{subsec:ch22-b2-persistence}
+
+The durable host constructs B2 persistence adapters through \texttt{Postgres\allowbreak Runtime\allowbreak Persistence}. The relevant records have separate responsibilities:
+
+\begin{description}
+  \item[Impasse case.] \texttt{Postgres\allowbreak Impasse\allowbreak Case\allowbreak Repository} persists the versioned case and applies compare-and-set updates. The case contains the parent identity, child capability subset, time and action budgets, status, result, and terminal reason.
+  \item[Child-step receipt.] \texttt{Postgres\allowbreak B2\allowbreak Child\allowbreak Step\allowbreak Receipt\allowbreak Store} persists claims, lease state, fencing tokens, completed findings, and unknown-outcome reconciliation for individual investigation steps.
+  \item[Child artifact.] \texttt{Postgres\allowbreak Impasse\allowbreak Child\allowbreak Artifact\allowbreak Store} stores the typed \texttt{Child\allowbreak Resolution\allowbreak Result} together with the B4 \texttt{Delegation\allowbreak Return} needed at parent return.
+  \item[Procedure draft.] \texttt{Postgres\allowbreak Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Repository} persists the scope-bound draft and approval state using version checks and append-only transition history.
+  \item[Procedure artifact.] \texttt{Postgres\allowbreak Recovery\allowbreak Procedure\allowbreak Artifact\allowbreak Store} publishes and retrieves immutable content-addressed artifacts under the expected memory scope.
+  \item[Procedural-memory version.] The existing CoALA procedural-memory repository stores the staged, validated, and active \texttt{Procedure\allowbreak Version}; Chapter 20 explains this memory boundary.
+\end{description}
+
+The tests support these claims at different depths. \texttt{Postgres\allowbreak M7\allowbreak B2\allowbreak Core\allowbreak Integration\allowbreak Test.\allowbreak child\allowbreak Step\allowbreak Receipts\allowbreak Resume\allowbreak Completed\allowbreak Work\allowbreak And\allowbreak Fence\allowbreak Expired\allowbreak Claims} exercises completed-step reuse, lease expiry, unknown-outcome reconciliation, and the higher fencing token on a new claim. \texttt{Postgres\allowbreak M7\allowbreak B2\allowbreak Core\allowbreak Integration\allowbreak Test.\allowbreak child\allowbreak Artifacts\allowbreak And\allowbreak Impasse\allowbreak Cases\allowbreak Survive\allowbreak Repository\allowbreak Replacement\allowbreak And\allowbreak Cas} checks case and child-artifact round-tripping through new repository instances, scope isolation, and optimistic case updates. The R2 integration test \texttt{R2\allowbreak Outcome\allowbreak Evidence\allowbreak Postgres\allowbreak Integration\allowbreak Test.\allowbreak b2\allowbreak Draft\allowbreak And\allowbreak Append\allowbreak Only\allowbreak Version\allowbreak History\allowbreak Survive\allowbreak Repository\allowbreak Replacement} checks PostgreSQL draft/approval history and repository replacement; \texttt{approved\allowbreak B2\allowbreak Artifacts\allowbreak Are\allowbreak Content\allowbreak Addressed\allowbreak Immutable\allowbreak And\allowbreak Survive\allowbreak Repository\allowbreak Replacement} checks immutable artifact persistence and scoped dereferencing.
+
+For readers following the implementation, the principal source locations are listed below. Paths are repository-relative to the accepted Java application; they are references for inspection, not files included in this book change.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.20\linewidth} >{\raggedright\arraybackslash}p{0.50\linewidth} >{\raggedright\arraybackslash}p{0.21\linewidth}}
+\caption{Primary B2 source locations used in this chapter.}\label{tab:ch22-source-map}\\
+\toprule
+\textbf{Responsibility} & \textbf{Repository-relative source} & \textbf{Entry point} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Responsibility} & \textbf{Repository-relative source} & \textbf{Entry point} \\
+\midrule
+\endhead
+Typed signal and case invariants & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java} & \texttt{open}, \texttt{recordAction}, \texttt{resolve} \\
+Signal consolidation & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java} & \texttt{consolidate} \\
+Runtime opening, investigation and return & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java} & \texttt{openImpasse}, \texttt{investigate\allowbreak Impasse}, \texttt{validate\allowbreak Impasse\allowbreak Return} \\
+Host-supplied B2 contracts & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java} & \texttt{Impasse\allowbreak Open\allowbreak Request}, \texttt{Child\allowbreak Investigation\allowbreak Plan} \\
+Four-node child graph & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java} & \texttt{compile}, \texttt{invoke} \\
+Durable child-step receipts & \url{supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java} & \texttt{claim}, \texttt{complete}, \texttt{fail} \\
+Draft and promotion lifecycle & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}; \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java} & \texttt{createDraft}, \texttt{approve}, \texttt{stage\allowbreak Approved\allowbreak Draft}, \texttt{validate}, \texttt{activate}, \texttt{retrieveActive} \\
+\bottomrule
+\end{longtable}
+
+These are focused persistence tests. They do not establish that the B2 subgraph itself has a dedicated checkpointer or that the entire outer graph restart path is explained by these repositories. The inner B2 graph is compiled with a fresh thread ID and no dedicated saver is supplied in its compile call. The top-level cognitive-cycle graph has its own checkpoint composition, which belongs to Chapter 24. Keep the objects separate: graph state carries references; B2 case, step, and child-artifact stores carry authoritative recovery records.
+
+\subsection{Reading the implementation through S/C/T/P/F/L/R}
+\label{subsec:ch22-seven-fields}
+
+Chapter 10 introduced the seven fields as an analytical lens, not as a required Java class layout. Applied to this B2 implementation, the fields expose both the controls that exist and the properties that remain outside the current source:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.12\linewidth}XX}
+\toprule
+\textbf{Field} & \textbf{Implementation reading} & \textbf{Qualification} \\
+\midrule
+\textbf{S} -- state substrate & Typed signal, parent identity snapshot, versioned case, child-step receipts and artifact, optional recovery draft and immutable artifact, and procedural-memory version. & The parent snapshot is four identity/version values, not a full copy of the parent state. \\
+\textbf{C} -- control locus & Host/domain supplies the typed signal and child plan; B2 services enforce case/return invariants; B4 owns the parent intention; the subgraph sequences the operations. & The detector consolidates typed signals; the active opening path consumes the supplied signal. \\
+\textbf{T} -- transition trigger & A blocked cognitive cycle is routed into the B2 subgraph, whose opening node calls the lifecycle service. & Full-graph conditional routing is reserved for Chapter 24. \\
+\textbf{P} -- persistence boundary & PostgreSQL-backed cases, step receipts, child artifacts, recovery drafts, and immutable procedure artifacts; procedural-memory versions use the CoALA memory persistence boundary. & The B2 subgraph itself has no dedicated saver in its shown compile path. \\
+\textbf{F} -- failure semantics & Wrong scope/capability, exhausted budget, deadline, stale parent, wrong result identity/time, duplicate or in-progress step, unknown outcome, unresolved escalation, and optimistic-version conflict. & B2/B4 startup uses compensating transitions, not a distributed atomic transaction. \\
+\textbf{L} -- learning operator & Optional typed draft, trusted B2 approval, immutable artifact, independent procedural validation/activation, and exact-scope active retrieval. & No automatic chunking; a successful case may produce no draft, and a draft is not active procedural memory. \\
+\textbf{R} -- resource/governance & Fixed child allow-list, parent-capability subset, deadline, child-action budget, step fencing, scope checks, and uncertainty refresh. & These local limits do not replace B6's broader resource and interruption authority, covered in Chapter 23. \\
+\bottomrule
+\end{tabularx}
+\caption{A source-grounded seven-field reading of the implemented B2 boundary.}
+\label{tab:ch22-seven-fields}
+\end{table}
+
+The table is not a maturity score. It records what the implementation stores, who supplies or controls it, what triggers the transitions, where records persist, how failures are represented, how later reuse is governed, and which resource limits apply. The same field can reveal an implementation boundary rather than a feature: for example, the parent snapshot and the absence of a dedicated inner-graph saver are persistence facts, not evidence that the system implements Soar dependency regeneration.\FanLanCite{\S II-D; \S VI-C, B2; Appendix D}
+
+\section{Failure semantics, implementation limits, and open edges}
+\label{sec:ch22-failures-limits}
+
+The following table keeps a control, its observable result, and its limit in view. It avoids describing a rejection as a successful recovery or a persisted record as a verified business fact.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.20\linewidth}XX}
+\toprule
+\textbf{Condition} & \textbf{Current control and result} & \textbf{What it does not establish} \\
+\midrule
+Duplicate typed signal & Consolidation groups by type/subject, unions evidence, retains the higher-severity descriptive fields, and sorts deterministically. & It does not classify raw error text or verify the underlying business claim. \\
+Child capability outside the parent grant or fixed allow-list & Case opening or step validation rejects the capability. & The host's typed plan remains an input; the mechanism does not infer every needed investigative step. \\
+Action budget exhausted or case deadline reached & The case transition rejects further work; an expired case becomes \texttt{EXPIRED}. & The budget is not the graph recursion limit or the full B6 resource governor. \\
+Parent identity changed & Scope, request, working-memory version, or objective fingerprint mismatch rejects the child return. & These checks are not a universal dependency engine or evidence truth verifier. \\
+Wrong child identity or timestamp & Case/result IDs, parent identity fields, and production time are checked before the case transition. & Nonempty evidence references do not prove that the source is fresh or authoritative. \\
+Duplicate or concurrent child step & Duplicate step IDs are rejected; a live receipt claim blocks concurrent execution; completed findings are replayed. & Receipt state does not prove the finding's business correctness. \\
+Unknown child-step outcome & The store requires explicit reconciliation before retry and uses fencing tokens for later ownership. & The case action budget remains separate and is not refunded automatically. \\
+B2 case opens but B4 delegation/start fails & The lifecycle attempts to reject the case and return the exact delegation. Compensation failures are surfaced. & There is no distributed transaction across the case and intention repositories. \\
+Unresolved child result & No findings yields \texttt{UNRESOLVED}; the case becomes \texttt{ESCALATED}. & The current path does not claim the parent objective is completed. \\
+Evidence is stale or foreign-scope & The draft verifier rejects it at draft creation, and evidence is checked again at approval, staging, and active retrieval. & The bare parent-return identity check does not perform this dereferencing. \\
+Registered action descriptor changed & Approval, staging, or later retrieval rejects a descriptor that no longer matches its fingerprint. & A stored reference does not grant future execution authority. \\
+\texttt{HYPOTHESIS\_\allowbreak PROPOSED} supplied & The enum exists, but current tested/runtime paths do not exercise it; the case maps every non-unresolved disposition to \texttt{RESOLVED}. & No separate hypothesis-only gate currently excludes it from draft eligibility. \\
+No draft proposal produced & The configured factory may return empty; when the paired R2 services are not configured, no draft is created. & A resolved case is not automatically reusable. \\
+\bottomrule
+\end{tabularx}
+\caption{B2 failure and boundary semantics in the inspected source.}
+\label{tab:ch22-failure-semantics}
+\end{table}
+
+Several limits follow directly. First, the application does not reproduce Soar's full superstate/substate architecture or Goal Dependency Set regeneration. Second, the child graph state does not contain the parent objective, a full memory copy, or the parent capability grant; those remain with their owners. Third, the fixed child allow-list contains no domain write capability. Fourth, a parent-return check protects identity and version but does not independently verify every business fact. Fifth, a successful child episode does not automatically compile a procedure, create an active procedural-memory item, or generalize a recovery rule. Sixth, \texttt{HYPOTHESIS\_\allowbreak PROPOSED} is an untested semantic edge in the current source. Finally, no experiment in this chapter establishes that B2 improves recovery success, recovery time, or transfer to new suppliers and disruptions. The chapter documents implementation controls and test evidence, not causal benefit.
+
+\section{Tests, recap, and practical exercises}
+\label{sec:ch22-tests-recap}
+
+\subsection{What the tests establish}
+\label{subsec:ch22-test-map}
+
+A useful test-to-claim map makes the evidence boundaries explicit:
+
+\small\begin{longtable}{>{\raggedright\arraybackslash}p{0.33\linewidth} >{\raggedright\arraybackslash}p{0.30\linewidth} >{\raggedright\arraybackslash}p{0.27\linewidth}}
+\caption{B2 tests and their limits.}\label{tab:ch22-test-map}\\
+\toprule
+\textbf{Test} & \textbf{What it demonstrates} & \textbf{What it does not demonstrate} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Test} & \textbf{What it demonstrates} & \textbf{What it does not demonstrate} \\
+\midrule
+\endhead
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak detector\allowbreak Consolidates\allowbreak Duplicate\allowbreak Signals\allowbreak And\allowbreak Keeps\allowbreak Highest\allowbreak Severity} & Typed-signal grouping, evidence union, severity selection, and deterministic consolidation. & Raw failure classification or business-truth verification. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak child\allowbreak Capabilities\allowbreak Must\allowbreak Be\allowbreak Subset\allowbreak Of\allowbreak Parent} and \texttt{child\allowbreak Capabilities\allowbreak Cannot\allowbreak Contain\allowbreak Any\allowbreak Write\allowbreak Capability} & The child cannot expand the parent grant or include a forbidden write capability. & A complete host capability policy. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak child\allowbreak Scope\allowbreak Must\allowbreak Match\allowbreak Parent\allowbreak Scope} & The B2 case scope must match the captured parent scope. & A full tenant-isolation proof across every adapter. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak child\allowbreak Action\allowbreak Budget\allowbreak And\allowbreak Capability\allowbreak Are\allowbreak Enforced} and \texttt{child\allowbreak Cannot\allowbreak Exceed\allowbreak Action\allowbreak Budget} & The per-case child capability and action-count limits. & The outer graph recursion limit or all B6 resources. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak evidence\allowbreak Backed\allowbreak Child\allowbreak Result\allowbreak Completes\allowbreak Only\allowbreak The\allowbreak Substate} & A positive result can resolve the case while preserving the parent version. & Completion of the parent business objective or truth verification of every finding. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak stale\allowbreak Parent\allowbreak Version\allowbreak Rejects\allowbreak Child\allowbreak Result} & A changed parent working-memory version prevents child return. & Full dependency tracking beyond the stored parent identity. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak unresolved\allowbreak Child\allowbreak Escalates\allowbreak Instead\allowbreak Of\allowbreak Claiming\allowbreak Resolution} and \texttt{case\allowbreak Expires\allowbreak At\allowbreak Deadline\allowbreak And\allowbreak Cannot\allowbreak Continue} & Unresolved outcomes escalate, and an expired case cannot continue. & Automatic extension or successful recovery from every failure. \\
+\texttt{Impasse\allowbreak Resolution\allowbreak Service\allowbreak Test.\allowbreak optimistic\allowbreak Version\allowbreak Conflict\allowbreak Is\allowbreak Rejected} & Stale case updates lose the optimistic version check. & Cross-repository atomicity with B4. \\
+\texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services\allowbreak Test.\allowbreak b2\allowbreak Resolution\allowbreak Runs\allowbreak Only\allowbreak Declared\allowbreak Child\allowbreak Capabilities\allowbreak And\allowbreak Returns\allowbreak To\allowbreak Parent\allowbreak Intention} & The successful delegated read-only lifecycle returns to the parent intention. & All possible compensation failures or a distributed atomic commit. \\
+\texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services\allowbreak Test.\allowbreak b2\allowbreak Child\allowbreak Cannot\allowbreak Execute\allowbreak ACapability\allowbreak Outside\allowbreak Its\allowbreak Delegated\allowbreak Scope} & The runtime rejects an undelegated child capability. & Business-truth verification of child findings. \\
+\texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Service\allowbreak Test.\allowbreak creates\allowbreak An\allowbreak Evidence\allowbreak Bound\allowbreak Non\allowbreak Executable\allowbreak Draft\allowbreak From\allowbreak Resolved\allowbreak Case\allowbreak And\allowbreak Registered\allowbreak Actions}, \texttt{create\allowbreak Is\allowbreak Idempotent\allowbreak For\allowbreak The\allowbreak Exact\allowbreak Source\allowbreak And\allowbreak Rejects\allowbreak Conflicting\allowbreak Reuse}, \texttt{unknown\allowbreak Or\allowbreak Unregistered\allowbreak Actions\allowbreak Cannot\allowbreak Become\allowbreak Procedure\allowbreak Steps}, and \texttt{free\allowbreak Form\allowbreak Narrative\allowbreak Is\allowbreak Not\allowbreak Accepted\allowbreak As\allowbreak An\allowbreak Executable\allowbreak Condition\allowbreak Key} & Typed evidence-bound proposals, exact-source idempotency, registry resolution, and rejection of narrative-as-instruction. & Automatic rule compilation or activation. \\
+\texttt{Recovery\allowbreak Procedure\allowbreak Draft\allowbreak Service\allowbreak Test.\allowbreak approval\allowbreak Requires\allowbreak Current\allowbreak Parent\allowbreak Evidence\allowbreak And\allowbreak Trusted\allowbreak Operator\allowbreak Authority}, \texttt{unauthorized\allowbreak Approval\allowbreak Fails\allowbreak Closed}, and \texttt{approval\allowbreak Cannot\allowbreak Cross\allowbreak Parent\allowbreak Version\allowbreak Or\allowbreak Objective\allowbreak Change} & Approval requires current parent identity, evidence validity, and trusted authority. & Future execution authorization. \\
+\texttt{Recovery\allowbreak Procedure\allowbreak Promotion\allowbreak Service\allowbreak Test.\allowbreak b2\allowbreak Approval\allowbreak Stages\allowbreak Only\allowbreak ADraft\allowbreak And\allowbreak Independent\allowbreak Procedural\allowbreak Lifecycle\allowbreak Is\allowbreak Required}, \texttt{repeated\allowbreak Promotion\allowbreak Of\allowbreak The\allowbreak Same\allowbreak Approved\allowbreak Draft\allowbreak Is\allowbreak Idempotent}, \texttt{stale\allowbreak Evidence\allowbreak Or\allowbreak Changed\allowbreak Action\allowbreak Descriptor\allowbreak Blocks\allowbreak Promotion}, and \texttt{later\allowbreak Retrieval\allowbreak Rejects\allowbreak Changed\allowbreak Action\allowbreak Descriptor\allowbreak And\allowbreak Foreign\allowbreak Scope} & Staging, idempotency, independent lifecycle, evidence/action rechecks, and scoped retrieval. & Execution of a retrieved procedure. \\
+\texttt{Recovery\allowbreak Procedure\allowbreak Promotion\allowbreak Service\allowbreak Test.\allowbreak approved\allowbreak Recovery\allowbreak Procedure\allowbreak Becomes\allowbreak AStandard\allowbreak Coala\allowbreak B1\allowbreak Retrieval\allowbreak Candidate} & An active approved recovery procedure can become an ordinary B1 retrieval candidate. & Automatic B1 utility calibration or improved task performance. \\
+\texttt{Postgres\allowbreak M7\allowbreak B2\allowbreak Core\allowbreak Integration\allowbreak Test.\allowbreak child\allowbreak Step\allowbreak Receipts\allowbreak Resume\allowbreak Completed\allowbreak Work\allowbreak And\allowbreak Fence\allowbreak Expired\allowbreak Claims} and \texttt{child\allowbreak Artifacts\allowbreak And\allowbreak Impasse\allowbreak Cases\allowbreak Survive\allowbreak Repository\allowbreak Replacement\allowbreak And\allowbreak Cas} & PostgreSQL child receipt, case, and artifact persistence, including fencing, scope, and compare-and-set. & A dedicated B2 graph checkpointer or full application restart. \\
+\texttt{R2\allowbreak Outcome\allowbreak Evidence\allowbreak Postgres\allowbreak Integration\allowbreak Test.\allowbreak b2\allowbreak Draft\allowbreak And\allowbreak Append\allowbreak Only\allowbreak Version\allowbreak History\allowbreak Survive\allowbreak Repository\allowbreak Replacement} and \texttt{approved\allowbreak B2\allowbreak Artifacts\allowbreak Are\allowbreak Content\allowbreak Addressed\allowbreak Immutable\allowbreak And\allowbreak Survive\allowbreak Repository\allowbreak Replacement} & PostgreSQL draft history and immutable procedure artifact persistence. & Active procedural-memory promotion by themselves. \\
+\texttt{M8\allowbreak B4\allowbreak Full\allowbreak Graph\allowbreak Workflow\allowbreak Test.\allowbreak full\allowbreak Graph\allowbreak Resolved\allowbreak B2\allowbreak Return\allowbreak Creates\allowbreak Typed\allowbreak Recovery\allowbreak Draft\allowbreak And\allowbreak Carries\allowbreak Reference} & The full-graph evaluation composition can create a typed draft and carry its reference in graph state. & B2 draft approval, staging, procedural validation, activation, or general experimental benefit. \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+These tests exercise different layers. Unit tests protect case and draft invariants. Lifecycle tests exercise the service path and B4 handoff. PostgreSQL tests establish selected repository and receipt behaviors. The full-graph evaluation test demonstrates a deterministic composed path to a draft. Green CI establishes that the checked source and tests pass in that build; it does not establish that the untested \texttt{HYPOTHESIS\_\allowbreak PROPOSED} path is safe or that B2 causally improves operational outcomes.
+
+\begin{chapterrecap}
+B2 begins with an application-supplied typed signal, not an automatic classifier over free text. The runtime captures a compact parent identity, opens a versioned case, and delegates only a bounded subset of read-oriented capabilities to the child. The child follows a host-provided typed plan, records each permitted action against a deadline and count budget, and can use durable step receipts with fencing and explicit unknown-outcome reconciliation. The B2 subgraph sequences opening, investigation, uncertainty refresh, and parent return, but the case and its stores remain authoritative for recovery state.
+
+At return, the application validates the identity and version of the parent and child result. It does not use that check to prove every finding true. An unresolved result escalates. The declared \texttt{HYPOTHESIS\_\allowbreak PROPOSED} value is not covered by current tests and is mapped like other positive dispositions in the case transition, so it must remain an explicit limitation. A resolved case may produce no procedure draft. If a typed draft is proposed, evidence and registered action descriptors are checked; a trusted approval permits staging only. Independent procedural validation and activation are still required. Retrieval returns an active, exact-scope runbook as planning knowledge; it never dispatches the referenced action. The supply-chain scenario is illustrative unless a statement is explicitly identified as a test result.
+\end{chapterrecap}
+
+\begin{reviewquestions}{Review questions and practical exercises}
+\begin{enumerate}
+  \item Distinguish a raw failure message, an application-supplied \texttt{ImpasseSignal}, and the output of \texttt{Deterministic\allowbreak Impasse\allowbreak Detector.\allowbreak consolidate}. Which one is used directly by the active \texttt{openImpasse} path?
+  \item List the four values in \texttt{Parent\allowbreak Context\allowbreak Snapshot}. Why is this not a copy of the parent's objective or a Soar-style dependency set?
+  \item Trace the order in which the B2 case is opened, the B4 intention is delegated, and the case is started. Why is compensation not equivalent to a distributed transaction?
+  \item Enumerate the fixed child capability allow-list. Explain the difference between the parent capability grant, the delegated child subset, and the case's maximum action count.
+  \item What do the \texttt{COMPLETED}, \texttt{IN\_PROGRESS}, and \texttt{UNKNOWN\_\allowbreak OUTCOME} child-step receipt states require the runtime to do? Why is a fencing token useful?
+  \item List the four B2 subgraph nodes. What must be true of the B6 uncertainty reference after the investigation node?
+  \item Which parent and result fields are checked at return? Which evidence checks occur only when a procedure draft is created or governed?
+  \item Distinguish \texttt{Resolution\allowbreak Disposition} from \texttt{Impasse\allowbreak Case\allowbreak Status}. Why is \texttt{HYPOTHESIS\_\allowbreak PROPOSED} an implementation limitation rather than an exercised behavior?
+  \item Why can a resolved B2 case produce no draft? What does the host-owned request factory supply that the child finding text does not?
+  \item Explain the difference between B2 draft approval, procedural-memory staging, independent validation, activation, and active retrieval.
+  \item Which B2 records have PostgreSQL adapters? Which tests establish child receipt/case persistence and which establish draft/artifact persistence?
+  \item Why does retrieving an active recovery runbook not authorize the referenced supply-chain action to execute?
+\end{enumerate}
+
+\paragraph{Practical exercise.} Create a \textbf{[Book example]} for a supplier's missing confirmation. Specify the parent snapshot, delegated read-only capabilities, deadline, and action budget; define one completed child step and one \texttt{UNKNOWN\_\allowbreak OUTCOME} receipt. Trace the fencing and parent-return checks. Decide whether to escalate or propose a typed draft, then identify the evidence, registered action IDs, verifier, approver, independent reviewer, and activator required before reuse.
+\end{reviewquestions}
+
+\section*{Looking ahead}
+\addcontentsline{toc}{section}{Looking ahead}
+
+Chapter 23 examines B4's persistent intention and method authority, then B6's uncertainty, resource, interruption, and stopping governance. This chapter has covered only B2's delegation/return seam and post-investigation uncertainty refresh.
+
+\paragraph{Source and example note.} The B2 theory follows Fan and Lan's analysis in Part II Chapter 13; CoALA supplies only the memory concepts mapped in Chapter 20. The Java contracts and workflow are application engineering choices. Examples are illustrative unless identified as test fixtures.

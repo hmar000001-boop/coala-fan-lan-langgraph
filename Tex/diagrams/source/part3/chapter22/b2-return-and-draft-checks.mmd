@@ -1,0 +1,13 @@
+flowchart LR
+accTitle: Parent return and procedure draft use different verification boundaries
+accDescr: The parent-return boundary validates case, result, parent scope, request, working-memory version, objective fingerprint, and time. It does not dereference every finding. If a host supplies a draft proposal, the draft service separately verifies evidence scope and freshness and resolves registered action descriptors before creating a non-executable proposal.
+    RESULT[Child result and stored artifact] --> RETURN[Parent-return checks]
+    PARENT[Current parent snapshot] --> RETURN
+    RETURN --> CASE[Case becomes resolved or escalated]
+    CASE --> FACTORY[Optional host draft request]
+    FACTORY --> DRAFT[Typed draft proposal]
+    DRAFT --> EVIDENCE[Verify evidence scope and freshness]
+    DRAFT --> ACTIONS[Resolve registered action descriptors]
+    EVIDENCE --> READY[Create non-executable draft]
+    ACTIONS --> READY
+    RETURN -. no evidence dereference here .-> LIMIT[Business truth is not proved]
