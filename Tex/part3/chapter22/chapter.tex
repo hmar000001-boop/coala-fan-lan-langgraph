@@ -72,6 +72,26 @@ record ChildResolutionResult(
     List<String> assumptions,
     Instant producedAt) { }
 \end{lstlisting}
+\BookSourceReferenceNoQR
+  {C22-S01}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}
+  {\texttt{ParentContextSnapshot} compact constructor}
+  {6--14}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {\texttt{childScopeMustMatchParentScope()}; \texttt{staleParentVersionRejectsChildResult()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+\BookSourceReferenceNoQR
+  {C22-S02}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}
+  {\texttt{ChildResolutionResult} compact constructor}
+  {7--22}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {\texttt{evidenceBackedChildResultCompletesOnlyTheSubstate()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
 \end{minipage}
 
 The listing omits constructor validation, but its fields show what crosses the boundary. The case checks the remaining invariants when it is opened and when a result is returned. It is important not to read a parent snapshot as a temporal database snapshot or a Soar goal dependency set. The code binds the return to four parent identity values; it does not reproduce every dependency-tracking facility proposed in Part II Chapter 13.
@@ -97,22 +117,39 @@ After opening the B2 case, the lifecycle checks that the current B4 intention is
 
 The code treats delegation and case start as one logical transition, but not as one database transaction spanning both repositories. If the active intention cannot delegate or the B2 case cannot start, the lifecycle attempts compensation. It reloads the case and rejects it if it remains open or investigating. If delegation succeeded, it reloads the intention and attempts to return it from the exact delegation with \texttt{NO\_\allowbreak METHOD\_\allowbreak CHANGE}. Compensation failures are attached to the original failure and surfaced. This is a best-effort consistency protocol, not proof of distributed atomicity.
 
-The relevant source sequence can be summarized without reproducing the full lifecycle method:
+The following is an exact excerpt of the lifecycle method through case start; the compensation branch that follows is discussed above but omitted from the listing:
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[language=Java,caption={The host supplies a typed request; B2 captures the parent identity, then B4 delegates and B2 starts the case.},label={lst:ch22-open-impasse}]
-var request = domain.impasseOpenRequest(context, now);
-ParentContextSnapshot parent = new ParentContextSnapshot(
-    memory.scopeId(), context.requestId(), memory.version(),
-    domain.objectiveFingerprint(context));
-var opened = impasses.open(request.caseId(), memory.scopeId(),
-    context.executionId(), parent, request.signal(),
-    request.parentCapabilities(), request.childCapabilities(),
-    now, request.deadline(), request.maximumChildActions());
-intentions.delegate(intention.id(), intention.version(), opened.id(), now);
-impasses.start(opened.id(), opened.version(), now);
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The lifecycle captures the current parent identity, opens a B2 case, then delegates the active B4 intention before starting the child.},label={lst:ch22-open-impasse}]
+var request = Objects.requireNonNull(domain.impasseOpenRequest(context, now), "impasse open request");
+ParentContextSnapshot parent = new ParentContextSnapshot(memory.scopeId(), context.requestId(),
+        memory.version(), required(domain.objectiveFingerprint(context), "objective fingerprint"));
+var opened = impasses.open(request.caseId(), memory.scopeId(), context.executionId(), parent,
+        request.signal(), request.parentCapabilities(), request.childCapabilities(), now,
+        request.deadline(), request.maximumChildActions());
+boolean delegated = false;
+try {
+    if (intention.status() != IntentionStatus.ACTIVE || intention.version() != context.intentionVersion()) {
+        throw new IllegalStateException("only the current active intention may delegate an impasse investigation");
+    }
+    intentions.delegate(intention.id(), intention.version(), opened.id(), now);
+    delegated = true;
+    // Starting the B2 child is part of the same logical transition as B4 delegation.
+    // If it fails, compensate both records rather than leaving a parent intention stranded.
+    impasses.start(opened.id(), opened.version(), now);
 \end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S03}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {\texttt{openImpasse(...)}}
+  {291--306}
+  {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
+  {\texttt{b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()}; \texttt{b2ChildCannotExecuteACapabilityOutsideItsDelegatedScope()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
 \end{minipage}
+
 
 The source order matters: the parent snapshot is captured before the child runs; the typed signal and capabilities come from the host/domain port; and the B4 intention is delegated only after the case exists. The test \texttt{Cognitive\allowbreak Cycle\allowbreak Lifecycle\allowbreak Services\allowbreak Test.\allowbreak b2\allowbreak Resolution\allowbreak Runs\allowbreak Only\allowbreak Declared\allowbreak Child\allowbreak Capabilities\allowbreak And\allowbreak Returns\allowbreak To\allowbreak Parent\allowbreak Intention} exercises the successful lifecycle path. A separate test rejects an attempt to use a capability outside the delegated scope. Neither test turns the two repositories into a cross-store transaction.
 
@@ -133,6 +170,31 @@ The lifecycle checks that the case belongs to the active execution and parent re
 
 The case's \texttt{recordAction} transition is called before the host executes each step. It requires the case to be live, in \texttt{INVESTIGATING}, within the delegated capability set, and below the maximum child-action count. The count is a mechanism-level budget: once recorded, a failed or interrupted attempt has still consumed an action slot. The outer graph recursion limit is a different limit, and the child-step receipt store described next is a different control again.
 
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The B2 case charges an action before execution and rejects an undelegated capability or exhausted budget.},label={lst:ch22-record-child-action}]
+public ImpasseResolutionCase recordAction(Capability capability, Instant now) {
+    requireLive(now);
+    if (status != ImpasseCaseStatus.INVESTIGATING)
+        throw new IllegalStateException("case is not investigating");
+    if (!childCapabilities.contains(Objects.requireNonNull(capability, "capability")))
+        throw new SecurityException("child action exceeds delegated capability");
+    if (childActionsUsed >= maximumChildActions)
+        throw new IllegalStateException("child action budget exhausted");
+    return revise(status, childActionsUsed + 1, null, null);
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S04}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {\texttt{recordAction(...)}}
+  {46--50}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {\texttt{childActionBudgetAndCapabilityAreEnforced()}; \texttt{childCannotExceedActionBudget()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+\end{minipage}
+
 \subsection{Durable child-step receipts and fencing}
 \label{subsec:ch22-step-receipts}
 
@@ -150,6 +212,44 @@ These states are worth keeping separate:
 \end{itemize}
 
 The receipt is not a business-fact verifier. It prevents duplicate or stale step execution and preserves the outcome of a read step. Whether the evidence is fresh, in scope, and appropriate for reuse is checked later when a recovery-procedure draft is proposed and governed. The child-step receipt also does not replace the B2 case's action budget or deadline.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={Completion is accepted only while the same claim is still live and its fencing token is current.},label={lst:ch22-child-step-completion-fence}]
+@Override public void complete(String caseId, String stepId, long fencingToken,
+                                   List<ResolutionFinding> findings, Instant at) {
+    String json = PostgresJsonArtifactRepository.validJson(findingsCodec.encode(List.copyOf(findings)));
+    String fingerprint = PostgresJsonArtifactRepository.sha256(json);
+    transaction(connection -> {
+        try (PreparedStatement update = connection.prepareStatement("""
+                UPDATE b2_child_step_receipt SET state='COMPLETED',result_payload=CAST(? AS jsonb),result_fingerprint=?,
+                    lease_owner=NULL,lease_until=NULL,updated_at=? WHERE scope_id=? AND case_id=? AND step_id=? AND state='CLAIMED'
+                    AND fencing_token=? AND lease_until>clock_timestamp()
+                """)) {
+            update.setString(1, json);
+            update.setString(2, fingerprint);
+            PostgresJdbc.setInstant(update, 3, at);
+            update.setString(4, scopeId);
+            update.setString(5, required(caseId));
+            update.setString(6, required(stepId));
+            update.setLong(7, fencingToken);
+            if (update.executeUpdate() != 1)
+                throw new SecurityException("B2 step completion rejected: expired or superseded claim");
+        }
+        return null;
+    });
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S05}
+  {supply-chain-agent-infrastructure-postgres}
+  {supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}
+  {\texttt{complete(...)}}
+  {89--104}
+  {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresM7B2CoreIntegrationTest.java}
+  {\texttt{childStepReceiptsResumeCompletedWorkAndFenceExpiredClaims()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresM7B2CoreIntegrationTest.java}
+\end{minipage}
 
 \BookDiagram[0.50\textheight]
   {Tex/diagrams/generated/part3/chapter22/b2-child-step-receipts.png}
@@ -177,6 +277,30 @@ The call to \texttt{Impasse\allowbreak Resolution\allowbreak Service.\allowbreak
 
 The checks protect a specific boundary: a child result cannot be attached to a different request or silently applied after the captured parent identity has changed. They do not prove that every narrative finding is true. The result contains evidence references and assumptions from the host/domain investigation. The parent-return method does not call \texttt{Recovery\allowbreak Draft\allowbreak Evidence\allowbreak Verifier} to dereference every finding at this point. Evidence scope and freshness are checked later if a procedure draft is requested, again during approval, and again during staging or retrieval.
 
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The runtime compares the domain-provided parent against authoritative working memory before asking the B2 service to resolve the child result.},label={lst:ch22-validate-parent-return}]
+WorkingMemorySnapshot latestMemory = currentMemory(context);
+ParentContextSnapshot currentParent = domain.currentParentContext(context, latestMemory);
+if (!currentParent.scopeId().equals(latestMemory.scopeId())
+        || !currentParent.requestId().equals(context.requestId())
+        || currentParent.workingMemoryVersion() != latestMemory.version()
+        || !currentParent.objectiveFingerprint().equals(domain.objectiveFingerprint(context))) {
+    throw new SecurityException("domain adapter parent snapshot differs from authoritative working memory or objective");
+}
+var resolved = impasses.resolve(caseId, resolutionCase.version(), artifact.result(), currentParent, now);
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S06}
+  {supply-chain-agent-runtime}
+  {supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {\texttt{validateImpasseReturn(...)}}
+  {407--415}
+  {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
+  {\texttt{b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
+\end{minipage}
+
 \BookDiagram[0.48\textheight]
   {Tex/diagrams/generated/part3/chapter22/b2-return-and-draft-checks.png}
   {Parent return checks the identity and version of the parent and child result. Evidence dereferencing and registered-action verification belong to the later procedure-draft and governance path, not to the parent identity check alone.}
@@ -188,6 +312,43 @@ The checks protect a specific boundary: a child result cannot be attached to a d
 If the child result is \texttt{UNRESOLVED}, \texttt{Impasse\allowbreak Resolution\allowbreak Case.\allowbreak resolve} moves the case to \texttt{ESCALATED} and retains the unresolved result and terminal reason. Any other disposition is mapped to case status \texttt{RESOLVED}. The positive-result constructor requires at least one finding, and each finding requires at least one evidence reference. These are useful structural safeguards, but they are not an independent truth evaluation of the referenced source.
 
 There is an implementation edge that must be stated plainly. The enum declares \texttt{HYPOTHESIS\_\allowbreak PROPOSED}, but the inspected production call sites and current B2 tests use \texttt{EVIDENCE\_\allowbreak CONFIRMED} and \texttt{UNRESOLVED}; no test exercises a positive \texttt{HYPOTHESIS\_\allowbreak PROPOSED} result. The case transition treats every non-\texttt{UNRESOLVED} disposition as \texttt{RESOLVED}, and the draft service's eligibility check excludes only \texttt{UNRESOLVED}. If a host began emitting \texttt{HYPOTHESIS\_\allowbreak PROPOSED}, the current code would not impose a separate hypothesis-only gate before draft eligibility. The chapter therefore does not describe that path as tested or safe. The active exercised path is the evidence-confirmed disposition, while hypothesis handling remains an explicit coverage and semantic gap in the accepted source.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The case transition binds the result to the captured parent identity and checks result identity and time before changing status.},label={lst:ch22-case-resolve}]
+public ImpasseResolutionCase resolve(ChildResolutionResult childResult,
+        ParentContextSnapshot currentParent, Instant now) {
+    requireLive(now);
+    if (status != ImpasseCaseStatus.INVESTIGATING)
+        throw new IllegalStateException("case is not investigating");
+    Objects.requireNonNull(childResult, "childResult");
+    Objects.requireNonNull(currentParent, "currentParent");
+    if (!scopeId.equals(currentParent.scopeId())
+            || !parentRequestId.equals(currentParent.requestId())
+            || parentWorkingMemoryVersion != currentParent.workingMemoryVersion()
+            || !objectiveFingerprint.equals(currentParent.objectiveFingerprint()))
+        throw new IllegalStateException("parent changed while child resolution was running; result must not be applied");
+    if (!id.equals(childResult.caseId()) || !parentRequestId.equals(childResult.parentRequestId())
+            || parentWorkingMemoryVersion != childResult.parentWorkingMemoryVersion()
+            || !objectiveFingerprint.equals(childResult.objectiveFingerprint()))
+        throw new SecurityException("child result does not match its parent case snapshot");
+    if (childResult.producedAt().isAfter(now) || childResult.producedAt().isBefore(openedAt))
+        throw new IllegalArgumentException("child result timestamp is outside case interval");
+    if (childResult.disposition() == ResolutionDisposition.UNRESOLVED)
+        return revise(ImpasseCaseStatus.ESCALATED, childActionsUsed, childResult, "child could not resolve impasse");
+    return revise(ImpasseCaseStatus.RESOLVED, childActionsUsed, childResult, null);
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S07}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {\texttt{resolve(...)}}
+  {52--65}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {\texttt{evidenceBackedChildResultCompletesOnlyTheSubstate()}; \texttt{staleParentVersionRejectsChildResult()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+\end{minipage}
 
 \subsection{Returning to B4 is a separate state transition}
 \label{subsec:ch22-return-b4}
@@ -219,6 +380,39 @@ The first governance step is \texttt{Recovery\allowbreak Procedure\allowbreak Dr
 
 The distinction is important because an approved draft is not yet a CoALA procedural-memory item. Approval says that an authorized reviewer accepts this typed proposal under the current parent and evidence constraints. It does not authorize the referenced action at a future execution time, and it does not bypass the later procedural-memory review and activation lifecycle.
 
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={Approval rechecks parent identity, evidence, registered action descriptors, trusted authority, and the draft version before a compare-and-set transition.},label={lst:ch22-approve-recovery-draft}]
+public RecoveryProcedureDraft approve(String id, long expectedVersion,
+        ParentContextSnapshot currentParent, RecoveryProcedureApproval approval, Instant now) {
+    RecoveryProcedureDraft current = get(id);
+    if (current.version() != expectedVersion) throw new IllegalStateException("recovery draft version conflict");
+    requireParent(current, currentParent);
+    if (!evidenceVerifier.verify(current.scopeId(), current.evidence(), now))
+        throw new SecurityException("draft evidence is no longer valid");
+    for (RegisteredRecoveryActionReference ref : current.actions()) {
+        RegisteredRecoveryActionReference fresh = registeredReference(new ActionId(ref.actionId()));
+        if (!fresh.equals(ref)) throw new SecurityException("registered action descriptor changed since draft creation");
+    }
+    if (approval.approvedAt().isAfter(now)) throw new IllegalArgumentException("approval timestamp cannot be in the future");
+    if (!approvalAuthority.isAuthorized(current, approval.approverId(), approval.approvalReference(), now))
+        throw new SecurityException("recovery procedure approval is not authorized");
+    RecoveryProcedureDraft next = current.approve(approval.approverId(), approval.approvalReference(), approval.approvedAt());
+    if (!repository.compareAndSet(id, expectedVersion, next)) throw new IllegalStateException("recovery draft changed concurrently");
+    return next;
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S08}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}
+  {\texttt{approve(...)}}
+  {72--88}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftServiceTest.java}
+  {\texttt{approvalRequiresCurrentParentEvidenceAndTrustedOperatorAuthority()}; \texttt{approvalCannotCrossParentVersionOrObjectiveChange()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftServiceTest.java}
+\end{minipage}
+
 \subsection{Staging publishes an immutable artifact and a procedural draft}
 \label{subsec:ch22-staging}
 
@@ -230,6 +424,42 @@ The promotion service then creates a CoALA \texttt{Procedure\allowbreak Version}
 \label{subsec:ch22-procedure-activation}
 
 A reviewer must be independent of the person who approved the B2 draft. The service delegates to the CoALA procedural-memory lifecycle to validate the staged \texttt{Procedure\allowbreak Version}. Activation is a further transition: the version must already be \texttt{VALIDATED}, and the activating actor must be independent of both the B2 draft approver and the procedural reviewer. Only then can the procedure become \texttt{ACTIVE}.
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Java,basicstyle=\ttfamily\footnotesize,breaklines=true,caption={The procedural reviewer and activator must be different from the B2 draft approver and from each other.},label={lst:ch22-independent-procedure-lifecycle}]
+public ProcedureVersion validate(ProcedureVersionId id, long expectedRevision,
+        String reviewer, Instant at) {
+    ProcedureVersion current = proceduralMemory.load(Objects.requireNonNull(id, "id"));
+    requireRecoveryRunbook(current);
+    requireIndependentActor(reviewer, current.createdBy(),
+            "procedural reviewer must be independent of the B2 draft approver");
+    return proceduralMemory.validate(id, expectedRevision, reviewer, at);
+}
+
+public ProcedureVersion activate(ProcedureVersionId id, long expectedRevision,
+        String approver, Instant at) {
+    ProcedureVersion current = proceduralMemory.load(Objects.requireNonNull(id, "id"));
+    requireRecoveryRunbook(current);
+    if (current.status() != ProcedureStatus.VALIDATED)
+        throw new IllegalStateException("recovery procedure must be separately validated before activation");
+    requireIndependentActor(approver, current.createdBy(),
+            "procedural approver must be independent of the B2 draft approver");
+    requireIndependentActor(approver, current.validatedBy(),
+            "procedural approver must be independent of the procedural reviewer");
+    return proceduralMemory.activate(id, expectedRevision, approver, at);
+}
+\end{lstlisting}
+\BookSourceReferenceQR
+  {C22-S09}
+  {supply-chain-agent-mechanisms}
+  {supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}
+  {\texttt{validate(...), activate(...)}}
+  {90--104}
+  {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionServiceTest.java}
+  {\texttt{b2ApprovalStagesOnlyADraftAndIndependentProceduralLifecycleIsRequired()}; \texttt{proceduralReviewerAndApproverMustBeIndependentActors()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionServiceTest.java}
+\end{minipage}
 
 Retrieval is also conditional. \texttt{retrieveActive} looks up a procedure for an exact memory scope and opaque condition key. It accepts only an active recovery runbook, dereferences the immutable artifact under the expected scope, checks its identity and provenance against the procedural-memory version, and re-verifies evidence and current action descriptors. A changed descriptor or stale/foreign evidence blocks retrieval. The service returns a \texttt{Reusable\allowbreak Recovery\allowbreak Procedure}, which is planning knowledge, not an executable command. The registered actions still require the ordinary capability, approval, validation, and dispatch boundaries explained in Chapter 19.
 
@@ -271,13 +501,14 @@ For readers following the implementation, the principal source locations are lis
 \textbf{Responsibility} & \textbf{Repository-relative source} & \textbf{Entry point} \\
 \midrule
 \endhead
-Typed signal and case invariants & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java} & \texttt{open}, \texttt{recordAction}, \texttt{resolve} \\
-Signal consolidation & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java} & \texttt{consolidate} \\
-Runtime opening, investigation and return & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java} & \texttt{openImpasse}, \texttt{investigate\allowbreak Impasse}, \texttt{validate\allowbreak Impasse\allowbreak Return} \\
-Host-supplied B2 contracts & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java} & \texttt{Impasse\allowbreak Open\allowbreak Request}, \texttt{Child\allowbreak Investigation\allowbreak Plan} \\
-Four-node child graph & \url{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java} & \texttt{compile}, \texttt{invoke} \\
-Durable child-step receipts & \url{supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java} & \texttt{claim}, \texttt{complete}, \texttt{fail} \\
-Draft and promotion lifecycle & \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}; \url{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java} & \texttt{createDraft}, \texttt{approve}, \texttt{stage\allowbreak Approved\allowbreak Draft}, \texttt{validate}, \texttt{activate}, \texttt{retrieveActive} \\
+Typed parent/result boundary & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}}; \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}} & constructor contracts \\
+Typed signal and case invariants & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}} & \texttt{open}, \texttt{recordAction}, \texttt{resolve} \\
+Signal consolidation & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}} & \texttt{consolidate} \\
+Runtime opening, investigation and return & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}} & \texttt{openImpasse}, \texttt{investigate\allowbreak Impasse}, \texttt{validate\allowbreak Impasse\allowbreak Return} \\
+Host-supplied B2 contracts & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}} & \texttt{Impasse\allowbreak Open\allowbreak Request}, \texttt{Child\allowbreak Investigation\allowbreak Plan} \\
+Four-node child graph & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}} & \texttt{compile}, \texttt{invoke} \\
+Durable child-step receipts & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}{\path{supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}} & \texttt{claim}, \texttt{complete}, \texttt{fail} \\
+Draft and promotion lifecycle & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}}; \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}} & \texttt{createDraft}, \texttt{approve}, \texttt{stage\allowbreak Approved\allowbreak Draft}, \texttt{validate}, \texttt{activate}, \texttt{retrieveActive} \\
 \bottomrule
 \end{longtable}
 
@@ -315,13 +546,17 @@ The table is not a maturity score. It records what the implementation stores, wh
 
 The following table keeps a control, its observable result, and its limit in view. It avoids describing a rejection as a successful recovery or a persisted record as a verified business fact.
 
-\begin{table}[htbp]
-\centering
 \small
-\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.20\linewidth}XX}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.19\linewidth} >{\raggedright\arraybackslash}p{0.35\linewidth} >{\raggedright\arraybackslash}p{0.35\linewidth}}
+\caption{B2 failure and boundary semantics in the inspected source.}\label{tab:ch22-failure-semantics}\\
 \toprule
 \textbf{Condition} & \textbf{Current control and result} & \textbf{What it does not establish} \\
 \midrule
+\endfirsthead
+\toprule
+\textbf{Condition} & \textbf{Current control and result} & \textbf{What it does not establish} \\
+\midrule
+\endhead
 Duplicate typed signal & Consolidation groups by type/subject, unions evidence, retains the higher-severity descriptive fields, and sorts deterministically. & It does not classify raw error text or verify the underlying business claim. \\
 Child capability outside the parent grant or fixed allow-list & Case opening or step validation rejects the capability. & The host's typed plan remains an input; the mechanism does not infer every needed investigative step. \\
 Action budget exhausted or case deadline reached & The case transition rejects further work; an expired case becomes \texttt{EXPIRED}. & The budget is not the graph recursion limit or the full B6 resource governor. \\
@@ -336,10 +571,8 @@ Registered action descriptor changed & Approval, staging, or later retrieval rej
 \texttt{HYPOTHESIS\_\allowbreak PROPOSED} supplied & The enum exists, but current tested/runtime paths do not exercise it; the case maps every non-unresolved disposition to \texttt{RESOLVED}. & No separate hypothesis-only gate currently excludes it from draft eligibility. \\
 No draft proposal produced & The configured factory may return empty; when the paired R2 services are not configured, no draft is created. & A resolved case is not automatically reusable. \\
 \bottomrule
-\end{tabularx}
-\caption{B2 failure and boundary semantics in the inspected source.}
-\label{tab:ch22-failure-semantics}
-\end{table}
+\end{longtable}
+\normalsize
 
 Several limits follow directly. First, the application does not reproduce Soar's full superstate/substate architecture or Goal Dependency Set regeneration. Second, the child graph state does not contain the parent objective, a full memory copy, or the parent capability grant; those remain with their owners. Third, the fixed child allow-list contains no domain write capability. Fourth, a parent-return check protects identity and version but does not independently verify every business fact. Fifth, a successful child episode does not automatically compile a procedure, create an active procedural-memory item, or generalize a recovery rule. Sixth, \texttt{HYPOTHESIS\_\allowbreak PROPOSED} is an untested semantic edge in the current source. Finally, no experiment in this chapter establishes that B2 improves recovery success, recovery time, or transfer to new suppliers and disruptions. The chapter documents implementation controls and test evidence, not causal benefit.
 

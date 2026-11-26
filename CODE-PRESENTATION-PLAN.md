@@ -1,10 +1,10 @@
 # Code Presentation and Source Navigation Plan
 
-**Status:** Accepted design; Chapters 19–21 QR source strips implemented and render-checked; Chapter 22 (B2) is the next mechanism-specific pilot  
+**Status:** Accepted design; Chapters 19–22 QR source strips implemented and render-checked; Chapter 23 (B4/B6) is next  
 **Created:** 25 November 2026  
 **Applies to:** Part III, Chapters 19–24  
 **Canonical LaTeX tree:** `Tex/part3/`  
-**Implementation baseline reviewed for Chapters 19–21:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Implementation baseline reviewed for Chapters 19–22:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
 
 > **Provenance note.** The supplied book archive did not contain a file named `CODE-PRESENTATION-PLAN.md`. This is therefore the first version of the plan, created in the book repository; it is not an edit to a previously present copy.
 
@@ -200,3 +200,28 @@ The C21-S06 counter increments only when recursion reaches a complete combinatio
 C21-S04 remains navigable through a printed source path and clickable source/test references but intentionally receives no QR. The cited durable-host test is related integration evidence, not a focused assertion for the private mapping helper or a durable B1 feature-state update. Keep this distinction visible; do not make the link look like stronger evidence than it is.
 
 The six C21 QR assets are vector PDFs under `Tex/diagrams/source-qr/`, with one `.tex` payload source per QR. The Chapter 21 source strips use the shared `\BookSourceReferenceQR` / `\BookSourceReferenceNoQR` macros introduced and accepted in the Chapter 19 changeset. The final standalone proof compiled to 40 US Letter pages; all seven listing/reference groups stayed on one page, and the six QR payloads decoded at 220 DPI and matched their clickable PDF URI annotations. The QR symbols' clickable outside dimensions are approximately 19.15 × 19.50 mm. The repository QR validator passed for all 14 assets across Chapters 19–21; the scaffold checks passed at six Part III chapters and the Mermaid sources-only check passed for 118 sources. The standalone proof checks layout, scan decoding, and clickable PDF URL parity only; it is not a production-font full-book build or a physical print certification.
+
+
+## 14. Chapter 22 source register and QR classification
+
+Chapter 22 documents the B2 parent-linked impasse and protected-recovery path against the same immutable application revision `fa8cd5ec0742d7010dbba2c3646852e95062a419` used in Chapters 19–21. Nine stable references are assigned: seven primary implementation listings receive QR codes, while the two boundary-record declarations remain text-only supporting references. The chapter preserves the distinction between parent identity checks, case transition checks, child-step fencing, and the later governance lifecycle.
+
+| Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
+| --- | --- | ---: | --- | --- |
+| `C22-S01` | `ParentContextSnapshot` compact constructor — four-field parent identity contract | 6–14 | `ImpasseResolutionServiceTest.childScopeMustMatchParentScope()`; `staleParentVersionRejectsChildResult()` | No QR; supporting record |
+| `C22-S02` | `ChildResolutionResult` compact constructor — typed finding-only return packet | 7–22 | `ImpasseResolutionServiceTest.evidenceBackedChildResultCompletesOnlyTheSubstate()` | No QR; supporting record |
+| `C22-S03` | `CognitiveCycleLifecycleServices.openImpasse(...)` — case creation followed by B4 delegation and B2 start | 291–306 | `CognitiveCycleLifecycleServicesTest.b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()`; `b2ChildCannotExecuteACapabilityOutsideItsDelegatedScope()` | **QR** |
+| `C22-S04` | `ImpasseResolutionCase.recordAction(...)` — delegated capability and child-action budget transition | 46–50 | `ImpasseResolutionServiceTest.childActionBudgetAndCapabilityAreEnforced()`; `childCannotExceedActionBudget()` | **QR** |
+| `C22-S05` | `PostgresB2ChildStepReceiptStore.complete(...)` — completion guarded by claim state, fencing token, and live lease | 89–104 | `PostgresM7B2CoreIntegrationTest.childStepReceiptsResumeCompletedWorkAndFenceExpiredClaims()` | **QR** |
+| `C22-S06` | `CognitiveCycleLifecycleServices.validateImpasseReturn(...)` — authoritative parent snapshot validation before case resolution and B4 return | 407–415 | `CognitiveCycleLifecycleServicesTest.b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()` | **QR** |
+| `C22-S07` | `ImpasseResolutionCase.resolve(...)` — case-level parent/result identity, timestamp, and disposition transition | 52–65 | `ImpasseResolutionServiceTest.evidenceBackedChildResultCompletesOnlyTheSubstate()`; `staleParentVersionRejectsChildResult()` | **QR** |
+| `C22-S08` | `RecoveryProcedureDraftService.approve(...)` — parent/evidence/action revalidation and trusted-authority CAS | 72–88 | `RecoveryProcedureDraftServiceTest.approvalRequiresCurrentParentEvidenceAndTrustedOperatorAuthority()`; `approvalCannotCrossParentVersionOrObjectiveChange()` | **QR** |
+| `C22-S09` | `RecoveryProcedurePromotionService.validate(...)` / `activate(...)` — independent procedural reviewer and activator | 90–104 | `RecoveryProcedurePromotionServiceTest.b2ApprovalStagesOnlyADraftAndIndependentProceduralLifecycleIsRequired()`; `proceduralReviewerAndApproverMustBeIndependentActors()` | **QR** |
+
+The two text-only references are deliberately limited to supporting Java record contracts; they still print the complete module, source path, member, source lines, test path, and test methods, with clickable PDF source and test labels. The seven QR payloads use the same commit-pinned GitHub source URLs as their adjacent PDF links and are generated as vector PDF assets. The visible source path and test path remain alongside each code listing.
+
+The Chapter 22 discussion distinguishes three separate enforcement locations: `recordAction(...)` consumes a case-level action slot before the host operation; the PostgreSQL receipt's `complete(...)` requires the exact claim to remain `CLAIMED`, the fencing token to match, and the lease to remain live; and `validateImpasseReturn(...)` compares the domain parent against authoritative working memory before calling the case-level `resolve(...)` transition. These controls do not make the inner B2 subgraph itself durable or constitute a distributed transaction across the case and B4 intention stores.
+
+The optional recovery-procedure path remains explicitly staged. `approve(...)` changes the B2 draft to `APPROVED` only. `stageApprovedDraft(...)` publishes an immutable artifact and a CoALA procedural-memory `DRAFT`; it does not activate it. `validate(...)` requires a reviewer independent of the B2 draft approver, and `activate(...)` requires a separately validated version plus an activator independent of both earlier actors. The linked tests exercise these boundaries but do not establish that the stored procedure executes an action.
+
+The Chapter 22 local standalone proof is used only for typography, source-strip cohesion, QR decoding, and PDF link verification. Production-font full-book compilation and physical-print certification remain separate release checks.

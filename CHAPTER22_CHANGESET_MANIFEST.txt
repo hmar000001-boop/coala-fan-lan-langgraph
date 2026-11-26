@@ -1,0 +1,29 @@
+Chapter 22 incremental changeset manifest
+Base application commit: fa8cd5ec0742d7010dbba2c3646852e95062a419
+Total: 20 files (2 modified, 18 added)
+
+MODIFIED
+Tex/part3/chapter22/chapter.tex
+CODE-PRESENTATION-PLAN.md
+
+ADDED — QR payload sources and vector assets
+Tex/diagrams/source-qr/C22-S03.tex
+Tex/diagrams/source-qr/C22-S03.pdf
+Tex/diagrams/source-qr/C22-S04.tex
+Tex/diagrams/source-qr/C22-S04.pdf
+Tex/diagrams/source-qr/C22-S05.tex
+Tex/diagrams/source-qr/C22-S05.pdf
+Tex/diagrams/source-qr/C22-S06.tex
+Tex/diagrams/source-qr/C22-S06.pdf
+Tex/diagrams/source-qr/C22-S07.tex
+Tex/diagrams/source-qr/C22-S07.pdf
+Tex/diagrams/source-qr/C22-S08.tex
+Tex/diagrams/source-qr/C22-S08.pdf
+Tex/diagrams/source-qr/C22-S09.tex
+Tex/diagrams/source-qr/C22-S09.pdf
+
+ADDED — review and delivery metadata
+review/Chapter_22_QR_Source_Review_v1.md
+CHAPTER22_QR_CHANGESET_README.md
+CHAPTER22_CHANGESET_MANIFEST.txt
+CHAPTER22_CHANGESET_SHA256SUMS.txt (checksum index; does not hash itself)
