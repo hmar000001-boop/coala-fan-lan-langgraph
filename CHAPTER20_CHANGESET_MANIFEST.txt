@@ -1,0 +1,28 @@
+Part III / Chapter 20 — incremental changeset manifest
+Base prerequisite: Part_III_Chapter19_QR_SCAFFOLD_CHANGESET_ONLY.zip already applied.
+Application source revision used for links: fa8cd5ec0742d7010dbba2c3646852e95062a419
+
+MODIFIED
+Tex/part3/chapter20/chapter.tex
+CODE-PRESENTATION-PLAN.md
+
+ADDED
+review/Chapter_20_Source_Review_v2.md
+Tex/diagrams/source-qr/C20-S01.tex
+Tex/diagrams/source-qr/C20-S01.pdf
+Tex/diagrams/source-qr/C20-S02.tex
+Tex/diagrams/source-qr/C20-S02.pdf
+Tex/diagrams/source-qr/C20-S03.tex
+Tex/diagrams/source-qr/C20-S03.pdf
+Tex/diagrams/source-qr/C20-S04.tex
+Tex/diagrams/source-qr/C20-S04.pdf
+Tex/diagrams/source-qr/C20-S07.tex
+Tex/diagrams/source-qr/C20-S07.pdf
+CHAPTER20_CHANGESET_README.md
+CHAPTER20_CHANGESET_MANIFEST.txt
+
+DELETED
+(none)
+
+NOT INCLUDED
+Full LaTeX project; Chapter 19 files; shared QR macros, scripts, and workflow; supply-chain application repository; generated proof PDF and temporary proof diagrams.

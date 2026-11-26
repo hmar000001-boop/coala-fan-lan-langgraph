@@ -78,6 +78,17 @@ public WorkingMemorySnapshot put(
 \end{lstlisting}
 \end{minipage}
 
+\BookSourceReferenceQR
+  {C20-S01}
+  {supply-chain-agent-memory}
+  {supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/working/WorkingMemoryService.java}
+  {\texttt{WorkingMemoryService.put(...)}}
+  {49--56}
+  {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/working/WorkingMemoryServiceTest.java}
+  {\texttt{staleWriterCannotOverwriteNewerWorkingMemoryVersion()}; \texttt{expiredWorkingMemoryCannotBeRevivedByAWrite()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/working/WorkingMemoryService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/working/WorkingMemoryServiceTest.java}
+
 The method does not mutate the existing snapshot. It first checks that the caller's expected version is current and that the snapshot has not expired. It then creates a replacement snapshot and asks the repository to compare-and-set it. If another update has already advanced the version, a stale write is rejected instead of silently overwriting newer context. The snapshot itself recomputes its evidence list from the evidence attached to its current slots and hypotheses. Removing a value therefore also removes evidence that is no longer referenced by the active snapshot.
 
 Hypotheses are represented separately from ordinary values. Their statuses distinguish proposed, supported, refuted, and withdrawn hypotheses. A supported hypothesis must carry supporting evidence; a refuted hypothesis must carry contradiction evidence. These constraints make the status meaningful rather than allowing the model to label a guess as established without recording why.
@@ -116,6 +127,17 @@ public Episode verify(String actor,
 \end{lstlisting}
 \end{minipage}
 
+\BookSourceReferenceQR
+  {C20-S02}
+  {supply-chain-agent-memory}
+  {supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/episodic/Episode.java}
+  {\texttt{Episode.verify(...)}}
+  {93--99}
+  {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/episodic/EpisodicMemoryServiceTest.java}
+  {\texttt{onlyExplicitlyReviewedEpisodeBecomesRetrievableExperience()}; \texttt{unverifiedEpisodeCannotBePromotedWithoutReviewEvidence()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/episodic/Episode.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/episodic/EpisodicMemoryServiceTest.java}
+
 The test suite demonstrates the distinction with two different assertions: a newly recorded episode is not returned as trusted experience, and an explicitly reviewed episode becomes eligible for retrieval. The review handler requires its own capability and evidence, but the current \texttt{Episode} model does not retain the recording principal in a way that lets the handler enforce that the reviewer differs from the original recorder. Do not infer a strict author/reviewer identity-separation invariant from this lifecycle. Verification means that the application accepted the episode as reviewed evidence within its stated scope and provenance; it does not make the episode a universal rule, semantic fact, or executable procedure.
 
 \subsection{Semantic memory: facts have provenance and time}
@@ -143,24 +165,46 @@ Procedural memory in this repository must not be described as GraSP or as a repr
 
 The four memory responsibilities become useful to a decision process when the application can retrieve them through one typed result. \texttt{MemoryRetrievalService} accepts a \texttt{MemoryRetrievalQuery} containing a scope, optional entity, optional semantic predicate, optional working-memory identifier, valid time, known time, and a per-type limit. The query shares a scope and request context, but the four stores do not apply identical temporal semantics. Working memory is loaded by identifier, checked for scope equality, and accepted when its expiry is after \texttt{knownAt}; the service returns the currently stored snapshot rather than reconstructing it as of a historical time. Episodic retrieval applies scope, optional entity, and \texttt{knownAt}; with no entity, it can return scope-relevant verified episodes. Semantic retrieval occurs only when an entity is supplied and applies scope, subject, optional predicate, \texttt{validAt}, and \texttt{knownAt}. Procedural retrieval applies scope and \texttt{knownAt}, but not \texttt{validAt}. Each repository applies the per-type limit. The result is a typed \texttt{MemoryRetrievalResult}; it does not flatten every record into one string.
 
-The core behavior is concise:
+\Needspace{0.68\textheight}
+
+The service's central retrieval method makes the four read paths explicit:
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={Cross-store retrieval applies scope and time filters without B1 scoring.},label={lst:ch20-memory-retrieval}]
-var episodes = episodic.findVerified(
-    new EpisodeQuery(query.scopeId(), query.entity(),
-                     query.knownAt(), query.limitPerType()));
-var facts = query.entity() == null
-    ? List.<SemanticFact>of()
-    : semantic.findActive(new SemanticFactQuery(
-        query.scopeId(), query.entity(), query.semanticPredicate(),
-        query.validAt(), query.knownAt(), query.limitPerType()));
-var procedures = procedural.findActiveAt(
-    query.scopeId(), query.knownAt(), query.limitPerType());
-return new MemoryRetrievalResult(
-    activeWorking, episodes, facts, procedures);
+public MemoryRetrievalResult retrieve(MemoryRetrievalQuery query) {
+    var activeWorking = Optional.<dev.supplychain.agent.memory.working.WorkingMemorySnapshot>empty();
+    if (query.workingMemoryId() != null) {
+        var snapshot = working.findById(query.workingMemoryId()).orElseThrow(() ->
+                new MemoryNotFoundException("Working memory not found: " + query.workingMemoryId().value()));
+        if (!snapshot.scopeId().equals(query.scopeId())) {
+            throw new SecurityException("working-memory scope does not match retrieval scope");
+        }
+        if (!snapshot.expiresAt().isAfter(query.knownAt())) {
+            throw new MemoryNotFoundException("Working memory has expired at requested valid time");
+        }
+        activeWorking = Optional.of(snapshot);
+    }
+    var episodes = episodic.findVerified(
+            new EpisodeQuery(query.scopeId(), query.entity(), query.knownAt(), query.limitPerType()));
+    var facts = query.entity() == null ? java.util.List.<dev.supplychain.agent.memory.semantic.SemanticFact>of()
+            : semantic.findActive(new SemanticFactQuery(query.scopeId(), query.entity(),
+                    query.semanticPredicate(), query.validAt(), query.knownAt(), query.limitPerType()));
+    var procedures = procedural.findActiveAt(query.scopeId(), query.knownAt(), query.limitPerType());
+    return new MemoryRetrievalResult(activeWorking, episodes, facts, procedures);
+}
 \end{lstlisting}
 \end{minipage}
+
+\BookSourceReferenceQR
+  {C20-S03}
+  {supply-chain-agent-memory}
+  {supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalService.java}
+  {\texttt{MemoryRetrievalService.retrieve(...)}}
+  {24--44}
+  {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalServiceTest.java}
+  {\texttt{exactRetrievalCombinesAllFourCoalaMemoryResponsibilitiesWithoutB1Scoring()}; \texttt{workingMemoryReferenceCannotBeReadAcrossScopes()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalService.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalServiceTest.java}
 
 This service deliberately performs deterministic, filter-based lookup. It does not assign activation, estimate retrieval latency, optimize downstream utility, or choose a context set under a resource budget. It also does not automatically copy returned items into working memory. A caller may use the typed result to construct a later reasoning request or feed a selection stage, but that handoff is not an automatic pipeline implemented by this service. Chapter 21 will examine B1's selection problem and B3's separate workspace competition/admission problem. Retrieval supplies candidate information; it is not a substitute for either one.
 
@@ -187,24 +231,38 @@ The action module gives these operations typed handler contracts. Their descript
 
 \texttt{ReasoningAction} receives a \texttt{ReasoningRequest} and delegates to an injected \texttt{Reasoning\allowbreak Provider}. The request identifies a task, a bounded context string, and a list of evidence references. The constructor for the request rejects a context longer than 48,000 characters and more than 200 evidence references, and it rejects duplicate evidence keys. These are application limits, not CoALA requirements.
 
+\Needspace{0.75\textheight}
+
 The result, \texttt{ReasoningAssessment}, is structured. It contains a summary, evidence-backed findings, hypotheses, assumptions, supporting evidence, information gaps, a confidence value, and a concise rationale. The fields are bounded in length and count. If a finding is labelled evidence-backed, the result must contain supporting evidence. The action also checks that the provider has not cited an evidence reference that was absent from the request:
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Java,caption={The reasoning action rejects citations outside the supplied evidence set.},label={lst:ch20-reasoning-action}]
 ReasoningAssessment assessment = Objects.requireNonNull(
-    provider instanceof ExecutionAwareReasoningProvider aware
-        ? aware.assess(context, input)
+    provider instanceof ExecutionAwareReasoningProvider executionAware
+        ? executionAware.assess(context, input)
         : provider.assess(input),
     "reasoning provider result");
 Set<?> supplied = new HashSet<>(input.evidence());
 if (!supplied.containsAll(assessment.supportingEvidence())) {
     throw new ActionExecutionException(new ActionFailure(
         ActionFailureCode.INVALID_INPUT,
-        "Reasoning provider cited evidence not supplied", false, false));
+        "Reasoning provider cited evidence that was not supplied in the request",
+        false, false));
 }
 return assessment;
 \end{lstlisting}
 \end{minipage}
+
+\BookSourceReferenceQR
+  {C20-S04}
+  {supply-chain-agent-actions}
+  {supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/internal/ReasoningAction.java}
+  {\texttt{ReasoningAction.execute(...)}}
+  {25--36}
+  {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/CoalaInternalActionsTest.java}
+  {\texttt{reasoningActionRejectsEvidenceReferencesNotSuppliedByCaller()}; \texttt{reasoningProviderMalformedAssessmentIsRejectedInsteadOfAccepted()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/internal/ReasoningAction.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/CoalaInternalActionsTest.java}
 
 This is an evidence-reference integrity check. It does not prove that a cited source is true, that a hypothesis is correct, or that the model interpreted the source accurately. The application preserves the distinction between an evidence-backed finding, an assumption, a hypothesis, and an information gap so that downstream logic can decide what to do with each. The assessment is not a private chain-of-thought transcript; it is a bounded result with a concise rationale.
 
@@ -213,7 +271,7 @@ A \texttt{LangChain4j\allowbreak ReasoningProvider} adapter implements the \text
 \subsection{Working-memory update and learning actions}
 \label{subsec:ch20-learning-actions}
 
-Reasoning does not automatically modify working memory. \texttt{WorkingMemoryUpdateAction} is a separate memory-write handler. It checks that the requested scope matches the stored snapshot, that the expected version is current, and that the snapshot has not expired. It also supplies a request fingerprint for idempotency. Only after the preconditions pass does it call \texttt{WorkingMemoryService.put}.
+Reasoning does not automatically modify working memory. \texttt{WorkingMemory\allowbreak UpdateAction} is a separate memory-write handler. It checks that the requested scope matches the stored snapshot, that the expected version is current, and that the snapshot has not expired. It also supplies a request fingerprint for idempotency. Only after the preconditions pass does it call \texttt{WorkingMemoryService.put}.
 
 Similarly, \texttt{EpisodeLearningAction} records an episode as unverified. Separate reviewer-facing operations handle episodic verification/rejection, semantic proposal/approval/rejection, and procedural validation/activation/rejection. The \texttt{LearningActionCatalog} exposes these operations through distinct, versioned action handlers and capabilities. The procedural handlers enforce author/validator/approver separation as described above; the episodic and semantic handlers do not enforce the same principal-identity comparison. Procedure predecessor retirement is not a separate catalog action: it occurs within the repository's replacement activation operation.
 
@@ -230,6 +288,8 @@ The focused tests \texttt{CoalaInternal\allowbreak ActionsTest} and \texttt{Lear
 \label{sec:ch20-external-actions}
 
 CoALA's action space includes interaction with an environment. Chapter 5 distinguishes receiving an observation from carrying out a grounding action. In this application, those roles are represented by separate handler groups. The complete dispatch, capability, idempotency, and world-version gates were already introduced in Section~\ChapterNineteenActionBoundaryRef; this section focuses on what the agent receives and requests.\CoALACite{Section 4.2, ``Grounding actions,'' p. 10}
+
+\Needspace{0.75\textheight}
 
 \texttt{SupplyChainPerceptionActions} provides read-only operations for supplier, inventory lot, customer order, shipment, available inventory, and quality disposition. These handlers return an \texttt{Observation<T>} rather than a mutable domain object. The observation carries the value together with the entity reference, evidence reference, provenance, and source snapshot version:
 
@@ -255,6 +315,17 @@ public record Observation<T>(
 \end{lstlisting}
 \end{minipage}
 
+\BookSourceReferenceNoQR
+  {C20-S05}
+  {supply-chain-agent-actions}
+  {supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/perception/Observation.java}
+  {\texttt{Observation<T>} compact constructor}
+  {8--17}
+  {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
+  {\texttt{perceptionReturnsImmutableSnapshotObservationWithProvenance()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/perception/Observation.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
+
 For example, reading the available quantity of an inventory lot produces an observation about a particular simulator snapshot. The version and provenance allow later operations to refer to the source of that value. They do not guarantee that the snapshot is still current when a later action is attempted; the state-changing path must still apply its own current-version checks.
 
 \texttt{SupplyChainGroundingActions} exposes typed operations such as reserving or releasing inventory, placing a purchase order, and rerouting a shipment. These are requests to change the modeled environment through \texttt{SupplyChainSimulationWorld}. The corresponding action descriptor identifies a domain-write effect and the required capability. A planner's proposal is not itself one of these committed grounding operations. Chapter 19 described how the dispatcher and world adapter validate a state-changing action before the simulator updates the current modeled snapshot.
@@ -273,6 +344,8 @@ Chapter 6 introduced proposal as the part of the decision process that generates
 
 The starting contract is \texttt{PlanningRequest}. It binds the recovery objective to an initial supply-chain snapshot, the current working-memory snapshot, evidence references, available action definitions, hard constraints, a scoring profile, risk and authority policies, a planning-complexity classification, a resource/time budget, and a request timestamp. The class also carries additional governance inputs used by later mechanism services, including planner overrides, reusable recovery procedures, uncertainty directives, and alternative-hypothesis review. We will not unpack those B2, B4, and B6 additions here; their responsibilities belong to Chapters 22 and 23.
 
+\Needspace{0.58\textheight}
+
 A \texttt{PlanningState} represents one point in a candidate search. It stores the recovery-objective identifier, the root-world version, the branch's current snapshot, the ordered path of proposed actions, and accumulated evidence. Its constructor enforces a useful invariant: the branch snapshot version must equal the root version plus the number of actions in the path. It also prevents the same planning-action identifier from appearing twice in one path. Advancing a state creates a new object and adds the action's supporting evidence:
 
 \begin{minipage}{\linewidth}
@@ -289,9 +362,22 @@ public PlanningState advance(SupplyChainSnapshot nextWorld,
 \end{lstlisting}
 \end{minipage}
 
+\BookSourceReferenceNoQR
+  {C20-S06}
+  {supply-chain-agent-planning}
+  {supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/PlanningState.java}
+  {\texttt{PlanningState.advance(...)}}
+  {33--40}
+  {supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/tot/ThoughtSearchPlannerTest.java}
+  {\texttt{expandsStructuredAlternativesAndReturnsRankedCandidates()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/PlanningState.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/tot/ThoughtSearchPlannerTest.java}
+
 A \texttt{PlanningAction} binds several things that must remain consistent: a planning-action identifier, an action descriptor, a domain recovery action, a simulator command, an impact estimate, supporting evidence, and assumptions. The identifier is also used by the command. This prevents the candidate description and the command that is simulated from referring to unrelated operations.
 
 The \texttt{PlanningWorldModel} defines three operations: create an initial state, list actions available from a state, and apply a proposed action to produce a new state or a typed rejection. Its contract requires deterministic behavior and no external side effects. The \texttt{PlanningRequest} also validates that every supplied action definition is a grounding action with a domain-write effect and that its required capability falls within the trusted proposal scope. \texttt{SimulatorBackedPlanningWorldModel} implements that contract using the same deterministic supply-chain simulator introduced in Chapter 19. Before applying a transition, it checks that the action descriptor is included in the request, that the capability is inside the trusted proposal scope, and that the typed recovery action matches the simulator command.
+
+\Needspace{0.58\textheight}
 
 The actual transition is deliberately small:
 
@@ -310,14 +396,26 @@ public WorldTransition apply(PlanningRequest request,
         PlanningState next = state.advance(result.snapshot(), action);
         return new WorldTransition.Applied(next);
     } catch (DomainViolation | IllegalArgumentException ex) {
-        return new WorldTransition.Rejected(
-            "DOMAIN_TRANSITION_REJECTED", ex.getMessage());
+        return new WorldTransition.Rejected("DOMAIN_TRANSITION_REJECTED",
+            ex.getMessage() == null
+                ? "domain rejected the transition" : ex.getMessage());
     }
 }
 \end{lstlisting}
 \end{minipage}
 
-The simulator receives the branch snapshot from \texttt{PlanningState}, not the current snapshot held by \texttt{SupplyChainSimulationWorld}. The result is placed into a new planning state. The method does not call the world adapter or commit a change to the current modeled environment. A rejected domain transition is represented as \texttt{WorldTransition.Rejected}. This makes it possible for a planner to explore an infeasible branch without corrupting the state on which the real decision is based.
+\BookSourceReferenceQR
+  {C20-S07}
+  {supply-chain-agent-planning}
+  {supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/SimulatorBackedPlanningWorldModel.java}
+  {\texttt{SimulatorBackedPlanningWorldModel.apply(...)}}
+  {54--64}
+  {supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/api/DeterministicCandidateEvaluatorTest.java}
+  {\texttt{acceptsSimulatorReplayedPlanAndMarksApprovalAsGovernanceRequirement()}; \texttt{rejectsAPlanWhoseClaimedStateDoesNotMatchSimulatorReplay()}}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/SimulatorBackedPlanningWorldModel.java}
+  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/api/DeterministicCandidateEvaluatorTest.java}
+
+The simulator receives the branch snapshot from \texttt{PlanningState}, not the current snapshot held by \texttt{SupplyChainSimulationWorld}. The result is placed into a new planning state. The method does not call the world adapter or commit a change to the current modeled environment. Notice the placement of the \texttt{try} block: \texttt{requireState}, the null check, and \texttt{validateAllowedAction} run before it, so invalid request ownership, missing action definitions, scope violations, and action/command mismatches fail fast rather than becoming typed transition rejections. Only a \texttt{DomainViolation} or \texttt{IllegalArgumentException} raised while simulating the branch or advancing its state is converted to \texttt{WorldTransition.Rejected}; the implementation supplies a fallback message if the exception has no message. This makes it possible for a planner to explore an infeasible domain branch without corrupting the state on which the real decision is based, while keeping request and authority validation distinct from domain-transition rejection.
 
 There are therefore two distinct uses of the simulator logic. During planning, it computes what the world would look like if a candidate path were followed, but only inside an isolated branch. During grounding, an authorized action is sent through the dispatcher and world adapter to change the current modeled environment. The internal rollout is a structured, deterministic simulator application to a branch; it is not a language model imagining a consequence and it is not environmental feedback. This is the implementation counterpart of the distinction already developed in Chapters 6--8 between using a structured simulator to develop/evaluate a proposal, reasoning about possible consequences, and receiving an observation after an external interaction.\CoALACite{Section 4.6, ``Evaluation,'' p. 12; ``Execution,'' p. 13}
 

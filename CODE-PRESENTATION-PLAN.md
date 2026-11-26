@@ -1,6 +1,6 @@
 # Code Presentation and Source Navigation Plan
 
-**Status:** Accepted design; Chapter 19 QR strip implemented and render-checked; Chapters 21–22 remain the next mechanism pilot  
+**Status:** Accepted design; Chapters 19–20 QR source strips implemented and render-checked; Chapters 21–22 are the next mechanism-specific pilot  
 **Created:** 25 November 2026  
 **Applies to:** Part III, Chapters 19–24  
 **Canonical LaTeX tree:** `Tex/part3/`  
@@ -163,3 +163,22 @@ The final 220-DPI page images were decoded successfully. For each listing, the d
 - Keep primary implementation code short enough to inspect in print; prefer a focused algorithm or state transition over unrelated surrounding code.
 - Keep supporting records, interfaces, and tiny excerpts navigable through printed paths and clickable PDF text, without a QR quota.
 - Preserve the distinction between a reference demonstration and a production integration throughout the Part III chapters.
+
+
+## 12. Chapter 20 source register and QR classification
+
+Chapter 20 maps the CoALA memory, internal-action, perception, and planning contracts to the frozen application revision `fa8cd5ec0742d7010dbba2c3646852e95062a419`. Seven listings receive stable IDs. Five are primary implementation spotlights and receive QR codes; the `Observation<T>` declaration and `PlanningState.advance(...)` helper remain supporting excerpts with clickable text references only.
+
+| Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
+| --- | --- | ---: | --- | --- |
+| `C20-S01` | `WorkingMemoryService.put(...)` — version/expiry guarded compare-and-set update | 49–56 | `WorkingMemoryServiceTest.staleWriterCannotOverwriteNewerWorkingMemoryVersion()`; `expiredWorkingMemoryCannotBeRevivedByAWrite()` | **QR** |
+| `C20-S02` | `Episode.verify(...)` — evidence-bearing episode lifecycle transition | 93–99 | `EpisodicMemoryServiceTest.onlyExplicitlyReviewedEpisodeBecomesRetrievableExperience()`; `unverifiedEpisodeCannotBePromotedWithoutReviewEvidence()` | **QR** |
+| `C20-S03` | `MemoryRetrievalService.retrieve(...)` — exact cross-store retrieval boundary | 24–44 | `MemoryRetrievalServiceTest.exactRetrievalCombinesAllFourCoalaMemoryResponsibilitiesWithoutB1Scoring()`; `workingMemoryReferenceCannotBeReadAcrossScopes()` | **QR** |
+| `C20-S04` | `ReasoningAction.execute(...)` — supplied-evidence citation integrity check | 25–36 | `CoalaInternalActionsTest.reasoningActionRejectsEvidenceReferencesNotSuppliedByCaller()`; `reasoningProviderMalformedAssessmentIsRejectedInsteadOfAccepted()` | **QR** |
+| `C20-S05` | `Observation<T>` compact constructor — provenance- and snapshot-bound observation record | 8–17 | `SupplyChainExternalActionsTest.perceptionReturnsImmutableSnapshotObservationWithProvenance()` | No QR; supporting record |
+| `C20-S06` | `PlanningState.advance(...)` — immutable branch path/evidence advancement | 33–40 | `ThoughtSearchPlannerTest.expandsStructuredAlternativesAndReturnsRankedCandidates()` | No QR; supporting state helper |
+| `C20-S07` | `SimulatorBackedPlanningWorldModel.apply(...)` — isolated simulator-backed branch transition | 54–64 | `DeterministicCandidateEvaluatorTest.acceptsSimulatorReplayedPlanAndMarksApprovalAsGovernanceRequirement()`; `rejectsAPlanWhoseClaimedStateDoesNotMatchSimulatorReplay()` | **QR** |
+
+All seven source paths and test paths resolve at the pinned commit, not a branch alias. The source line ranges above match the actual one-based line numbers of the pinned source files. Listing 20.3 shows the complete `retrieve(...)` method, including working-memory lookup, scope/expiry checks, and the episodic, semantic, and procedural read paths. For C20-S07, the printed explanation also distinguishes request/authority validation (performed before the `try` block and therefore fail-fast) from simulator/domain-transition failures converted to `WorldTransition.Rejected`.
+
+The Chapter 20 standalone proof was used to check the source-strip layout, QR readability, and PDF link annotations. All seven listing/source-reference pairs remain on the same page. The five QR payloads are generated as vector PDF assets under `Tex/diagrams/source-qr/`; each was decoded from the rendered PDF at 220 DPI and matched the URL on its clickable QR annotation. The two text-only references retain clickable source and test links. This verifies the digital proof only; it is not a physical-print certification. The local proof substitutes DejaVu fonts and temporary diagram placeholders because the production TeX Gyre fonts and generated Mermaid artwork are absent from the supplied archive.
