@@ -1,41 +1,7 @@
-CHANGESET MANIFEST — CHAPTER 19 QR + SCAFFOLD FIX
+CHANGED
+Tex/part0/frontmatter/preface.tex
 
-Base: supplied coala-fan-lan-langgraph-main book repository
-Scope: changes only; application repository untouched
-
-MODIFIED
-  .github/workflows/build-book.yml
-  Tex/part3/chapter19/chapter.tex
-  Tex/shared-macros.tex
-  check-scaffold.sh
-  scripts/check-scaffold.sh
-
-ADDED
-  CHANGESET_README.md
-  CHANGESET_MANIFEST.txt
-  CODE-PRESENTATION-PLAN.md
-  DELETE_THESE_PATHS.txt
-  Tex/diagrams/source-qr/README.md
-  Tex/diagrams/source-qr/C19-S02.tex
-  Tex/diagrams/source-qr/C19-S02.pdf
-  Tex/diagrams/source-qr/C19-S03.tex
-  Tex/diagrams/source-qr/C19-S03.pdf
-  Tex/diagrams/source-qr/C19-S04.tex
-  Tex/diagrams/source-qr/C19-S04.pdf
-  review/Chapter_19_Source_Review_v3.md (historical, superseded review)
-  review/Chapter_19_Source_Review_v4.md (current audit)
-  scripts/check-source-qrs.py
-  scripts/generate-source-qrs.sh
-
-DELETED (remove manually after overlay extraction; see DELETE_THESE_PATHS.txt)
-  Tex/part3/chapter25/chapter.tex
-  Tex/part3/chapter26/chapter.tex
-  Tex/part3/chapter27/chapter.tex
-  Tex/part3/chapter28/chapter.tex
-  Tex/part3/chapter29/chapter.tex
-  Tex/part3/chapter30/chapter.tex
-
-NOT MODIFIED
-  Tex/preamble.tex (already supplied hyperref/graphicx support)
-  All other chapter sources, including Chapters 20–24
-  Every file in the supply-chain-agent application repository
+ADDED TO THE CHANGESET PACKAGE (not repository source)
+PREFACE_RELIABILITY_UPDATE_README.md
+PREFACE_RELIABILITY_UPDATE.patch
+CHANGESET_MANIFEST.txt
