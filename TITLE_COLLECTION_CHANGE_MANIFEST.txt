@@ -1,0 +1,19 @@
+Book publication identity update
+
+Complete title:
+Reliable AI Agents: Architecture and Implementation
+
+Subtitle:
+Memory, Planning, and Recovery for Production Systems Using Java, LangChain4j, and LangGraph4j
+
+Series / collection:
+Production AI Engineering
+
+Changed files:
+- Tex/part0/frontmatter/title-page.tex — authoritative title page and visible series label
+- part0/frontmatter/title-page.tex — duplicate/convenience title page kept consistent
+- Tex/preamble.tex — PDF title metadata and title-identifying preamble comment
+- Tex/shared-macros.tex — PDF title metadata override
+- README.md — current publication title, subtitle, and series label
+
+No chapters, preface, copyright page, licences, code, or other manuscript content were intentionally changed.

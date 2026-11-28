@@ -1,4 +1,7 @@
-# From Cognitive Architectures to Production Agentic Systems
+# Reliable AI Agents: Architecture and Implementation
+
+**Subtitle:** Memory, Planning, and Recovery for Production Systems Using Java, LangChain4j, and LangGraph4j  
+**Series:** Production AI Engineering
 
 A source-disciplined technical book connecting CoALA, Fan and Lan's mechanism-level analysis, and the engineering of one simulated supply-chain agentic application in Java.
 
@@ -12,7 +15,7 @@ Part III is a teaching/reference demonstration, not a deployed enterprise integr
 
 ## Manuscript status
 
-Chapters 1–24 contain drafted prose. Part III Chapters 19–24 have been drafted and source-checked against the supplied application snapshot. Their source registers distinguish primary implementation listings with per-listing QR codes from supporting contracts and excerpts that retain clickable text references.
+Chapters 1–24 contain drafted prose. Part III Chapters 19–24 have been drafted and source-checked against the supplied application snapshot. Their source registers distinguish primary implementation listings with per-listing QR codes from supporting contracts and excerpts that retain clickable text references. On 26 November 2026, Chapter 24 was revised against the preceding Part III chapters and the pinned supply-chain application snapshot: its persistence ownership is more exact, its five restart paths now match Chapter 19's inventory, and its recap/source note follows the established Part III pattern.
 
 ## Repository layout
 
@@ -31,6 +34,10 @@ Chapters 1–24 contain drafted prose. Part III Chapters 19–24 have been draft
 ## Page and typography specification
 
 The production PDF uses **US Letter (8.5 × 11 inches), two-sided book layout, and a 0.15-inch binding offset**. XeLaTeX and `fontspec` use the TeX Gyre Termes, Heros, and Cursor font families. Keep the shared preamble authoritative; do not create chapter-local typography or geometry overrides.
+
+## Current Part III reader review
+
+The complete 26 November 2026 review is in `review/Part_III_Reader_Fluency_Review_2026-11-26.md`. It evaluates learning fluency, chapter-by-chapter comprehension, code/source alignment, and the recommended final pedagogical revisions. The learning scores are editorial estimates, not results of a learner study. Chapter 24 is the final chapter of Part III; no Chapters 25–30 are included.
 
 ## Build
 
