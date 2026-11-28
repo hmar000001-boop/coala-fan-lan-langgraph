@@ -84,8 +84,8 @@ public record RecoveryIntention(
   {13--38}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
   {\texttt{intentionCapturesImmutableObjectiveFingerprintAndConstraints()} and \texttt{methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntention.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntention.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
 
 The compact constructor enforces several local invariants: the objective fingerprint must have the expected 64-character lowercase hexadecimal form; timestamps cannot move backwards; suspension must preserve a resume status; a delegation ID exists if and only if the status is delegated; a completion proof exists exactly for a completed intention and must carry the same fingerprint; and terminal metadata is forbidden on non-terminal intentions. The authority policy must name the same objective owner as the intention. Those checks do not prove that the objective is achievable or that its protected constraints are sufficient. They make the persisted intention internally coherent before a service or repository accepts a transition.
 
@@ -127,8 +127,8 @@ private RecoveryIntention update(RecoveryIntentionId id, long expected,
   {67--70, 130--139}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
   {\texttt{methodChangeUpdatesActivePlanReferenceButNeverObjectiveFingerprint()} and \texttt{staleVersionCannotOverwriteConcurrentIntentionUpdate()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionService.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b4/RecoveryIntentionServiceTest.java}
 
 The PostgreSQL repository adds a second, durable concurrency check. Its update predicate includes persistence scope, intention ID, expected version, and objective fingerprint. When one row changes, the new version is appended to the intention-history table inside the same JDBC transaction. If no row matches, the transaction rolls back and the caller receives a failed compare-and-set. This makes the current record and its transition-history entry one database transaction; it does not create a distributed transaction with the B2 case repository, the graph checkpoint, or an external action system.
 
@@ -168,8 +168,8 @@ The PostgreSQL repository adds a second, durable concurrency check. Its update p
   {75--100}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
   {\texttt{concurrentIntentionUpdatesUseVersionCasAndPreserveTheProtectedObjective()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresRecoveryIntentionRepository.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresRecoveryIntentionRepository.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
 
 The integration test creates two repository views competing to advance the same intention version. Exactly one compare-and-set wins; the current version advances once, the protected objective fingerprint and constraints remain unchanged, and history contains the initial version plus the single winning update. This is evidence for the repository's optimistic-concurrency boundary under that test setup. It is not a benchmark of database contention, and it does not prove atomicity across multiple repositories.
 
@@ -219,8 +219,8 @@ switch (directive.action()) {
   {477--493}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
   {\texttt{b4MethodChangeControlsTheNextFullGraphPlanner\allowbreak WithoutChangingTheCommittedObjective()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
 
 \subsection{A method change is observable at the planner boundary}
 \label{subsec:ch23-next-planner-call}
@@ -281,8 +281,8 @@ public record Reference(String assessmentId, long version,
   {92--114}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
   {\texttt{uncertaintyAssessmentMustMatchExecutionScopeAndValidityWindow()} and \texttt{missingUncertaintyDimensionIsNotSilentlyTreatedAsZero()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/UncertaintyAssessment.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/UncertaintyAssessment.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
 
 \subsection{Assessment triggers and calibration lifecycle}
 \label{subsec:ch23-uncertainty-assessment-lifecycle}
@@ -344,8 +344,8 @@ return assessment.reference();
   {499--541}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/UncertaintyCalibrationTrainerTest.java}
   {\texttt{activatedProfileCalibratesAllDimensionsBut\allowbreak UncalibratedAssessmentRemainsUnchanged()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/UncertaintyCalibrationTrainerTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/UncertaintyCalibrationTrainerTest.java}
 
 \BookDiagram[0.46\textheight]
   {Tex/diagrams/generated/part3/chapter23/b6-uncertainty-revisions.png}
@@ -419,8 +419,8 @@ return decision(MetaControlAction.CONTINUE, MetaControlReason.WITHIN_BUDGET_AND_
   {10--28}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
   {\texttt{lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()}; \texttt{deadlineStopsExecution()}; \texttt{criticalPlanUncertaintyInterruptsForHumanDecision()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernor.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernor.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
 
 The governor's decision is bounded by the resource policy. Its low-margin branch does not grant a larger execution ceiling or authorize extra work. It carries an explicit instruction for the next planning call. The value object constrains that instruction to a reduction from 1 through 90 percent and requires a nonblank policy ID:
 
@@ -449,8 +449,8 @@ public record PlannerBudgetDownshift(int reductionPercent, String policyId) {
   {1--17}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
   {\texttt{lowResourceMarginSelectsReducedComputationWithAnExplicitTypedPlannerDirective()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/PlannerBudgetDownshift.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b6/PlannerBudgetDownshift.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b6/MetaControlGovernorTest.java}
 
 In the graph, a downshift is accumulated as a planner-budget scale and reason. The graph requires a non-null typed downshift when the governor returns \texttt{REDUCE\_COMPUTATION}; it reduces the scale and routes to another proposal, subject to a bounded reconsideration count. If no further reduction is possible within the planner's minimum compute envelope, it records \texttt{REDUCTION\_EXHAUSTED}. The change affects the next planner budget (for example, maximum expansions, evaluations, model calls, and rollouts). The tests explicitly check that structural depth, maximum candidates, and the absolute execution deadline are unchanged. Most importantly, the shared PostgreSQL execution budget remains at its original limit. A local downshift is not an update to the durable account.
 
@@ -513,8 +513,8 @@ public <T> T execute(String executionId, String operationId, ResourceUsage reser
   {81--116}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuardTest.java}
   {\texttt{reservesBeforeWorkAndCommitsTrustedMeasuredUsage()}; \texttt{failedStartedWorkIsConservativelyChargedAtItsReservation()}; \texttt{committedOperationIdentityCannotBeInvokedAgain()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuard.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuardTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuard.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/ResourceBudgetExecutionGuardTest.java}
 
 The guard's remaining method body covers operation failure, invalid usage measurement, successful actual-usage commit, and heartbeat cleanup. The failure path intentionally retains the conservative reserved charge after the operation-start boundary. It does not prove that an external side effect succeeded or failed; it accounts for resource use and prevents an ambiguous started operation from being replayed as if it were new. For an external action, the M3 execution ledger and observation/reconciliation path still own the action outcome.
 
@@ -553,8 +553,8 @@ return loadLease(connection, execution, reservation, false);
   {279--295}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/R1DefBudgetLeaseRecoveryIntegrationTest.java}
   {\texttt{expiredUnstartedReservationIsReclaimedWithANewFenceAndCanRunOnce()}; \texttt{expiredStartedReservationIsFencedAndChargedConservativelyWithoutReplay()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresResourceBudgetLedger.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/R1DefBudgetLeaseRecoveryIntegrationTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresResourceBudgetLedger.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/R1DefBudgetLeaseRecoveryIntegrationTest.java}
 
 The lease-recovery integration tests exercise two distinct restart rules. An expired reservation that never crossed the operation-start boundary can be reclaimed with a higher fencing token and then run once. An expired reservation that had started is fenced, conservatively charged, and not replayed. These tests support the specific recovery transitions under the PostgreSQL integration fixture; they are not a general claim that lease expiry reveals the outcome of an external operation.
 
@@ -584,8 +584,8 @@ public ReasoningAssessment assess(ActionContext context, ReasoningRequest reques
   {43--53}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4DPostgresBudgetExecutionIntegrationTest.java}
   {\texttt{m5PlanningAndM3ReasoningConsumeOneSharedPostgresBudgetAccount()}; \texttt{closedPostgresBudgetStoreBlocksReasoningBeforeProviderInvocation()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4DPostgresBudgetExecutionIntegrationTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4DPostgresBudgetExecutionIntegrationTest.java}
 
 The companion \texttt{ResourceBudgeted\allowbreak ActionExecution} adapter applies one \texttt{ACTION\_\allowbreak DISPATCHES} unit to an M3 handler invocation, but its documented position is after the M3 idempotency ledger has granted the attempt. If a handler returns and B6 cannot commit its usage, the adapter reports an unknown outcome and requires reconciliation before retrying. The same guard can therefore constrain planning, reasoning, and action dispatch, while the respective M5/M3 components retain their own operation and business-outcome semantics. A resource-budget exception is not an authorization decision, and an unknown side-effect outcome is not a safe retry signal.
 

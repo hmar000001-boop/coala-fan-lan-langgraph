@@ -3,7 +3,7 @@
 **Book:** *From Cognitive Architectures to Production Agentic Systems: Understanding CoALA, Fan & Lan, and Engineering Complex Agents with Java*  
 **Part:** III — approved six-chapter structure (Chapters 19–24)  
 **Outline status:** drafted and source-checked; author-directed drafting authorized 26 November 2026  
-**Implementation baseline:** supplied `supply-chain-agent-main` archive, ZIP comment commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`; the `c49c543` reference in `CHANGESET_INFO` is a CI-evidence overlay base and contains no Java source changes  
+**Implementation baseline:** supplied `supply-chain-agent-main` archive, ZIP comment commit `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`; the `c49c543` reference in `CHANGESET_INFO` is a CI-evidence overlay base and contains no Java source changes  
 **Teaching role:** connect the application services into the actual cognitive graph and durable host, then demonstrate the simulated supply-chain workflow through separate, accurately bounded integration tests.
 
 ## 1. Purpose and teaching contract

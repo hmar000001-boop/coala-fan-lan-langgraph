@@ -86,8 +86,8 @@ public WorkingMemorySnapshot put(
   {49--56}
   {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/working/WorkingMemoryServiceTest.java}
   {\texttt{staleWriterCannotOverwriteNewerWorkingMemoryVersion()}; \texttt{expiredWorkingMemoryCannotBeRevivedByAWrite()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/working/WorkingMemoryService.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/working/WorkingMemoryServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/working/WorkingMemoryService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/working/WorkingMemoryServiceTest.java}
 
 The method does not mutate the existing snapshot. It first checks that the caller's expected version is current and that the snapshot has not expired. It then creates a replacement snapshot and asks the repository to compare-and-set it. If another update has already advanced the version, a stale write is rejected instead of silently overwriting newer context. The snapshot itself recomputes its evidence list from the evidence attached to its current slots and hypotheses. Removing a value therefore also removes evidence that is no longer referenced by the active snapshot.
 
@@ -135,8 +135,8 @@ public Episode verify(String actor,
   {93--99}
   {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/episodic/EpisodicMemoryServiceTest.java}
   {\texttt{onlyExplicitlyReviewedEpisodeBecomesRetrievableExperience()}; \texttt{unverifiedEpisodeCannotBePromotedWithoutReviewEvidence()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/episodic/Episode.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/episodic/EpisodicMemoryServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/episodic/Episode.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/episodic/EpisodicMemoryServiceTest.java}
 
 The test suite demonstrates the distinction with two different assertions: a newly recorded episode is not returned as trusted experience, and an explicitly reviewed episode becomes eligible for retrieval. The review handler requires its own capability and evidence, but the current \texttt{Episode} model does not retain the recording principal in a way that lets the handler enforce that the reviewer differs from the original recorder. Do not infer a strict author/reviewer identity-separation invariant from this lifecycle. Verification means that the application accepted the episode as reviewed evidence within its stated scope and provenance; it does not make the episode a universal rule, semantic fact, or executable procedure.
 
@@ -203,8 +203,8 @@ public MemoryRetrievalResult retrieve(MemoryRetrievalQuery query) {
   {24--44}
   {supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalServiceTest.java}
   {\texttt{exactRetrievalCombinesAllFourCoalaMemoryResponsibilitiesWithoutB1Scoring()}; \texttt{workingMemoryReferenceCannotBeReadAcrossScopes()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalService.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/main/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-memory/src/test/java/dev/supplychain/agent/memory/retrieval/MemoryRetrievalServiceTest.java}
 
 This service deliberately performs deterministic, filter-based lookup. It does not assign activation, estimate retrieval latency, optimize downstream utility, or choose a context set under a resource budget. It also does not automatically copy returned items into working memory. A caller may use the typed result to construct a later reasoning request or feed a selection stage, but that handoff is not an automatic pipeline implemented by this service. Chapter 21 will examine B1's selection problem and B3's separate workspace competition/admission problem. Retrieval supplies candidate information; it is not a substitute for either one.
 
@@ -261,8 +261,8 @@ return assessment;
   {25--36}
   {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/CoalaInternalActionsTest.java}
   {\texttt{reasoningActionRejectsEvidenceReferencesNotSuppliedByCaller()}; \texttt{reasoningProviderMalformedAssessmentIsRejectedInsteadOfAccepted()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/internal/ReasoningAction.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/CoalaInternalActionsTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/internal/ReasoningAction.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/CoalaInternalActionsTest.java}
 
 This is an evidence-reference integrity check. It does not prove that a cited source is true, that a hypothesis is correct, or that the model interpreted the source accurately. The application preserves the distinction between an evidence-backed finding, an assumption, a hypothesis, and an information gap so that downstream logic can decide what to do with each. The assessment is not a private chain-of-thought transcript; it is a bounded result with a concise rationale.
 
@@ -323,8 +323,8 @@ public record Observation<T>(
   {8--17}
   {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
   {\texttt{perceptionReturnsImmutableSnapshotObservationWithProvenance()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/perception/Observation.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/external/perception/Observation.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/SupplyChainExternalActionsTest.java}
 
 For example, reading the available quantity of an inventory lot produces an observation about a particular simulator snapshot. The version and provenance allow later operations to refer to the source of that value. They do not guarantee that the snapshot is still current when a later action is attempted; the state-changing path must still apply its own current-version checks.
 
@@ -370,8 +370,8 @@ public PlanningState advance(SupplyChainSnapshot nextWorld,
   {33--40}
   {supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/tot/ThoughtSearchPlannerTest.java}
   {\texttt{expandsStructuredAlternativesAndReturnsRankedCandidates()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/PlanningState.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/tot/ThoughtSearchPlannerTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/PlanningState.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/tot/ThoughtSearchPlannerTest.java}
 
 A \texttt{PlanningAction} binds several things that must remain consistent: a planning-action identifier, an action descriptor, a domain recovery action, a simulator command, an impact estimate, supporting evidence, and assumptions. The identifier is also used by the command. This prevents the candidate description and the command that is simulated from referring to unrelated operations.
 
@@ -412,8 +412,8 @@ public WorldTransition apply(PlanningRequest request,
   {54--64}
   {supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/api/DeterministicCandidateEvaluatorTest.java}
   {\texttt{acceptsSimulatorReplayedPlanAndMarksApprovalAsGovernanceRequirement()}; \texttt{rejectsAPlanWhoseClaimedStateDoesNotMatchSimulatorReplay()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/SimulatorBackedPlanningWorldModel.java}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/api/DeterministicCandidateEvaluatorTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-planning/src/main/java/dev/supplychain/agent/planning/api/SimulatorBackedPlanningWorldModel.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-planning/src/test/java/dev/supplychain/agent/planning/api/DeterministicCandidateEvaluatorTest.java}
 
 The simulator receives the branch snapshot from \texttt{PlanningState}, not the current snapshot held by \texttt{SupplyChainSimulationWorld}. The result is placed into a new planning state. The method does not call the world adapter or commit a change to the current modeled environment. Notice the placement of the \texttt{try} block: \texttt{requireState}, the null check, and \texttt{validateAllowedAction} run before it, so invalid request ownership, missing action definitions, scope violations, and action/command mismatches fail fast rather than becoming typed transition rejections. Only a \texttt{DomainViolation} or \texttt{IllegalArgumentException} raised while simulating the branch or advancing its state is converted to \texttt{WorldTransition.Rejected}; the implementation supplies a fallback message if the exception has no message. This makes it possible for a planner to explore an infeasible domain branch without corrupting the state on which the real decision is based, while keeping request and authority validation distinct from domain-transition rejection.
 

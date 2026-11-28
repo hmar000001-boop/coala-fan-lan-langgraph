@@ -1,0 +1,26 @@
+Part III source-link, QR, and implementation-clarification changes
+
+New repository: https://github.com/haythemabr/supply-chain-agent
+New pinned commit: 6329aec82e1d8b4f19b68986a0d4cf0c448f697f
+Previous pinned commit: fa8cd5ec0742d7010dbba2c3646852e95062a419
+
+Changes included
+- Updated all 123 direct GitHub source links in Chapters 19–24 to the new repository owner and commit.
+- Updated CODE-PRESENTATION-PLAN.md and the current Chapter 23/24 outline source-baseline references.
+- Updated the source-QR validation script to require the new repository prefix and commit.
+- Updated all 35 QR TeX payloads and regenerated all 35 corresponding QR PDFs.
+- Chapter 24 now names the concrete REQ-09 business action: SupplyChainGroundingActions.ReserveInventory, its typed SimulationCommand.ReserveInventory, and the ReserveInventoryRequest boundary, with direct source links. This clarifies the existing implementation; it does not change the scenario or claim new behavior.
+
+Validation performed
+- 123 direct Chapter 19–24 source URL occurrences use the new owner and full commit SHA.
+- 81 unique source paths were checked and all exist in the supplied application archive (11), whose embedded commit is fa8cd5ec0742d7010dbba2c3646852e95062a419.
+- No old owner or old commit remains in active chapter sources, source QR TeX files, the code-presentation plan, or current Chapter 23/24 outlines. Historical review reports and manifests are intentionally preserved unchanged.
+- scripts/check-source-qrs.py passes for all 35 QR assets.
+- All 35 QR PDFs were regenerated from the updated QR TeX sources.
+
+Verification boundary
+- The public GitHub commit page for 6329aec82e1d8b4f19b68986a0d4cf0c448f697f confirms that the commit changes README.md only (83 additions, 32 deletions); it does not change Java implementation files.
+- The current commit archive/tree could not be independently retrieved in this run. Source paths were verified against the supplied application archive (11), pinned to fa8cd5ec0742d7010dbba2c3646852e95062a419. Therefore this is a repository/commit permalink migration plus one reader-facing clarification, not a full independent re-audit of every Java implementation line at 6329aec82e1d8b4f19b68986a0d4cf0c448f697f.
+- No full LaTeX book build or GitHub Actions run was performed.
+
+No application source, tests, Maven files, CI workflows, database migrations, or application documentation were modified.

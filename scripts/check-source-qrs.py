@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 QR_DIR = ROOT / "Tex" / "diagrams" / "source-qr"
 CHAPTERS = sorted((ROOT / "Tex" / "part3").glob("chapter*/chapter.tex"))
 EXPECTED_PREFIX = "https://github.com/haythemabr/supply-chain-agent/blob/"
-EXPECTED_COMMIT = "fa8cd5ec0742d7010dbba2c3646852e95062a419"
+EXPECTED_COMMIT = "6329aec82e1d8b4f19b68986a0d4cf0c448f697f"
 
 
 def extract_macro_args(text: str, macro: str, count: int) -> list[list[str]]:

@@ -12,7 +12,7 @@ By the end of this chapter, you should be able to explain which component owns g
 \end{learningbox}
 
 \begin{notebox}
-\textbf{Implementation baseline.} Source paths, members, tests, and QR destinations in this chapter are pinned to application commit \texttt{fa8cd5ec0742d7010dbba2c3646852e95062a419}, recorded in the supplied application ZIP comment. The separate \texttt{CHANGESET\_INFO} entry names a \texttt{c49c543} base for an overlay that changes only CI evidence-capture scripts; it does not replace the Java source snapshot used here.
+\textbf{Implementation baseline.} Source paths, members, tests, and QR destinations in this chapter are pinned to application commit \texttt{6329aec82e1d8b4f19b68986a0d4cf0c448f697f}, recorded in the supplied application ZIP comment. The separate \texttt{CHANGESET\_INFO} entry names a \texttt{c49c543} base for an overlay that changes only CI evidence-capture scripts; it does not replace the Java source snapshot used here.
 \end{notebox}
 
 \section{From contracts and services to one application}
@@ -49,8 +49,8 @@ public static StateGraph<CognitiveCycleState> buildFull(
   {44--105}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
   {\texttt{durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/cognitive/CognitiveCycleApplicationGraph.java\#L44-L105}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/cognitive/CognitiveCycleApplicationGraph.java\#L44-L105}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
 
 The operations port itself is useful as a source map, not as a QR-worthy algorithm. The state object has a similar supporting role. Its schema carries execution identifiers, memory and workspace references, planner and candidate identifiers, B2/B4/B6 references, approval and actor references, observation identifiers, status, and bounded routing counters. It is deliberately checkpoint-friendly: large memory records, planner artifacts, approval records, and simulator snapshots remain in their authoritative services or adapters.
 
@@ -62,8 +62,8 @@ The operations port itself is useful as a source map, not as a QR-worthy algorit
   {24--98}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java}
   {\texttt{readOnlyCycleRunsThroughCoalaPlannersAndObservationWithoutApproval()}; \texttt{stateChangingCandidateInterruptsAndResumesOnlyAfterBoundApproval()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleOperations.java\#L24-L98}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L28-L113}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleOperations.java\#L24-L98}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L28-L113}
 
 \BookSourceReferenceNoQR
   {C24-S02}
@@ -73,8 +73,8 @@ The operations port itself is useful as a source map, not as a QR-worthy algorit
   {18--90}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java}
   {\texttt{retrievalProjectionAdvancesTheWorkingMemoryVersionInGraphState()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleState.java\#L18-L90}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L49-L60}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleState.java\#L18-L90}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L49-L60}
 
 \section{The actual cognitive-cycle graph}
 \label{sec:ch24-actual-graph}
@@ -123,8 +123,8 @@ The source registers the nodes and then describes the edges. The following secti
   {619--735; listing excerpt 685--714}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java}
   {\texttt{stateChangingCandidateInterruptsAndResumesOnlyAfterBoundApproval()}; \texttt{b2ImpasseIsResolvedInItsOwnBoundedSubgraphBeforeParentReconsiders()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraph.java\#L619-L735}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L85-L184}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraph.java\#L619-L735}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/CognitiveCycleGraphTest.java\#L85-L184}
 
 The graph also bounds repeated work. The source defines maxima for clarification rounds, evidence requests, planning rounds, reconsiderations, and working-memory observation retries. These counters help make loops finite, but they do not guarantee a request reaches completion: routes can still escalate, await trusted input, or stop when evidence or authority is insufficient. The graph's route functions are conditional; no claim should be made that each request passes through every mechanism node.
 
@@ -171,8 +171,8 @@ String summary = switch (outcome) {
   {17--50}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
   {Primary REQ-09 uses a deterministic RequestInterpreter port; this integration test does not invoke the LangChain4j adapter or a live model.}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jRequestInterpreter.java\#L17-L50}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jRequestInterpreter.java\#L17-L50}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
 
 The reasoning adapter is likewise typed and tool-free. It gives the model only the evidence references supplied by its caller, then resolves returned evidence keys against that supplied map. A citation key that was not present in the request is rejected. Confidence text is normalized to the application's enum; unrecognized or absent confidence becomes \texttt{UNASSESSED}, not a fabricated positive value. The adapter's tests exercise these typed boundaries, but they do not establish the quality of a live reasoning model on an operational workload.
 
@@ -193,8 +193,8 @@ var citations = response.supportingEvidenceKeys().stream().distinct().map(key ->
   {28--53}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jReasoningProviderTest.java}
   {\texttt{modelCannotCiteEvidenceKeyNotPresentInTheRequest()}; \texttt{missingConfidenceDegradesToUnassessedRatherThanInventingCertainty()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jReasoningProvider.java\#L28-L53}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jReasoningProviderTest.java\#L43-L90}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jReasoningProvider.java\#L28-L53}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/LangChain4jReasoningProviderTest.java\#L43-L90}
 
 \texttt{BudgetedReasoningProvider} wraps the M3 reasoning adapter with a resource guard. The current accounting request charges one model call and one reasoning evaluation per invocation. It does not guess a token count; the code comment leaves richer measurement to trusted provider usage metadata if such a source becomes available. The host wiring requires the exact same guard object to be visible to M5, M3, and B6. The relevant test asserts that a successful invocation consumes one call/evaluation, a second invocation fails when the budget is exhausted, and the delegate is not called again.
 
@@ -206,8 +206,8 @@ var citations = response.supportingEvidenceKeys().stream().distinct().map(key ->
   {20--53}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProviderTest.java}
   {\texttt{realM3ReasoningActionReservesAndCommitsDurableB6InvocationUsage()}; \texttt{budgetLedgerOutageFailsClosedBeforeCallingTheProvider()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java\#L20-L53}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProviderTest.java\#L27-L100}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProvider.java\#L20-L53}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/langchain4j/BudgetedReasoningProviderTest.java\#L27-L100}
 
 The primary REQ-09 end-to-end test intentionally supplies deterministic test implementations for request interpretation and reasoning. That choice keeps the integration trace repeatable and removes external model variability. The trace demonstrates graph composition and the supply-chain decision/execution workflow; it does not test a live LangChain4j provider. The production adapters are separate extension points that require their own model/provider configuration and evaluation.
 
@@ -226,8 +226,8 @@ The assembly has several distinct layers. The four CoALA memory services use the
   {83--113}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
   {\texttt{b6AssessmentRevisionIsScopedVersionedAndIdempotentForTheSameGraphTrigger()}; \texttt{b6SameLogicalTriggerRefreshesAgainOnlyWhenItsPredecessorRevisionAdvances()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java\#L83-L113}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java\#L368-L402}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java\#L83-L113}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java\#L368-L402}
 
 The lifecycle tests use an in-memory test domain. They verify scoped revision sequencing and idempotency for a retried graph trigger; they do not establish that a production adapter stores or reloads assessment revisions from PostgreSQL.
 
@@ -265,8 +265,8 @@ ReasoningProvider reasoningProvider = Objects.requireNonNull(
   {272--364; listing excerpt 287--305}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
   {\texttt{durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHost.java\#L272-L364}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHost.java\#L272-L364}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
 
 \texttt{PostgresAgentPersistence} is a single-data-source composition facade, not the entire persistence model. It exposes memory persistence, planner-session storage, operational health, scope-bound runtime persistence, recovery-procedure drafts, and B3 outcome-evidence repositories. The host and specialized repositories retain their own record semantics. The table below is therefore more useful than the statement “PostgreSQL stores the agent memory.”
 
@@ -302,8 +302,8 @@ Simulated supply-chain snapshot & Authoritative state of the example business wo
   {17--69}
   {supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java}
   {\texttt{durableHostPersistsMemoryRestoresInterruptedCycleAndAcceptsANewTopLevelCycle()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/PostgresAgentPersistence.java\#L17-L69}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/PostgresAgentPersistence.java\#L17-L69}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
 
 The checkpoint saver receives the graph builder and the same \texttt{DataSource} supplied by the host. It takes the graph's state serializer and enables its checkpoint tables. A deterministic thread ID is derived from the memory scope and execution ID, so a restart of the same execution reopens its graph thread while another execution in the same scope receives a different thread identity.
 
@@ -330,8 +330,8 @@ public static String threadIdForExecution(String scopeId, String executionId) {
   {23--38}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/checkpoint/PostgresLangGraph4jSaverFactoryIntegrationTest.java}
   {\texttt{executionThreadIdentityIsStableAndScopeSeparated()}; \texttt{productionSaverFactoryUsesSharedDataSourceForPauseAndRestartResume()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/checkpoint/PostgresLangGraph4jCheckpointSaverFactory.java\#L23-L38}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/checkpoint/PostgresLangGraph4jSaverFactoryIntegrationTest.java\#L34-L76}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/checkpoint/PostgresLangGraph4jCheckpointSaverFactory.java\#L23-L38}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/checkpoint/PostgresLangGraph4jSaverFactoryIntegrationTest.java\#L34-L76}
 
 The host's public \texttt{start(...)} method creates the deterministic graph thread from scope and execution and places request identifiers in the graph input. \texttt{resume(...)} reuses that same thread and writes host-supplied response values into checkpointed state before continuing. It does not create a second execution identity. The \texttt{streamAndSnapshot(...)} method then reads the latest checkpoint for the thread after a resumed stream is consumed; the source comments explain why reading with the original immutable checkpoint configuration could return the pre-resume snapshot under the pinned LangGraph4j version. That detail is an adapter-specific correctness concern, not a general property to assume for every graph library.
 
@@ -372,8 +372,8 @@ The dispatcher's receipt boundary is important because the handler may return af
   {41--200; receipt failure excerpt 146--166}
   {supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/ActionDispatcherTest.java}
   {\texttt{duplicateSuccessfulMutationIsNotExecutedTwice()}; \texttt{authorizationIsCheckedBeforePreconditionAndIdempotencyClaim()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/api/ActionDispatcher.java\#L41-L200}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/ActionDispatcherTest.java\#L42-L90}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/main/java/dev/supplychain/agent/actions/api/ActionDispatcher.java\#L41-L200}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-actions/src/test/java/dev/supplychain/agent/actions/ActionDispatcherTest.java\#L42-L90}
 \end{samepage}
 
 \section{The primary walkthrough: two REQ-09 cycles}
@@ -393,6 +393,8 @@ The first host instance initializes the scope/execution graph and runs interpret
 After the first host closes, the external test authority approves the exact request. A second host instance opens the same durable scope and resumes the same thread. The test simulator is configured to apply the effect and then lose the acknowledgement. The test deliberately interrupts the host after the external effect but before reconciliation. The simulator transition count is one, its version has advanced once, and the recorded action batch is \texttt{UNKNOWN\_OUTCOME} with one item marked outcome-unknown.
 
 A third host instance is then opened from the same PostgreSQL-backed state. It resumes at reconciliation. The simulator's authoritative snapshot shows the applied effect; the graph records an \texttt{OBJECTIVE\_SATISFIED} observation and completes the cycle without dispatching the action again. The transition count remains one. The observation is written to CoALA working memory, and the B4 intention becomes \texttt{COMPLETED} only after the simulator-backed satisfaction proof has been reconciled. The action batch remains \texttt{UNKNOWN\_OUTCOME} at the transport level: authoritative business evidence resolves the real-world question without rewriting the historical fact that the acknowledgement was lost.
+
+The business effect in this walkthrough is a typed inventory reservation, not an unconstrained model-issued command. The REQ-09 test selects the \texttt{SupplyChainGroundingActions.ReserveInventory} action, checks that the planned simulator command is a \texttt{SimulationCommand.ReserveInventory}, and constructs a \texttt{ReserveInventoryRequest} using the current snapshot version and the exact reservation, order, order-line, lot, and fulfillment-quantity values. This is the point where the approved cognitive plan becomes a domain-specific request to the simulated world. See the \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L862-L883}{REQ-09 test's reservation construction} and the \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-simulator/src/main/java/dev/supplychain/agent/simulator/command/SimulationCommand.java}{typed simulator command definition}.
 
 \clearpage
 \begin{samepage}
@@ -416,8 +418,8 @@ assertEquals(ActionExecutionBatch.BatchStatus.UNKNOWN_OUTCOME, reconciledUnknown
   {151--302; reconciliation assertions 235--261}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
   {\texttt{durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java\#L151-L302}
 \end{samepage}
 
 \subsection{Cycle 2: a new execution reuses the shared memory scope}
@@ -465,8 +467,8 @@ The app-module integration test opens the actual \texttt{DurableCognitiveApplica
   {63--117}
   {supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java}
   {\texttt{durableHostPersistsMemoryRestoresInterruptedCycleAndAcceptsANewTopLevelCycle()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/test/java/dev/supplychain/agent/app/durable/DurableCognitiveApplicationHostPostgresIntegrationTest.java\#L63-L117}
 
 \subsection{M8B4C focused workflow: pool replacement and ambiguous-write reconciliation}
 
@@ -480,8 +482,8 @@ The M8B4C test also closes the first pool and creates a replacement pool, but it
   {88--180}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java}
   {\texttt{interruptedWorkflowReloadsApprovalIntentionBudgetAndReconcilesAmbiguousWriteAfterPoolReplacement()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java\#L88-L180}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java\#L88-L180}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java\#L88-L180}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4CRestartReconciliationIntegrationTest.java\#L88-L180}
 
 \subsection{A focused fresh-JVM action-ledger probe}
 
@@ -512,8 +514,8 @@ if (!"ALREADY_COMPLETED".equals(value(terminal.state(), "replayStatus"))) {
   {77--161; replacement path 133--160}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4ForkedJvmProcessRestartIntegrationTest.java}
   {\texttt{independentJvmRestartRestoresWorkflowAuthorityBudgetAndExternalOutcome()}}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4ForkedJvmProbe.java\#L77-L161}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4ForkedJvmProcessRestartIntegrationTest.java\#L24-L38}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4ForkedJvmProbe.java\#L77-L161}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/M8B4ForkedJvmProcessRestartIntegrationTest.java\#L24-L38}
 
 This is evidence for a focused action-ledger/checkpoint process boundary. It is not the full \texttt{DurableCognitiveApplicationHost}, not the REQ-09 simulator workflow, and not proof that the complete cognitive graph can restart in a different JVM after an already-applied business effect.
 
@@ -529,15 +531,15 @@ The full-graph restart test runs the actual full graph in child JVMs using the \
   {275--330}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java}
   {\texttt{completeApplicationGraphResumesFromPostgresCheckpointInFreshJvmAfterAbruptDeath()}; expected terminal state is ESCALATED after clarification resume}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java\#L275-L330}
-  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java\#L275-L330}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java\#L275-L330}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/M8B4FullGraphWorkflowTest.java\#L275-L330}
 
 The two same-JVM paths above are separate from REQ-09: the durable-host test stops at clarification before planning, while M8B4C uses a small workflow to reconcile an ambiguous provider write after rebuilding repositories. Chapter 19's five-path inventory is therefore preserved, with the REQ-09 walkthrough above supplying the two-cycle business-flow detail and the remaining four paths supplying narrower restart evidence.
 
 \section{The executable entry point and the durable host are different surfaces}
 \label{sec:ch24-runnable-surface}
 
-The repository has an executable \href{https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/Phase0Application.java}{\texttt{Phase0Application}} (source, lines 17--47), but it must not be mistaken for a command-line version of the full cognitive supply-chain agent. It creates a fixed-response chat model, compiles the smaller \texttt{SupplyChainIntakeGraph} using an in-memory \texttt{MemorySaver}, sends one deterministic request, and prints the interpretation result. It is a local intake smoke program; it does not assemble the full \texttt{CognitiveCycleApplicationGraph}, PostgreSQL repositories, durable host, full B1/B2/B3/B4/B6 composition, approval workflow, or simulator-backed recovery cycle.
+The repository has an executable \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-app/src/main/java/dev/supplychain/agent/app/Phase0Application.java}{\texttt{Phase0Application}} (source, lines 17--47), but it must not be mistaken for a command-line version of the full cognitive supply-chain agent. It creates a fixed-response chat model, compiles the smaller \texttt{SupplyChainIntakeGraph} using an in-memory \texttt{MemorySaver}, sends one deterministic request, and prints the interpretation result. It is a local intake smoke program; it does not assemble the full \texttt{CognitiveCycleApplicationGraph}, PostgreSQL repositories, durable host, full B1/B2/B3/B4/B6 composition, approval workflow, or simulator-backed recovery cycle.
 
 The full graph is assembled by \texttt{CognitiveCycleApplicationGraph} and exposed through \texttt{DurableCognitiveApplicationHost.start(...)} and \texttt{resume(...)}. The most complete business workflow in the supplied repository remains the test-backed REQ-09 scenario. There is no full standalone UI or simple full-application CLI main in the supplied application module. This distinction helps the reader understand the current state of the implementation without inventing a front end that is not in the source.
 
