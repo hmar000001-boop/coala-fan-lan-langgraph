@@ -81,8 +81,8 @@ if (b1FeatureLearning != null)
   {228--277}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServicesTest.java}
   {\texttt{retrievalUsesM2BeforeB1AndPersistsTheSelectedEvidenceSet()}; \texttt{selectedLongTermMemoryProjectionIsIdempotentAfterGraphCheckpointInterruption()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServicesTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServicesTest.java}
 \end{minipage}
 
 The listing omits the surrounding error translation and result construction, but preserves the sequence in the source. It is important that the method calls M2 before it constructs B1 candidates. The B1 candidate factory adapts a typed \texttt{Memory\allowbreak{}Retrieval\allowbreak{}Result}; B1 is not another search engine that independently queries all four stores. The candidate factory does not change the source memory records. It constructs a candidate reference and attaches a feature sidecar supplied by the injected \texttt{B1\allowbreak{}Candidate\allowbreak{}Feature\allowbreak{}Provider}.
@@ -157,8 +157,8 @@ double net = probability * candidate.expectedDownstreamUtility()
   {26--93}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelectorTest.java}
   {\texttt{selectorRanksByExpectedDownstreamValueAndFitsContextBudget()}; \texttt{measuredInfrastructureLatencyIsSeparateFromCognitiveLatency()}; \texttt{maintenanceProfileChargesRefreshWhenDueAndRecurringHorizonCost()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelector.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelectorTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelector.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b1/B1RetrievalSelectorTest.java}
 \end{minipage}
 
 The expression is not the ACT-R activation equation. Nor is its logistic output a calibrated probability simply because the value lies between zero and one. It is the application's scoring rule. The weights and feature values must be understood as configured engineering inputs, not measurements reported by CoALA or Fan and Lan. The paper's B1 proposal motivates the interaction among accessibility, latency, value, and cost; this particular formula and its Java data contracts are the application's implementation choice.\FanLanCite{\S V-A; \S V-B; \S VI-C, B1; Tables V--VI; Appendices B, C-A, and D}
@@ -292,8 +292,8 @@ public void applyVerifiedOutcome(VerifiedDownstreamOutcomeEvidence verified) {
   {63--72}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
   {\texttt{verifiedDownstreamOutcomeUpdatesOnlyTheExactAttributedB1MemoryRevision()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1MemoryFeatureLearningService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b1/B1MemoryFeatureLearningService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
 \end{minipage}
 
 This is a carefully bounded connection between the two bundles. B3 produces the verified evidence capability and exact candidate attribution; B1 consumes that capability to update the matching memory feature state. A workspace receipt does not become a training signal by itself, and an unverified outcome does not update B1.
@@ -358,8 +358,8 @@ return candidate.withMemoryAttributions(attributions);
   {422--455}
   {supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
   {Related host integration: \texttt{durableHostApprovesDispatchesReconcilesRestartsAndConsumesPriorCycleMemory()}; no focused test asserts this private helper or a persisted B1 feature update.}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/decision/CognitiveCycleDecisionServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-evaluation/src/test/java/dev/supplychain/agent/evaluation/DurableCognitiveApplicationHostEndToEndPostgresIntegrationTest.java}
 \end{minipage}
 
 The attribution is not an action capability. It says where a candidate's evidence came from, so that a later verified outcome can be attributed narrowly. It does not allow the consumer to mutate memory or to execute a proposed plan. B1 and B3 both remain separate from the application's external action authorization and grounding boundary described in Chapter 19.
@@ -412,8 +412,8 @@ for (WorkspaceCandidate candidate : mandatory) {
   {66--79}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
   {\texttt{mandatoryContentIsAdmittedBeforeOptionalContent()}; \texttt{mandatoryContentExceedingCapacityFailsWithoutPartialSnapshot()}; \texttt{mandatoryContentExceedingMaximumCountFails()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
 \end{minipage}
 
 The distinction is between priority and feasibility. Mandatory status protects a candidate from optional ranking; it does not override a hard capacity limit or make incompatible mandatory candidates jointly valid. The test methods \texttt{mandatory\allowbreak{}Content\allowbreak{}Is\allowbreak{}Admitted\allowbreak{}Before\allowbreak{}Optional\allowbreak{}Content}, \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Capacity\allowbreak{}Fails\allowbreak{}Without\allowbreak{}Partial\allowbreak{}Snapshot}, and \texttt{mandatory\allowbreak{}Content\allowbreak{}Exceeding\allowbreak{}Maximum\allowbreak{}Count\allowbreak{}Fails} exercise these rules.
@@ -485,8 +485,8 @@ if (current.size() == targetSize) {
   {204--254}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
   {\texttt{alternativeCoalitionsCompeteAsFirstClassOptionsAndRecordTheWinner()}; \texttt{incompleteCoalitionEnumerationFallsBackToSingletonAdmissionAndReportsTruncation()}; \texttt{coalitionCompetitionIsDeterministicAcrossCandidateInputOrder()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/WorkspaceAdmissionServiceTest.java}
 \end{minipage}
 
 The complete-combination counter is not a counter for every recursive node. The code above also returns immediately after the candidate count is completed; earlier partial branches are pruned by capacity or conflict checks without using an attempt. This is why the default of 512 must remain described as a bound on evaluated complete combinations rather than a hard bound on all recursive operations.
@@ -558,8 +558,8 @@ if (!verifier.verify(report.scopeId(), report.receiptId(), report.candidateId(),
   {84--107}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
   {\texttt{verified\allowbreak{}Outcome\allowbreak{}Must\allowbreak{}Reference\allowbreak{}An\allowbreak{}Accepted\allowbreak{}Consumed\allowbreak{}Candidate\allowbreak{}And\allowbreak{}Verified\allowbreak{}Source\allowbreak{}Evidence()}; \texttt{outcome\allowbreak{}For\allowbreak{}Unconsumed\allowbreak{}Candidate\allowbreak{}Or\allowbreak{}Unverified\allowbreak{}Evidence\allowbreak{}Is\allowbreak{}Rejected()}; \texttt{persisted\allowbreak{}Outcome\allowbreak{}Is\allowbreak{}Reverified\allowbreak{}Before\allowbreak{}Trainer\allowbreak{}Capability\allowbreak{}Is\allowbreak{}Minted()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b3/B3OutcomeEvidenceServiceTest.java}
 \end{minipage}
 
 The first test rejects reports that do not satisfy the accepted-receipt and verified-evidence contract. The second checks that unconsumed candidates and unverified evidence cannot be associated with an outcome. The third revalidates persisted evidence before exposing a training capability. A separate test drives the B3-to-B1 path and checks that only the exact attributed memory revision is updated, with replay remaining idempotent. These are mechanism/service tests; they do not show that the consumer used the content in a way that caused a better business result.

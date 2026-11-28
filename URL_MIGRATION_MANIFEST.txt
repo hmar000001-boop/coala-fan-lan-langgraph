@@ -1,0 +1,11 @@
+GitHub repository URL migration
+
+Old repository: https://github.com/hmar000001-boop/supply-chain-agent
+New repository: https://github.com/haythemabr/supply-chain-agent
+Pinned application commit preserved: fa8cd5ec0742d7010dbba2c3646852e95062a419
+
+Scope: update existing book source links, QR source payloads, repository references in supporting documentation, and the QR validator's expected URL prefix. Regenerate the 35 QR PDF assets. No source-link architecture, commit pin, application code, LaTeX build configuration, or CI workflow was changed.
+
+Validation performed: scripts/check-source-qrs.py passed and verified 35 chapter QR references against their .tex payload sources. All 35 QR PDF assets were regenerated with xelatex. A complete book build / GitHub Actions run was not performed.
+
+Important: the new GitHub repository must contain commit fa8cd5ec0742d7010dbba2c3646852e95062a419 with the referenced paths, or the commit-pinned links will return 404.

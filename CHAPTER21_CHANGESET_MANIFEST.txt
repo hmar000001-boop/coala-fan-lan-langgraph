@@ -1,7 +1,7 @@
 Part III / Chapter 21 — incremental changeset manifest
 Base prerequisites: Part_III_Chapter19_QR_SCAFFOLD_CHANGESET_ONLY.zip and Part_III_Chapter20_QR_CHANGESET_ONLY.zip already applied.
 Application source revision used for links: fa8cd5ec0742d7010dbba2c3646852e95062a419
-GitHub repository: hmar000001-boop/supply-chain-agent
+GitHub repository: haythemabr/supply-chain-agent
 
 MODIFIED
 Tex/part3/chapter21/chapter.tex

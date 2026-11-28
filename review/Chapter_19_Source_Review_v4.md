@@ -1,14 +1,16 @@
+> **Historical status note (26 November 2026):** This source/QR review predates the completion of Chapters 23–24. Its statements that those chapters were outline-gated describe the earlier snapshot only. The current Part III contains drafted Chapters 19–24, with Chapter 24 as its final chapter.
+
 # Chapter 19 Source and QR Review — v4
 
 **Date:** 26 November 2026  
 **Chapter:** Engineering Foundations for Request-Driven Enterprise Agentic Systems  
 **Application archive:** `supply-chain-agent-main (10).zip`  
 **Application archive SHA-256:** `8d2fd8eb0aef0ea65704349469619d789351ec7b085dd55a23d5041153f62d4c`  
-**Application repository:** `https://github.com/hmar000001-boop/supply-chain-agent`  
+**Application repository:** `https://github.com/haythemabr/supply-chain-agent`  
 **Frozen source commit:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`  
 **Review scope:** six-chapter Part III scaffold, Chapter 19 source accuracy, QR generation/layout, PDF hyperlinks, and the exact change-set boundary.
 
-This review supersedes the Chapter 19 QR-readiness conclusion in `Chapter_19_Source_Review_v3.md`. The v3 report was accurate about the source paths and code review, but its repository-identity conclusion was incomplete: the current application ZIP's `CHANGESET_INFO/CHANGESET_INFO.txt` identifies `hmar000001-boop/supply-chain-agent`, and the ZIP comment carries the full frozen commit. The repository and commit-pinned source views were then verified. No source URL, owner, or repository name was guessed.
+This review supersedes the Chapter 19 QR-readiness conclusion in `Chapter_19_Source_Review_v3.md`. The v3 report was accurate about the source paths and code review, but its repository-identity conclusion was incomplete: the current application ZIP's `CHANGESET_INFO/CHANGESET_INFO.txt` identifies `haythemabr/supply-chain-agent`, and the ZIP comment carries the full frozen commit. The repository and commit-pinned source views were then verified. No source URL, owner, or repository name was guessed.
 
 ## 1. Scaffold correction
 
@@ -30,12 +32,12 @@ Both report Part I = 8, Part II = 10, and Part III = 6. The existing chapter gat
 
 ## 2. Frozen source identity and URL construction
 
-The application ZIP reports the full commit `fa8cd5ec0742d7010dbba2c3646852e95062a419` in its archive comment. `CHANGESET_INFO/CHANGESET_INFO.txt` identifies the repository as `hmar000001-boop/supply-chain-agent`. The commit-pinned GitHub `blob` pages were checked before use.
+The application ZIP reports the full commit `fa8cd5ec0742d7010dbba2c3646852e95062a419` in its archive comment. `CHANGESET_INFO/CHANGESET_INFO.txt` identifies the repository as `haythemabr/supply-chain-agent`. The commit-pinned GitHub `blob` pages were checked before use.
 
 Every Chapter 19 source URL has this structure:
 
 ```text
-https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/<repository-relative-source-path>
+https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/<repository-relative-source-path>
 ```
 
 The payload opens the immutable source file view at the reviewed commit. The exact member and source line range are printed alongside it. The QR does not point to `main`, `master`, a raw download endpoint, or a shortener.

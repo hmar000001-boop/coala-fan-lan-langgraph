@@ -55,12 +55,12 @@ The QR and the visible **Open exact source** PDF hyperlink must use the **same c
 Canonical form (the current Chapter 19 links use this commit-pinned form):
 
 ```text
-https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/{REPOSITORY_RELATIVE_PATH}
+https://github.com/haythemabr/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/{REPOSITORY_RELATIVE_PATH}
 ```
 
 The source ID and the printed source path identify the same destination used by the QR. The test label is a separate clickable PDF reference to the test file at the same commit; it is not encoded in the implementation QR.
 
-**Repository identity verified for this snapshot.** The application archive's `CHANGESET_INFO/CHANGESET_INFO.txt` records `hmar000001-boop/supply-chain-agent`; its ZIP comment records commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The public GitHub repository and commit-pinned source files were checked before these URLs were added. This is not an inferred owner/repository pair. The links intentionally target the source-file `blob` view at that immutable commit. Source line ranges remain printed next to the member because line-fragment anchors are not currently part of the QR payload.
+**Repository identity verified for this snapshot.** The application archive's `CHANGESET_INFO/CHANGESET_INFO.txt` records `haythemabr/supply-chain-agent`; its ZIP comment records commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The public GitHub repository and commit-pinned source files were checked before these URLs were added. This is not an inferred owner/repository pair. The links intentionally target the source-file `blob` view at that immutable commit. Source line ranges remain printed next to the member because line-fragment anchors are not currently part of the QR payload.
 
 ## 5. LaTeX layout and package choice
 
