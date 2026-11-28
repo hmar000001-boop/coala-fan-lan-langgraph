@@ -22,21 +22,23 @@
 
 \usepackage[toc,nonumberlist]{glossaries}
 \makeglossaries
+\renewcommand*{\glossarypreamble}{\begin{multicols}{2}\raggedcolumns\small}
+\renewcommand*{\glossarypostamble}{\end{multicols}}
 \input{Tex/glossary/terms.tex}
 
 % Reusable review and recap blocks used throughout the book.
 \newtcolorbox{chapterrecap}{
   colback=TakeawayBg, colframe=TakeawayBorder,
-  before skip=12pt, fonttitle=\sffamily\bfseries\small,
+  before skip=10.5pt, fonttitle=\sffamily\bfseries\small,
   title={Chapter recap}, breakable, lines before break=3,
-  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  left=8pt, right=8pt, top=5.25pt, bottom=5.25pt,
   boxrule=0.6pt, width=\linewidth
 }
 \newtcolorbox{reviewquestions}[1]{
   colback=NoteBg, colframe=NoteBorder,
-  before skip=12pt, fonttitle=\sffamily\bfseries\small,
+  before skip=10.5pt, fonttitle=\sffamily\bfseries\small,
   title={#1}, breakable, lines before break=3,
-  left=8pt, right=8pt, top=6pt, bottom=6pt,
+  left=8pt, right=8pt, top=5.25pt, bottom=5.25pt,
   boxrule=0.6pt, width=\linewidth
 }
 \providecommand{\tightlist}{}

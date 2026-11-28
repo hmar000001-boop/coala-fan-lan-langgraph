@@ -1,7 +1,10 @@
-CHANGED
-Tex/part0/frontmatter/preface.tex
-
-ADDED TO THE CHANGESET PACKAGE (not repository source)
-PREFACE_RELIABILITY_UPDATE_README.md
-PREFACE_RELIABILITY_UPDATE.patch
-CHANGESET_MANIFEST.txt
+Tex/preamble.tex
+Tex/main.tex
+Tex/shared-macros.tex
+Tex/part2/chapter14/chapter.tex
+Tex/part3/chapter19/chapter.tex
+Tex/part3/chapter20/chapter.tex
+Tex/part3/chapter23/chapter.tex
+Tex/part3/chapter24/chapter.tex
+Tex/appendices/appendix-c-persistence.tex
+scripts/quality-checks.sh

@@ -529,7 +529,7 @@ The feedback queue and policy learner are deliberately separate. The cycle recor
 
 \subsection{The workspace cycle state machine}
 
-A cycle should have an explicit lifecycle. The proposed normal path is \texttt{COLLECTING}, \texttt{VALIDATING}, \texttt{COALITION\_FORMATION}, \texttt{COMPETING}, \texttt{ADMITTED}, \texttt{BROADCAST}, \texttt{CONSUMING}, \texttt{OUTCOME\_RECORDED}, \texttt{POLICY\_UPDATE}, and \texttt{EXPIRED}. Invalid candidates can be rejected before competition. A cycle with no eligible coalition may close as \texttt{NO\_ADMISSION}; this is preferable to inventing content just to fill the budget.
+A cycle should have an explicit lifecycle. The proposed normal path is \texttt{COLLECTING}, \texttt{VALIDATING}, \texttt{COALITION\allowbreak{}\_FORMATION}, \texttt{COMPETING}, \texttt{ADMITTED}, \texttt{BROADCAST}, \texttt{CONSUMING}, \texttt{OUTCOME\allowbreak{}\_RECORDED}, \texttt{POLICY\allowbreak{}\_UPDATE}, and \texttt{EXPIRED}. Invalid candidates can be rejected before competition. A cycle with no eligible coalition may close as \texttt{NO\_ADMISSION}; this is preferable to inventing content just to fill the budget.
 
 \BookDiagram[0.63\textheight]{Tex/diagrams/generated/part2/chapter14/b3-workspace-state-machine.png}{Proposed B3 cycle state machine from candidate collection through admission, broadcast, consumer processing, outcome attribution, policy update, and expiry, including no-admission and delivery-failure exits.}{fig:ch14-workspace-state}
 

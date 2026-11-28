@@ -1,36 +1,11 @@
 \input{Tex/preamble.tex}
 \input{Tex/shared-macros.tex}
 
-%% Keep deep navigation in the PDF outline even though the printed contents
-%% intentionally stops at first-level sections.
-\hypersetup{bookmarksdepth=subsubsection}
-
-%% Preserve the existing description-style glossary entries, but flow them
-%% in two columns to reduce back-matter length without deleting definitions.
-\newglossarystyle{twocolumnlist}{%
-  \setglossarystyle{list}%
-  \renewenvironment{theglossary}%
-    {\begin{multicols}{2}\begin{description}}%
-    {\end{description}\end{multicols}}%
-}
-\setglossarystyle{twocolumnlist}
-
-%% Two-column printed table of contents. The standard chapter heading and
-%% running marks are retained; only the layout and displayed depth change.
-\makeatletter
-\renewcommand{\tableofcontents}{%
-  \chapter*{\contentsname
-    \@mkboth{\MakeUppercase\contentsname}{\MakeUppercase\contentsname}}%
-  \begin{multicols}{2}
-    \setlength{\columnsep}{24pt}%
-    \@starttoc{toc}%
-  \end{multicols}%
-}
-\makeatother
-
 \begin{document}
 \frontmatter
 \input{Tex/part0/content.tex}
+\setcounter{tocdepth}{1}
+\hypersetup{bookmarksdepth=3}
 \tableofcontents
 
 \mainmatter

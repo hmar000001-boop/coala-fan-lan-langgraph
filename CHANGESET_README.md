@@ -1,59 +1,54 @@
-> **Historical changeset note (26 November 2026):** This file documents how an earlier changes-only patch was applied. In the cleaned repository distributed with the current Part III review, all Chapter 25–30 placeholder directories listed below have already been removed from both the canonical `Tex/part3/` tree and the legacy root `part3/` tree. `DELETE_THESE_PATHS.txt` is now a completed-removal audit record, not a pending instruction.
+# KDP Hardcover 550-page Change Set
 
-# Chapter 19 QR and six-chapter scaffold correction
+## Status
 
-This is a **changes-only patch** for the book repository. It is not a full project archive. It consolidates the earlier Chapter 19 revision and the follow-up fixes for the canonical six-chapter Part III scaffold and QR implementation.
+This is the approved source-only overlay against the exact baseline below. It implements the seven approved change groups. **It is not a verified print-ready PDF:** a full production build did not finish in this runtime, and the most recent user-supplied CI result before this patch was 579 physical pages (580 KDP-counted). Run the book's normal CI build after applying this overlay; the quality gate will reject any output over 550 KDP-counted pages.
 
-## Apply
+## Baseline and protected identity
 
-1. Extract this ZIP at the root of `coala-fan-lan-langgraph-main` (or the working root of your renamed book repository), preserving all relative paths.
-2. Delete every file/directory listed in `DELETE_THESE_PATHS.txt`. ZIP overlays do not remove deleted files automatically.
-3. Run:
+- Baseline archive: `coala-fan-lan-langgraph-main (5).zip`
+- Baseline SHA-256: `0a4a86dcde745703c8c9fd105a1244a42da80e038f9fd0da88413ed8ece47a66`
+- Embedded application repository: `https://github.com/haythemabr/supply-chain-agent`
+- Pinned application commit: `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`
 
-   ```bash
-   bash scripts/check-scaffold.sh
-   bash check-scaffold.sh
-   bash scripts/generate-source-qrs.sh
-   python3 scripts/check-source-qrs.py
-   ```
+The repository URL and commit are preserved exactly. No application-repository files are included or modified.
 
-   Both scaffold checks must report Part III = 6. The QR validator must report three matching QR assets.
+## Implemented changes
 
-The canonical Part III LaTeX tree is `Tex/part3/` and includes Chapters 19–24 only. The root-level `part3/` directory is a legacy secondary copy; `Tex/main.tex` remains the authoritative combined-book entry point.
+1. **KDP geometry:** 8.25 × 11 in trim; 0.90 in inside, 0.50 in outside, 0.75 in top, and 0.65 in bottom margins; zero binding offset; running-header box positioned within the top safe area.
+2. **Two-sided pagination:** retain `twoside`, switch to `openany`, and make `\cleardoublepage` clear without inserting automatic blank verso pages. Explicit source page breaks remain untouched.
+3. **Moderate vertical compression:** body leading 1.18 → 1.12; paragraph skip 6 pt → 4 pt; proportionate spacing reductions around headings, lists, tables, floats, captions, listings, and teaching/source-layout boxes. Body font size and code font sizes are unchanged.
+4. **Targeted line wrapping:** 42 `\allowbreak{}` insertions and one existing `\linebreak[3]` strengthened to `\linebreak[4]`. The six touched chapter/appendix files compare byte-for-byte after removal of only these line-break controls; their substantive text and printed identifier strings are unchanged.
+5. **Printed contents:** two columns; parts, chapters, and first-level sections retained; deeper printed TOC entries omitted. PDF bookmarks remain enabled through subsubsection depth.
+6. **Glossary:** two-column layout; all 133 glossary declarations and their descriptions remain unchanged. Index and bibliography source material are not edited.
+7. **KDP quality gate:** enforce 594 × 792 pt (8.25 × 11 in), calculate KDP page count by rounding an odd physical page count up to the next even count, and fail above 550. The title and chapter-content checks remain in place.
 
-## Included changes
+## Files in this overlay
 
-**Modified**
+Exactly ten existing repository files are modified. No repository files are added or deleted:
 
-- `.github/workflows/build-book.yml` — regenerate the standalone vector QR assets and verify URL/payload consistency before compiling the book.
-- `Tex/part3/chapter19/chapter.tex` — revised Chapter 19 source/test references below Listings 19.1–19.4; QR/source strips under Listings 19.2, 19.3, and 19.4; text-only source strip under Listing 19.1; local code-font reduction only for the long Listing 19.3 algorithm.
-- `Tex/shared-macros.tex` — reusable text-only and QR source-reference macros; each embedded QR vector graphic is wrapped in `\href` using the same source URL as the text links.
-- `scripts/check-scaffold.sh` — explicitly require exactly six canonical Part III chapters (19–24) and reject old chapter25–30 directories.
-- `check-scaffold.sh` — root-level entry point delegates to the canonical checker, avoiding two conflicting implementations.
-- `CODE-PRESENTATION-PLAN.md` — QR policy, source-reference convention, generated vector asset workflow, and proof results.
-- `review/Chapter_19_Source_Review_v3.md` — preserved as a historical intermediate review and explicitly marked superseded.
-- `review/Chapter_19_Source_Review_v4.md` — current source, scaffold, QR, and PDF-proof audit.
+- `Tex/preamble.tex`
+- `Tex/main.tex`
+- `Tex/shared-macros.tex`
+- `Tex/part2/chapter14/chapter.tex`
+- `Tex/part3/chapter19/chapter.tex`
+- `Tex/part3/chapter20/chapter.tex`
+- `Tex/part3/chapter23/chapter.tex`
+- `Tex/part3/chapter24/chapter.tex`
+- `Tex/appendices/appendix-c-persistence.tex`
+- `scripts/quality-checks.sh`
 
-**Added**
+## Validation performed
 
-- `scripts/generate-source-qrs.sh` — creates the three vector QR PDF assets from the adjacent standalone LaTeX sources using `qrcode.sty` and XeLaTeX.
-- `scripts/check-source-qrs.py` — verifies that each QR payload exactly matches its chapter macro source URL and that the vector PDF is present.
-- `Tex/diagrams/source-qr/README.md` — QR asset generation and update procedure.
-- `Tex/diagrams/source-qr/C19-S02.tex` and `.pdf` — Listing 19.2 QR.
-- `Tex/diagrams/source-qr/C19-S03.tex` and `.pdf` — Listing 19.3 QR.
-- `Tex/diagrams/source-qr/C19-S04.tex` and `.pdf` — Listing 19.4 QR.
-- `DELETE_THESE_PATHS.txt` — explicit deletions required because a ZIP overlay cannot remove old placeholder files.
-- `CHANGESET_MANIFEST.txt` — Added/Modified/Deleted inventory relative to the supplied book repository.
-- `CHANGESET_README.md` — this file.
+- Uploaded baseline archive SHA-256 verified against the approved value above.
+- Source QR check passed: 35 QR assets match their commit-pinned PDF links.
+- Mermaid inventory: 131 source/reference pairs are present in the project. The local existence check relied on temporary placeholder PNGs in the diagnostic workspace; no diagram PNGs are included in this overlay, and real Mermaid rendering still requires the production CI renderer.
+- Protected Part III repository URL and pinned-commit occurrence counts match the baseline; no wrong owner or wrong commit references were introduced.
+- All 133 glossary declarations are retained; glossary term source is byte-identical to baseline.
+- For all six chapter/appendix text files containing line-break annotations, removing only `\allowbreak{}` and `\linebreak[n]` makes the edited text exactly identical to baseline.
+- `bash -n scripts/quality-checks.sh` passed.
+- Quality-gate fixtures passed at 549 physical pages (550 KDP-counted) and 550 physical pages; a 551-physical-page fixture was correctly rejected as 552 KDP-counted.
 
-**Deleted by manual application in the earlier changeset; removal is already reflected in the current cleaned repository**
+## Build limitation / next validation
 
-- `Tex/part3/chapter25/chapter.tex` through `Tex/part3/chapter30/chapter.tex` — obsolete placeholder-only canonical build chapters. They were removed from both Part III trees in the cleaned repository delivered on 26 November 2026.
-
-## QR behaviour and verification
-
-The source QR is generated as a vector PDF with `qrcode.sty`, a 17 mm matrix, and the required four-module quiet zone. The book includes the complete asset at 19.5 mm height on an opaque white field. The QR image itself is clickable in the PDF. Its hyperlink, the source ID, the printed source path, and **Open exact source** all use the same immutable GitHub source URL. Test file and test-method labels link separately to the matching test file at the same commit.
-
-The final Chapter 19 XeLaTeX proof was rendered at 220 DPI. All three QR payloads were decoded and matched exactly to the URI annotation covering the QR rectangle. The clickable squares measured 19.15 × 19.50 mm. Listing 19.3 was visually checked to ensure the source strip no longer collides with the page number. This is a screen/raster proof, not a physical-print certification or final full-book CI build.
-
-The application archive identity is `haythemabr/supply-chain-agent`, commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. No application-repository files are included or modified.
+A full local book build was not completed: the environment does not contain the configured TeX Gyre OpenType font files, the Mermaid renderer dependencies could not be installed within the execution window, and the fallback diagnostic build was stopped before producing a complete PDF. No fallback font substitutions or placeholder diagram images are included in this overlay. Therefore, the final page count and two-column page layout must be confirmed by the repository's normal production CI build. Do not treat this source overlay as KDP-approved until that build passes the 550-page gate and the PDF is visually reviewed.
