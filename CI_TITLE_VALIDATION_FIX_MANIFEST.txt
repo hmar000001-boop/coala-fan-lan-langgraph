@@ -1,0 +1,15 @@
+Reliable AI Agents — CI title validation correction
+
+Purpose:
+Fix the PDF quality-check failure caused by the validator expecting the retired book title.
+
+Files included:
+- scripts/quality-checks.sh: expects the approved PDF title, "Reliable AI Agents: Architecture and Implementation".
+- styles/bookstyle.sty: aligns the shared style package's fallback PDF title and subject metadata with the approved publication identity.
+
+No chapters, body text, bibliography, figures, PDF generation workflow, application code, or tests were changed.
+
+Validation performed:
+- bash -n scripts/quality-checks.sh
+- Static check confirms the validator and shared style metadata use the approved title.
+- Full LaTeX build and GitHub Actions run were not performed in this environment.

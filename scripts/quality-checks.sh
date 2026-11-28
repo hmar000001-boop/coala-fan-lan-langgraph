@@ -46,7 +46,7 @@ esac
 
 TITLE_LINE="$(grep -m1 '^Title:' "$INFO_FILE" || true)"
 case "$TITLE_LINE" in
-  *"From Cognitive Architectures to Production Agentic Systems"*) ;;
+  *"Reliable AI Agents: Architecture and Implementation"*) ;;
   *)
     printf 'Observed PDF metadata:\n%s\n' "$TITLE_LINE" >&2
     fail 'PDF title metadata is missing or does not match the book title'
