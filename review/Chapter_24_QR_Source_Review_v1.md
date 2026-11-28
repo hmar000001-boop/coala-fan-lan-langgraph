@@ -3,7 +3,7 @@
 **Chapter:** Composing the Supply-Chain Agent: Graph Orchestration, Persistence, and Simulated Execution  
 **Review date:** 26 November 2026  
 **Application snapshot:** supplied `supply-chain-agent-main` archive, ZIP comment commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`  
-**Repository:** `hmar000001-boop/supply-chain-agent`  
+**Repository:** `haythemabr/supply-chain-agent`  
 **Scope:** Chapter 24 LaTeX source, its outline, seven Mermaid source diagrams, seven primary QR assets, and the source/build/scaffold registry changes required to include Chapter 24.
 
 ## 1. Review outcome

@@ -80,8 +80,8 @@ record ChildResolutionResult(
   {6--14}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
   {\texttt{childScopeMustMatchParentScope()}; \texttt{staleParentVersionRejectsChildResult()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
 \BookSourceReferenceNoQR
   {C22-S02}
   {supply-chain-agent-mechanisms}
@@ -90,8 +90,8 @@ record ChildResolutionResult(
   {7--22}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
   {\texttt{evidenceBackedChildResultCompletesOnlyTheSubstate()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
 \end{minipage}
 
 The listing omits constructor validation, but its fields show what crosses the boundary. The case checks the remaining invariants when it is opened and when a result is returned. It is important not to read a parent snapshot as a temporal database snapshot or a Soar goal dependency set. The code binds the return to four parent identity values; it does not reproduce every dependency-tracking facility proposed in Part II Chapter 13.
@@ -146,8 +146,8 @@ try {
   {291--306}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
   {\texttt{b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()}; \texttt{b2ChildCannotExecuteACapabilityOutsideItsDelegatedScope()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
 \end{minipage}
 
 
@@ -191,8 +191,8 @@ public ImpasseResolutionCase recordAction(Capability capability, Instant now) {
   {46--50}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
   {\texttt{childActionBudgetAndCapabilityAreEnforced()}; \texttt{childCannotExceedActionBudget()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
 \end{minipage}
 
 \subsection{Durable child-step receipts and fencing}
@@ -247,8 +247,8 @@ The receipt is not a business-fact verifier. It prevents duplicate or stale step
   {89--104}
   {supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresM7B2CoreIntegrationTest.java}
   {\texttt{childStepReceiptsResumeCompletedWorkAndFenceExpiredClaims()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresM7B2CoreIntegrationTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/test/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresM7B2CoreIntegrationTest.java}
 \end{minipage}
 
 \BookDiagram[0.50\textheight]
@@ -297,8 +297,8 @@ var resolved = impasses.resolve(caseId, resolutionCase.version(), artifact.resul
   {407--415}
   {supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
   {\texttt{b2ResolutionRunsOnlyDeclaredChildCapabilitiesAndReturnsToParentIntention()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/test/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServicesTest.java}
 \end{minipage}
 
 \BookDiagram[0.48\textheight]
@@ -346,8 +346,8 @@ public ImpasseResolutionCase resolve(ChildResolutionResult childResult,
   {52--65}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
   {\texttt{evidenceBackedChildResultCompletesOnlyTheSubstate()}; \texttt{staleParentVersionRejectsChildResult()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionServiceTest.java}
 \end{minipage}
 
 \subsection{Returning to B4 is a separate state transition}
@@ -409,8 +409,8 @@ public RecoveryProcedureDraft approve(String id, long expectedVersion,
   {72--88}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftServiceTest.java}
   {\texttt{approvalRequiresCurrentParentEvidenceAndTrustedOperatorAuthority()}; \texttt{approvalCannotCrossParentVersionOrObjectiveChange()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftServiceTest.java}
 \end{minipage}
 
 \subsection{Staging publishes an immutable artifact and a procedural draft}
@@ -457,8 +457,8 @@ public ProcedureVersion activate(ProcedureVersionId id, long expectedRevision,
   {90--104}
   {supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionServiceTest.java}
   {\texttt{b2ApprovalStagesOnlyADraftAndIndependentProceduralLifecycleIsRequired()}; \texttt{proceduralReviewerAndApproverMustBeIndependentActors()}}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}
-  {https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionServiceTest.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}
+  {https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/test/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionServiceTest.java}
 \end{minipage}
 
 Retrieval is also conditional. \texttt{retrieveActive} looks up a procedure for an exact memory scope and opaque condition key. It accepts only an active recovery runbook, dereferences the immutable artifact under the expected scope, checks its identity and provenance against the procedural-memory version, and re-verifies evidence and current action descriptors. A changed descriptor or stale/foreign evidence blocks retrieval. The service returns a \texttt{Reusable\allowbreak Recovery\allowbreak Procedure}, which is planning knowledge, not an executable command. The registered actions still require the ordinary capability, approval, validation, and dispatch boundaries explained in Chapter 19.
@@ -501,14 +501,14 @@ For readers following the implementation, the principal source locations are lis
 \textbf{Responsibility} & \textbf{Repository-relative source} & \textbf{Entry point} \\
 \midrule
 \endhead
-Typed parent/result boundary & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}}; \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}} & constructor contracts \\
-Typed signal and case invariants & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}} & \texttt{open}, \texttt{recordAction}, \texttt{resolve} \\
-Signal consolidation & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}} & \texttt{consolidate} \\
-Runtime opening, investigation and return & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}} & \texttt{openImpasse}, \texttt{investigate\allowbreak Impasse}, \texttt{validate\allowbreak Impasse\allowbreak Return} \\
-Host-supplied B2 contracts & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}} & \texttt{Impasse\allowbreak Open\allowbreak Request}, \texttt{Child\allowbreak Investigation\allowbreak Plan} \\
-Four-node child graph & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}} & \texttt{compile}, \texttt{invoke} \\
-Durable child-step receipts & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}{\path{supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}} & \texttt{claim}, \texttt{complete}, \texttt{fail} \\
-Draft and promotion lifecycle & \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}}; \href{https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}} & \texttt{createDraft}, \texttt{approve}, \texttt{stage\allowbreak Approved\allowbreak Draft}, \texttt{validate}, \texttt{activate}, \texttt{retrieveActive} \\
+Typed parent/result boundary & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ParentContextSnapshot.java}}; \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ChildResolutionResult.java}} & constructor contracts \\
+Typed signal and case invariants & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/ImpasseResolutionCase.java}} & \texttt{open}, \texttt{recordAction}, \texttt{resolve} \\
+Signal consolidation & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/DeterministicImpasseDetector.java}} & \texttt{consolidate} \\
+Runtime opening, investigation and return & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecycleServices.java}} & \texttt{openImpasse}, \texttt{investigate\allowbreak Impasse}, \texttt{validate\allowbreak Impasse\allowbreak Return} \\
+Host-supplied B2 contracts & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/lifecycle/CognitiveCycleLifecyclePort.java}} & \texttt{Impasse\allowbreak Open\allowbreak Request}, \texttt{Child\allowbreak Investigation\allowbreak Plan} \\
+Four-node child graph & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}{\path{supply-chain-agent-runtime/src/main/java/dev/supplychain/agent/runtime/cognitive/B2ResolutionSubgraph.java}} & \texttt{compile}, \texttt{invoke} \\
+Durable child-step receipts & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}{\path{supply-chain-agent-infrastructure-postgres/src/main/java/dev/supplychain/agent/infrastructure/postgres/runtime/PostgresB2ChildStepReceiptStore.java}} & \texttt{claim}, \texttt{complete}, \texttt{fail} \\
+Draft and promotion lifecycle & \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedureDraftService.java}}; \href{https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}{\path{supply-chain-agent-mechanisms/src/main/java/dev/supplychain/agent/mechanisms/b2/RecoveryProcedurePromotionService.java}} & \texttt{createDraft}, \texttt{approve}, \texttt{stage\allowbreak Approved\allowbreak Draft}, \texttt{validate}, \texttt{activate}, \texttt{retrieveActive} \\
 \bottomrule
 \end{longtable}
 

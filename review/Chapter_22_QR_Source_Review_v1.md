@@ -4,7 +4,7 @@
 **Status:** Chapter 22 source strips and QR codes integrated; standalone XeLaTeX proof rendered and inspected.  
 **Book source:** `Tex/part3/chapter22/chapter.tex`  
 **Central source-navigation plan:** `CODE-PRESENTATION-PLAN.md`  
-**Frozen application snapshot:** `hmar000001-boop/supply-chain-agent` at `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Frozen application snapshot:** `haythemabr/supply-chain-agent` at `fa8cd5ec0742d7010dbba2c3646852e95062a419`
 
 ## 1. Scope and source provenance
 

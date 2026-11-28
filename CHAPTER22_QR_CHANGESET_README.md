@@ -1,7 +1,7 @@
 # Chapter 22 — incremental LaTeX changeset only
 
 **Base book archive:** `coala-fan-lan-langgraph-main (2).zip`  
-**Application source baseline:** `hmar000001-boop/supply-chain-agent` at `fa8cd5ec0742d7010dbba2c3646852e95062a419`  
+**Application source baseline:** `haythemabr/supply-chain-agent` at `fa8cd5ec0742d7010dbba2c3646852e95062a419`  
 **Package type:** incremental changes-only ZIP. It is **not** the complete book project.
 
 ## Archive contents

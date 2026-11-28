@@ -3,7 +3,7 @@
 **Project:** *From Cognitive Architectures to Production Agentic Systems*  
 **Chapter:** 24 — Composing the Supply-Chain Agent: Graph Orchestration, Persistence, and Simulated Execution  
 **Baseline:** the supplied book repository plus the already accepted Chapter 19–23 changesets  
-**Application snapshot used for source links:** `hmar000001-boop/supply-chain-agent`, commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Application snapshot used for source links:** `haythemabr/supply-chain-agent`, commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`
 
 ## Apply
 

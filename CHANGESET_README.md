@@ -1,3 +1,5 @@
+> **Historical changeset note (26 November 2026):** This file documents how an earlier changes-only patch was applied. In the cleaned repository distributed with the current Part III review, all Chapter 25–30 placeholder directories listed below have already been removed from both the canonical `Tex/part3/` tree and the legacy root `part3/` tree. `DELETE_THESE_PATHS.txt` is now a completed-removal audit record, not a pending instruction.
+
 # Chapter 19 QR and six-chapter scaffold correction
 
 This is a **changes-only patch** for the book repository. It is not a full project archive. It consolidates the earlier Chapter 19 revision and the follow-up fixes for the canonical six-chapter Part III scaffold and QR implementation.
@@ -44,9 +46,9 @@ The canonical Part III LaTeX tree is `Tex/part3/` and includes Chapters 19–24 
 - `CHANGESET_MANIFEST.txt` — Added/Modified/Deleted inventory relative to the supplied book repository.
 - `CHANGESET_README.md` — this file.
 
-**Deleted by manual application**
+**Deleted by manual application in the earlier changeset; removal is already reflected in the current cleaned repository**
 
-- `Tex/part3/chapter25/chapter.tex` through `Tex/part3/chapter30/chapter.tex` — obsolete placeholder-only canonical build chapters. Remove them as specified in `DELETE_THESE_PATHS.txt`.
+- `Tex/part3/chapter25/chapter.tex` through `Tex/part3/chapter30/chapter.tex` — obsolete placeholder-only canonical build chapters. They were removed from both Part III trees in the cleaned repository delivered on 26 November 2026.
 
 ## QR behaviour and verification
 
@@ -54,4 +56,4 @@ The source QR is generated as a vector PDF with `qrcode.sty`, a 17 mm matrix, an
 
 The final Chapter 19 XeLaTeX proof was rendered at 220 DPI. All three QR payloads were decoded and matched exactly to the URI annotation covering the QR rectangle. The clickable squares measured 19.15 × 19.50 mm. Listing 19.3 was visually checked to ensure the source strip no longer collides with the page number. This is a screen/raster proof, not a physical-print certification or final full-book CI build.
 
-The application archive identity is `hmar000001-boop/supply-chain-agent`, commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. No application-repository files are included or modified.
+The application archive identity is `haythemabr/supply-chain-agent`, commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. No application-repository files are included or modified.

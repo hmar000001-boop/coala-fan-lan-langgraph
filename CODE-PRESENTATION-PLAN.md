@@ -4,7 +4,7 @@
 **Created:** 25 November 2026  
 **Applies to:** Part III, Chapters 19–24  
 **Canonical LaTeX tree:** `Tex/part3/`  
-**Implementation baseline reviewed for Chapters 19–24:** `fa8cd5ec0742d7010dbba2c3646852e95062a419`
+**Implementation baseline reviewed for Chapters 19–24:** `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`
 
 > **Provenance note.** The supplied book archive did not contain a file named `CODE-PRESENTATION-PLAN.md`. This is therefore the first version of the plan, created in the book repository; it is not an edit to a previously present copy.
 
@@ -55,12 +55,12 @@ The QR and the visible **Open exact source** PDF hyperlink must use the **same c
 Canonical form (the current Chapter 19 links use this commit-pinned form):
 
 ```text
-https://github.com/hmar000001-boop/supply-chain-agent/blob/fa8cd5ec0742d7010dbba2c3646852e95062a419/{REPOSITORY_RELATIVE_PATH}
+https://github.com/haythemabr/supply-chain-agent/blob/6329aec82e1d8b4f19b68986a0d4cf0c448f697f/{REPOSITORY_RELATIVE_PATH}
 ```
 
 The source ID and the printed source path identify the same destination used by the QR. The test label is a separate clickable PDF reference to the test file at the same commit; it is not encoded in the implementation QR.
 
-**Repository identity verified for this snapshot.** The application archive's `CHANGESET_INFO/CHANGESET_INFO.txt` records `hmar000001-boop/supply-chain-agent`; its ZIP comment records commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The public GitHub repository and commit-pinned source files were checked before these URLs were added. This is not an inferred owner/repository pair. The links intentionally target the source-file `blob` view at that immutable commit. Source line ranges remain printed next to the member because line-fragment anchors are not currently part of the QR payload.
+**Repository identity verified for this snapshot.** The application archive's `CHANGESET_INFO/CHANGESET_INFO.txt` records `haythemabr/supply-chain-agent`; its ZIP comment records commit `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. The public GitHub repository and commit-pinned source files were checked before these URLs were added. This is not an inferred owner/repository pair. The links intentionally target the source-file `blob` view at that immutable commit. Source line ranges remain printed next to the member because line-fragment anchors are not currently part of the QR payload.
 
 ## 5. LaTeX layout and package choice
 
@@ -122,7 +122,7 @@ The source-strip dimensions, QR macro, caption treatment, visible path and test 
 
 ## 9. Chapter 19 source-register created in the first revision
 
-The Chapter 19 revision assigns these IDs and prints their full paths, members, source line ranges, and test evidence against application commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The requested Listing 19.2 example receives a QR as an explicit reader-navigation pilot even though the constructor is a supporting typed-command excerpt; this is not a rule to QR every record or declaration:
+The Chapter 19 revision assigns these IDs and prints their full paths, members, source line ranges, and test evidence against application commit `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. The requested Listing 19.2 example receives a QR as an explicit reader-navigation pilot even though the constructor is a supporting typed-command excerpt; this is not a rule to QR every record or declaration:
 
 | Source ID | Classification | Implementation target | QR status |
 | --- | --- | --- | --- |
@@ -161,7 +161,7 @@ The final 220-DPI page images were decoded successfully. For each listing, the d
 
 ## 12. Chapter 20 source register and QR classification
 
-Chapter 20 maps the CoALA memory, internal-action, perception, and planning contracts to the frozen application revision `fa8cd5ec0742d7010dbba2c3646852e95062a419`. Seven listings receive stable IDs. Five are primary implementation spotlights and receive QR codes; the `Observation<T>` declaration and `PlanningState.advance(...)` helper remain supporting excerpts with clickable text references only.
+Chapter 20 maps the CoALA memory, internal-action, perception, and planning contracts to the frozen application revision `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. Seven listings receive stable IDs. Five are primary implementation spotlights and receive QR codes; the `Observation<T>` declaration and `PlanningState.advance(...)` helper remain supporting excerpts with clickable text references only.
 
 | Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
 | --- | --- | ---: | --- | --- |
@@ -179,7 +179,7 @@ The Chapter 20 standalone proof was used to check the source-strip layout, QR re
 
 ## 13. Chapter 21 source register and QR classification
 
-Chapter 21 follows the B1 retrieval/learning path and the B3 workspace-admission/outcome path against frozen application commit `fa8cd5ec0742d7010dbba2c3646852e95062a419`. Seven stable source IDs are assigned. Six primary implementation listings receive QR codes; the private runtime attribution helper remains a text-only supporting reference because the available end-to-end test does not directly assert that helper or a persisted B1 feature update.
+Chapter 21 follows the B1 retrieval/learning path and the B3 workspace-admission/outcome path against frozen application commit `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. Seven stable source IDs are assigned. Six primary implementation listings receive QR codes; the private runtime attribution helper remains a text-only supporting reference because the available end-to-end test does not directly assert that helper or a persisted B1 feature update.
 
 | Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
 | --- | --- | ---: | --- | --- |
@@ -200,7 +200,7 @@ The six C21 QR assets are vector PDFs under `Tex/diagrams/source-qr/`, with one 
 
 ## 14. Chapter 22 source register and QR classification
 
-Chapter 22 documents the B2 parent-linked impasse and protected-recovery path against the same immutable application revision `fa8cd5ec0742d7010dbba2c3646852e95062a419` used in Chapters 19–21. Nine stable references are assigned: seven primary implementation listings receive QR codes, while the two boundary-record declarations remain text-only supporting references. The chapter preserves the distinction between parent identity checks, case transition checks, child-step fencing, and the later governance lifecycle.
+Chapter 22 documents the B2 parent-linked impasse and protected-recovery path against the same immutable application revision `6329aec82e1d8b4f19b68986a0d4cf0c448f697f` used in Chapters 19–21. Nine stable references are assigned: seven primary implementation listings receive QR codes, while the two boundary-record declarations remain text-only supporting references. The chapter preserves the distinction between parent identity checks, case transition checks, child-step fencing, and the later governance lifecycle.
 
 | Source ID | Listing / implementation target | Source range | Proof test(s) | QR status |
 | --- | --- | ---: | --- | --- |
@@ -224,7 +224,7 @@ The Chapter 22 local standalone proof is used only for typography, source-strip 
 
 ## 15. Chapter 23 source register and B4/B6 QR classification
 
-Chapter 23 follows the B4 intention lifecycle and B6 uncertainty/resource governance against the exact application snapshot identified by the supplied archive's ZIP comment: `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The archive's `CHANGESET_INFO` also contains a separate CI-evidence overlay base reference (`c49c543`); that overlay does not replace the application-code snapshot used by this chapter. The Chapter 23 QR and test URLs are pinned to the full `fa8cd5e` commit, not to a branch.
+Chapter 23 follows the B4 intention lifecycle and B6 uncertainty/resource governance against the exact application snapshot identified by the supplied archive's ZIP comment: `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. The archive's `CHANGESET_INFO` also contains a separate CI-evidence overlay base reference (`c49c543`); that overlay does not replace the application-code snapshot used by this chapter. The Chapter 23 QR and test URLs are pinned to the full `fa8cd5e` commit, not to a branch.
 
 Eleven source IDs are assigned. Seven primary implementation listings receive QR codes; four supporting record/helper/adaptor excerpts retain clickable text references only.
 
@@ -256,7 +256,7 @@ The standalone layout proof has 35 pages. Automated PDF inspection confirms that
 
 ## 16. Chapter 24 application composition source register
 
-Chapter 24 uses the application archive whose ZIP comment pins the Java snapshot to `fa8cd5ec0742d7010dbba2c3646852e95062a419`. The `CHANGESET_INFO` entry records a separate `c49c543` base only for an overlay changing CI evidence-capture scripts; it contains no Maven/Java source or workflow YAML changes. All Chapter 24 source and test permalinks therefore use the full `fa8cd5e` commit rather than a branch.
+Chapter 24 uses the application archive whose ZIP comment pins the Java snapshot to `6329aec82e1d8b4f19b68986a0d4cf0c448f697f`. The `CHANGESET_INFO` entry records a separate `c49c543` base only for an overlay changing CI evidence-capture scripts; it contains no Maven/Java source or workflow YAML changes. All Chapter 24 source and test permalinks therefore use the full `fa8cd5e` commit rather than a branch.
 
 Fourteen source-reference records are assigned. Seven primary implementation listings receive a QR code; seven supporting contracts/adapters/persistence or test references retain clickable text-only navigation. The small `Phase0Application` intake smoke program is linked separately in the runnable-surface discussion because it has no dedicated test and is not a primary listing.
 
