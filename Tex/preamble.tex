@@ -6,7 +6,7 @@
 \documentclass[
   11pt,
   twoside,
-  openright
+  openany
 ]{book}
 
 \usepackage{polyglossia}
@@ -27,13 +27,16 @@
 ]
 
 \usepackage{geometry}
+%% KDP hardcover trim: 8.25 x 11 inches. The 0.9-inch inner margin
+%% exceeds KDP's 0.75-inch minimum for a 501-700-page interior; the 0.5-inch
+%% outer margin also exceeds the no-bleed minimum. No bleed is used.
 \geometry{
-  papersize    = {8.5in, 11in},
+  papersize    = {8.25in, 11in},
   top          = 0.9in,
   bottom       = 1in,
-  inner        = 1.2in,
-  outer        = 1.05in,
-  bindingoffset= 0.15in,
+  inner        = 0.9in,
+  outer        = 0.5in,
+  bindingoffset= 0in,
   headheight   = 23.07pt,
   twoside
 }
@@ -83,6 +86,7 @@
 
 \usepackage{needspace}
 \usepackage{etoolbox}
+\usepackage{multicol}
 \preto\section{\needspace{5\baselineskip}}
 \preto\subsection{\needspace{4\baselineskip}}
 \preto\subsubsection{\needspace{3\baselineskip}}
@@ -129,17 +133,16 @@
   \renewcommand{\headrulewidth}{0pt}
 }
 
-\makeatletter
-\renewcommand{\cleardoublepage}{%
-  \clearpage
-  \if@twoside
-    \ifodd\c@page\else
-      \thispagestyle{empty}\hbox{}\newpage
-      \if@twocolumn\hbox{}\newpage\fi
-    \fi
-  \fi
-}
-\makeatother
+%% Hardcover page-count optimization: keep two-sided pagination, but do not
+%% insert automatic blank verso pages before parts or other clear-double-page
+%% boundaries. Chapters use openany above; this also covers explicit
+%% \cleardoublepage calls in the book-level structure.
+\let\cleardoublepage\clearpage
+
+%% Printed contents are intentionally limited to parts, chapters, and sections.
+%% Deeper heading navigation remains available in the PDF outline (configured
+%% separately in Tex/main.tex).
+\setcounter{tocdepth}{1}
 
 \usepackage{rotating}
 \usepackage{booktabs}

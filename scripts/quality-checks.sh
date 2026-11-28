@@ -37,10 +37,10 @@ require_file "$TEXT_FILE"
 
 PAGE_SIZE_LINE="$(grep -m1 '^Page size:' "$INFO_FILE" || true)"
 case "$PAGE_SIZE_LINE" in
-  *"612 x 792 pts"*|*"612.0 x 792.0 pts"*) ;;
+  *"594 x 792 pts"*|*"594.0 x 792.0 pts"*) ;;
   *)
     printf 'Observed PDF page size: %s\n' "$PAGE_SIZE_LINE" >&2
-    fail 'compiled PDF page size must be US Letter (8.5 x 11 inches)'
+    fail 'compiled PDF page size must be KDP hardcover trim (8.25 x 11 inches)'
     ;;
 esac
 
@@ -105,4 +105,11 @@ PAGES="$(pdfinfo "$PDF" | awk '/^Pages:/ {print $2}')"
 [[ "$PAGES" =~ ^[0-9]+$ ]] || fail 'could not determine the PDF page count'
 (( PAGES > 1 )) || fail "PDF has only $PAGES page; expected a compiled book"
 
-printf 'PDF validation passed: %s pages; book metadata, chapter headings, and text extraction verified.\n' "$PAGES"
+# KDP rounds an odd interior page count up to the next even number.
+KDP_PAGES="$PAGES"
+if (( KDP_PAGES % 2 == 1 )); then
+  ((KDP_PAGES += 1))
+fi
+(( KDP_PAGES <= 550 )) || fail "KDP hardcover page limit exceeded: PDF has $PAGES pages (KDP counts $KDP_PAGES); maximum is 550"
+
+printf 'PDF validation passed: %s physical pages; KDP counts %s even pages (maximum 550); KDP trim, metadata, chapter headings, and text extraction verified.\n' "$PAGES" "$KDP_PAGES"
